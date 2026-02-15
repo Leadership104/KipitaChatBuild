@@ -42,3 +42,16 @@ Template stubs are included as:
 - Trip Planning
 - Safety First
 - Travel Community
+
+
+## Place newly added Firebase JSON files
+If you have new Firebase config JSON files, place them with:
+
+```bash
+scripts/place_firebase_json.sh /path/prod-google-services.json /path/dev-google-services.json /path/staging-google-services.json
+```
+
+This copies files to:
+- `app/src/prod/google-services.json`
+- `app/src/dev/google-services.json`
+- `app/src/staging/google-services.json`
