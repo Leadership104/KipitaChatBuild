@@ -1,0 +1,1 @@
+# Kipita release rules
