@@ -1,6 +1,6 @@
 # KipitaChatBuild
 
-Kipita Android foundation with:
+Production-oriented Android foundation for Kipita with:
 - Verified government travel/safety ingestion and caching
 - Bitcoin merchant aggregation (BTCMap + Cash App schema)
 - Nomad-style place intelligence (cost, internet, safety, walkability, weather)
@@ -9,6 +9,7 @@ Kipita Android foundation with:
 - Group trip chat (up to 10 people) with one main AI planner
 - Multi-LLM assistant routing (OpenAI, Claude, Gemini)
 - Motion-first Compose map, AI, chat, and wallet surfaces
+- In-house error logging and support submission to `info@kipita.com`
 
 ## Firebase flavor integration
 Configured Android package IDs per flavor:
@@ -25,5 +26,3 @@ Template stubs are included as:
 - `google-services.json.template`
 
 ⚠️ Never commit service-account private keys into this repository. Use secure secret storage / CI secret managers.
-
-- In-house error logging with support submission to info@kipita.com
