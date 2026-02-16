@@ -24,6 +24,7 @@ class MapViewModel @Inject constructor(
     private val nomadRepository: NomadRepository,
     private val offlineMapRepository: OfflineMapRepository,
     private val errorLogger: InHouseErrorLogger
+    private val travelDataEngine: TravelDataEngine
 ) : ViewModel() {
     private val _state = MutableStateFlow(MapUiState())
     val state: StateFlow<MapUiState> = _state.asStateFlow()
@@ -57,6 +58,8 @@ class MapViewModel @Inject constructor(
             runCatching { offlineMapRepository.cacheRegion(region) }
                 .onSuccess { _state.value = _state.value.copy(offlineReady = true) }
                 .onFailure { errorLogger.log("MapViewModel.cacheRegionOffline", it) }
+            val notices = travelDataEngine.collectRegionNotices(region)
+            _state.value = _state.value.copy(loading = false, notices = notices)
         }
     }
 
@@ -70,6 +73,7 @@ class MapViewModel @Inject constructor(
 }
 
 enum class OverlayType { BTC_MERCHANTS, SAFETY, HEALTH, INFRASTRUCTURE, NOMAD }
+enum class OverlayType { BTC_MERCHANTS, SAFETY, HEALTH, INFRASTRUCTURE }
 
 data class MapUiState(
     val loading: Boolean = false,
@@ -78,4 +82,5 @@ data class MapUiState(
     val nomadPlaces: List<NomadPlaceInfo> = emptyList(),
     val activeOverlays: Set<OverlayType> = setOf(OverlayType.BTC_MERCHANTS, OverlayType.SAFETY, OverlayType.HEALTH, OverlayType.NOMAD),
     val offlineReady: Boolean = false
+    val activeOverlays: Set<OverlayType> = setOf(OverlayType.SAFETY, OverlayType.HEALTH)
 )

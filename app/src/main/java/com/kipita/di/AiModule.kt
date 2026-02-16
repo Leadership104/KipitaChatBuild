@@ -9,6 +9,7 @@ import com.kipita.data.repository.TripChatRepository
 import com.kipita.domain.usecase.AiOrchestrator
 import com.kipita.domain.usecase.LlmRouter
 import com.kipita.domain.usecase.LlmTokenProvider
+import com.kipita.domain.usecase.AiOrchestrationUseCase
 import com.kipita.domain.usecase.TravelDataEngine
 import dagger.Module
 import dagger.Provides
@@ -47,4 +48,6 @@ object AiModule {
         nomadRepository,
         tripChatRepository
     )
+    fun provideAiOrchestrationUseCase(engine: TravelDataEngine): AiOrchestrationUseCase =
+        AiOrchestrationUseCase(engine)
 }

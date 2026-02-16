@@ -9,6 +9,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -43,6 +48,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun MapScreen(paddingValues: PaddingValues, viewModel: MapViewModel = hiltViewModel()) {
@@ -56,6 +64,9 @@ fun MapScreen(paddingValues: PaddingValues, viewModel: MapViewModel = hiltViewMo
         viewModel.load("global")
         launch { markerAlpha.animateTo(1f, spring(stiffness = Spring.StiffnessLow)) }
     }
+    var selected by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(Unit) { viewModel.load("global") }
 
     Column(
         modifier = Modifier
@@ -138,6 +149,39 @@ fun MapScreen(paddingValues: PaddingValues, viewModel: MapViewModel = hiltViewMo
                         Text(notice.description)
                         Text("Verified: ${notice.verified} • ${notice.sourceName}")
                         AnimatedVisibility(isSelected) {
+                AssistChip(
+                    onClick = { viewModel.toggleOverlay(overlay) },
+                    label = { Text(overlay.name) }
+                )
+            }
+        }
+
+        AnimatedVisibility(visible = state.loading) { CircularProgressIndicator() }
+
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(state.notices) { notice ->
+                val isSelected = selected == notice.hashCode()
+                val scale by animateFloatAsState(
+                    targetValue = if (isSelected) 1f else 0.96f,
+                    animationSpec = spring(stiffness = Spring.StiffnessLow),
+                    label = "tap-scale"
+                )
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .scale(scale)
+                        .clickable { selected = notice.hashCode() },
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(notice.title, style = MaterialTheme.typography.titleLarge)
+                        Spacer(Modifier.height(8.dp))
+                        Text(notice.description, style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Verified Government Source: ${notice.verified}")
+                        Text("Source: ${notice.sourceName}")
+                        Text("Updated: ${notice.lastUpdated}")
+                        AnimatedVisibility(visible = isSelected) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -146,6 +190,10 @@ fun MapScreen(paddingValues: PaddingValues, viewModel: MapViewModel = hiltViewMo
                                     .padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Spacer(Modifier.size(8.dp))
                                 Text("Severity ${notice.severity}")
                             }
                         }

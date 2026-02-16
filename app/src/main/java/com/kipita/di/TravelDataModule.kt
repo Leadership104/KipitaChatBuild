@@ -22,6 +22,12 @@ import com.kipita.data.repository.NomadRepository
 import com.kipita.data.repository.OfflineMapRepository
 import com.kipita.data.repository.SafetyRepository
 import com.kipita.data.repository.TripChatRepository
+import com.kipita.data.api.GovernmentApiService
+import com.kipita.data.local.KipitaDatabase
+import com.kipita.data.local.TravelNoticeDao
+import com.kipita.data.repository.AdvisoryRepository
+import com.kipita.data.repository.HealthRepository
+import com.kipita.data.repository.SafetyRepository
 import com.kipita.data.validation.DataValidationLayer
 import com.kipita.data.validation.SourceVerificationLayer
 import com.kipita.domain.usecase.TravelDataEngine
@@ -39,6 +45,7 @@ object TravelDataModule {
     @Singleton
     fun provideDb(@ApplicationContext context: Context): KipitaDatabase =
         Room.databaseBuilder(context, KipitaDatabase::class.java, "kipita.db").fallbackToDestructiveMigration().build()
+        Room.databaseBuilder(context, KipitaDatabase::class.java, "kipita.db").build()
 
     @Provides
     fun provideTravelDao(db: KipitaDatabase): TravelNoticeDao = db.travelNoticeDao()

@@ -9,6 +9,7 @@ import com.kipita.data.api.GeminiApiService
 import com.kipita.data.api.GovernmentApiService
 import com.kipita.data.api.NomadApiService
 import com.kipita.data.api.OpenAiApiService
+import com.kipita.data.api.GovernmentApiService
 import com.kipita.data.api.WalletApiService
 import dagger.Module
 import dagger.Provides
@@ -48,6 +49,7 @@ object NetworkModule {
     @Singleton
     @PrimaryApi
     fun providePrimaryRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
         .baseUrl(BuildConfig.BASE_URL)
         .client(okHttpClient)
         .addConverterFactory(MoshiConverterFactory.create())
@@ -134,4 +136,10 @@ object NetworkModule {
 
     @Provides
     fun provideGeminiApiService(@GeminiApi retrofit: Retrofit): GeminiApiService = retrofit.create(GeminiApiService::class.java)
+    fun provideGovernmentApiService(retrofit: Retrofit): GovernmentApiService =
+        retrofit.create(GovernmentApiService::class.java)
+
+    @Provides
+    fun provideWalletApiService(retrofit: Retrofit): WalletApiService =
+        retrofit.create(WalletApiService::class.java)
 }
