@@ -55,3 +55,4 @@ This copies files to:
 - `app/src/prod/google-services.json`
 - `app/src/dev/google-services.json`
 - `app/src/staging/google-services.json`
+Production-oriented Android foundation for Kipita with verified travel data, map overlays, AI orchestration, and wallet integrations.

@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.kipita.data.error.InHouseErrorLogger
 import com.kipita.domain.usecase.AiOrchestrator
 import com.kipita.domain.usecase.OrchestratedAssistantResponse
+import com.kipita.domain.usecase.AiInsight
+import com.kipita.domain.usecase.AiOrchestrationUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,5 +28,12 @@ class AiViewModel @Inject constructor(
                 .onSuccess { _response.value = it }
                 .onFailure { errorLogger.log("AiViewModel.analyze", it) }
         }
+    private val aiUseCase: AiOrchestrationUseCase
+) : ViewModel() {
+    private val _insight = MutableStateFlow<AiInsight?>(null)
+    val insight: StateFlow<AiInsight?> = _insight.asStateFlow()
+
+    fun analyze(region: String) {
+        viewModelScope.launch { _insight.value = aiUseCase.assessRegion(region) }
     }
 }

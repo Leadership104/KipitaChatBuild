@@ -17,3 +17,7 @@ class KipitaApplication : Application(), Configuration.Provider {
             .setWorkerFactory(workerFactory)
             .build()
 }
+import dagger.hilt.android.HiltAndroidApp
+
+@HiltAndroidApp
+class KipitaApplication : Application()

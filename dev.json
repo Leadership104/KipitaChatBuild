@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "569078308896",
+    "project_id": "kipita-99351",
+    "storage_bucket": "kipita-99351.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:569078308896:android:856e84b71c3e1a5f06dc45",
+        "android_client_info": {
+          "package_name": "com.mytum"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7H7qR4qDvx8P9uHbSvlbWjFEr4Lti58c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:569078308896:android:bf090569d8fd975206dc45",
+        "android_client_info": {
+          "package_name": "com.mytum.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7H7qR4qDvx8P9uHbSvlbWjFEr4Lti58c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:569078308896:android:8bae879e68581d8c06dc45",
+        "android_client_info": {
+          "package_name": "com.mytum.staging"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7H7qR4qDvx8P9uHbSvlbWjFEr4Lti58c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
