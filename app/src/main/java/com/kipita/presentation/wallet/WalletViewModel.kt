@@ -3,6 +3,8 @@ package com.kipita.presentation.wallet
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kipita.data.api.WalletApiService
+import com.kipita.data.error.InHouseErrorLogger
+import com.kipita.data.repository.CurrencyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,6 +14,9 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class WalletViewModel @Inject constructor(
+    private val walletApiService: WalletApiService,
+    private val currencyRepository: CurrencyRepository,
+    private val errorLogger: InHouseErrorLogger
     private val walletApiService: WalletApiService
 ) : ViewModel() {
 
@@ -20,6 +25,29 @@ class WalletViewModel @Inject constructor(
 
     fun refreshBalances(coinbaseToken: String, cashAppToken: String) {
         viewModelScope.launch {
+            runCatching {
+                val coinbase = walletApiService.coinbaseBalance("Bearer $coinbaseToken")
+                val cashApp = walletApiService.cashAppBalance("Bearer $cashAppToken")
+                _state.value.copy(
+                    coinbaseBalance = coinbase.btcBalance,
+                    cashAppBalance = cashApp.btcBalance
+                )
+            }.onSuccess { _state.value = it }
+                .onFailure { errorLogger.log("WalletViewModel.refreshBalances", it) }
+        }
+    }
+
+    fun convert(amount: Double, from: String, to: String) {
+        viewModelScope.launch {
+            runCatching { currencyRepository.convert(amount, from, to) }
+                .onSuccess { conversion ->
+                    _state.value = _state.value.copy(
+                        conversionRate = conversion.rate,
+                        conversionValue = conversion.convertedAmount,
+                        conversionLabel = "${conversion.from}→${conversion.to}"
+                    )
+                }
+                .onFailure { errorLogger.log("WalletViewModel.convert", it) }
             val coinbase = runCatching { walletApiService.coinbaseBalance("Bearer $coinbaseToken") }.getOrNull()
             val cashApp = runCatching { walletApiService.cashAppBalance("Bearer $cashAppToken") }.getOrNull()
             _state.value = WalletUiState(
@@ -32,5 +60,9 @@ class WalletViewModel @Inject constructor(
 
 data class WalletUiState(
     val coinbaseBalance: Double = 0.0,
+    val cashAppBalance: Double = 0.0,
+    val conversionRate: Double? = null,
+    val conversionValue: Double? = null,
+    val conversionLabel: String = ""
     val cashAppBalance: Double = 0.0
 )

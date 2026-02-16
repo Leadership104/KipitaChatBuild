@@ -20,6 +20,75 @@ data class TravelNotice(
     val lastUpdated: Instant
 )
 
+data class MerchantLocation(
+    val id: String,
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+    val acceptsOnchainBtc: Boolean,
+    val acceptsLightning: Boolean,
+    val acceptsCashApp: Boolean,
+    val source: String,
+    val lastVerified: Instant,
+    val metadata: Map<String, String>
+)
+
+data class NomadPlaceInfo(
+    val placeId: String,
+    val city: String,
+    val country: String,
+    val costOfLivingUsd: Double,
+    val internetMbps: Double,
+    val safetyScore: Double,
+    val walkabilityScore: Double,
+    val weatherSummary: String,
+    val timezone: String,
+    val updatedAt: Instant
+)
+
+data class CurrencyConversion(
+    val from: String,
+    val to: String,
+    val rate: Double,
+    val convertedAmount: Double,
+    val timestamp: Instant
+)
+
+data class TripMessage(
+    val id: String,
+    val tripId: String,
+    val senderId: String,
+    val senderName: String,
+    val content: String,
+    val createdAt: Instant,
+    val isAi: Boolean = false
+)
+
+data class TripPlan(
+    val tripId: String,
+    val title: String,
+    val participantIds: List<String>,
+    val itineraryDraft: List<String>,
+    val updatedAt: Instant
+)
+
+enum class LlmProvider { OPENAI, CLAUDE, GEMINI }
+
+data class LlmPrompt(
+    val provider: LlmProvider,
+    val input: String,
+    val structured: Boolean = false
+)
+
+data class LlmResult(
+    val provider: LlmProvider,
+    val content: String,
+    val model: String,
+    val confidence: Double,
+    val functionJson: String? = null,
+    val timestamp: Instant = Instant.now()
+)
+
 sealed class TravelAlert {
     data class Safe(val notices: List<TravelNotice>) : TravelAlert()
     data class Warning(val notices: List<TravelNotice>, val score: SafetyScore) : TravelAlert()

@@ -1,0 +1,14 @@
+{
+  "project_info": {
+    "project_id": "kipita-a1694"
+  },
+  "client": [
+    {
+      "client_info": {
+        "android_client_info": {
+          "package_name": "com.mytum.dev"
+        }
+      }
+    }
+  ]
+}

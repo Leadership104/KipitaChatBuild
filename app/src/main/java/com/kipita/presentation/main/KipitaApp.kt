@@ -15,6 +15,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.kipita.presentation.ai.AiAssistantScreen
+import com.kipita.presentation.chat.ChatScreen
+import com.kipita.presentation.home.ExperienceScreen
+import com.kipita.presentation.map.MapScreen
+import com.kipita.presentation.settings.SettingsScreen
+import com.kipita.presentation.wallet.WalletScreen
+
+enum class MainRoute { EXPERIENCE, MAP, CHAT, AI, WALLET, SETTINGS }
+
+@Composable
+fun KipitaApp() {
+    var route by rememberSaveable { mutableStateOf(MainRoute.EXPERIENCE) }
 import com.kipita.presentation.map.MapScreen
 import com.kipita.presentation.wallet.WalletScreen
 
@@ -42,6 +53,12 @@ fun KipitaApp() {
             AnimatedVisibility(visible = true) {
                 Crossfade(targetState = route, label = "route-transition") { destination ->
                     when (destination) {
+                        MainRoute.EXPERIENCE -> ExperienceScreen(padding)
+                        MainRoute.MAP -> MapScreen(padding)
+                        MainRoute.CHAT -> ChatScreen(padding)
+                        MainRoute.AI -> AiAssistantScreen(padding)
+                        MainRoute.WALLET -> WalletScreen(padding)
+                        MainRoute.SETTINGS -> SettingsScreen(padding)
                         MainRoute.MAP -> MapScreen(padding)
                         MainRoute.AI -> AiAssistantScreen(padding)
                         MainRoute.WALLET -> WalletScreen(padding)

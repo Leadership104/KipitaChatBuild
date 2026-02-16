@@ -18,6 +18,7 @@ android {
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"kipita-a1694\"")
     }
 
     buildTypes {
@@ -37,16 +38,19 @@ android {
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
             buildConfigField("String", "BASE_URL", "\"https://api.dev.kipita.app/\"")
+            buildConfigField("String", "FIREBASE_APP_PACKAGE", "\"com.mytum.dev\"")
         }
         create("staging") {
             dimension = "env"
             applicationIdSuffix = ".staging"
             versionNameSuffix = "-staging"
             buildConfigField("String", "BASE_URL", "\"https://api.staging.kipita.app/\"")
+            buildConfigField("String", "FIREBASE_APP_PACKAGE", "\"com.mytum.staging\"")
         }
         create("prod") {
             dimension = "env"
             buildConfigField("String", "BASE_URL", "\"https://api.kipita.app/\"")
+            buildConfigField("String", "FIREBASE_APP_PACKAGE", "\"com.mytum\"")
         }
     }
 
@@ -95,6 +99,15 @@ dependencies {
     implementation(libs.work.runtime.ktx)
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
+    kapt(libs.androidx.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.work)
+    implementation(libs.androidx.datastore.preferences)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+
     implementation(libs.hilt.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
 
