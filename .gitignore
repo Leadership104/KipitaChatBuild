@@ -1,0 +1,8 @@
+.gradle/
+/local.properties
+/.idea/
+**/build/
+
+# Firebase
+app/src/**/google-services.json
+*firebase-adminsdk*.json
