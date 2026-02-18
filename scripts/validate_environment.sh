@@ -16,6 +16,34 @@ java -version 2>&1 | head -n 2 || true
 echo "- Gradle:"
 gradle -v | head -n 20 || true
 
+# Validate version catalog + compose plugin wiring used by this project.
+echo "- Checking version catalog + Compose plugin wiring..."
+if [[ -f "gradle/libs.versions.toml" ]]; then
+  echo "  OK: gradle/libs.versions.toml present"
+else
+  echo "  ERROR: gradle/libs.versions.toml missing"
+  exit 2
+fi
+
+if rg -q '^kotlin-compose\s*=\s*\{\s*id\s*=\s*"org\.jetbrains\.kotlin\.plugin\.compose"' gradle/libs.versions.toml; then
+  echo "  OK: kotlin-compose plugin alias present in catalog"
+else
+  echo "  ERROR: kotlin-compose plugin alias missing in gradle/libs.versions.toml"
+  exit 2
+fi
+
+if rg -q 'alias\(libs\.plugins\.kotlin\.compose\)\s+apply\s+false' build.gradle.kts; then
+  echo "  OK: root build.gradle.kts applies libs.plugins.kotlin.compose with apply false"
+else
+  echo "  WARN: root build.gradle.kts does not use alias(libs.plugins.kotlin.compose) apply false"
+fi
+
+if rg -q 'alias\(libs\.plugins\.kotlin\.compose\)' app/build.gradle.kts; then
+  echo "  OK: app/build.gradle.kts applies libs.plugins.kotlin.compose"
+else
+  echo "  WARN: app/build.gradle.kts does not apply libs.plugins.kotlin.compose"
+fi
+
 # Check merge conflict markers in core files.
 echo "- Checking conflict markers..."
 if rg -n "<<<<<<<|=======|>>>>>>>" README.md app build.gradle.kts settings.gradle.kts gradle/libs.versions.toml .gitignore >/tmp/kipita_conflicts.txt 2>/dev/null; then

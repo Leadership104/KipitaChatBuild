@@ -37,6 +37,16 @@ Template stubs are included as:
 - Backend proxy recommended for mobile web/public clients; do not expose raw Gemini keys in client code.
 
 
+
+## Gradle version catalog + Compose plugin troubleshooting
+- This project uses the default Gradle `libs` version catalog at: `gradle/libs.versions.toml`.
+- Compose compiler plugin alias is defined as: `plugins.kotlin-compose` in that file.
+- It is applied in:
+  - root `build.gradle.kts` as `alias(libs.plugins.kotlin.compose) apply false`
+  - module `app/build.gradle.kts` as `alias(libs.plugins.kotlin.compose)`
+
+If Android Studio reports that it cannot resolve `libs` aliases, verify the file exists at exactly `gradle/libs.versions.toml` and re-sync Gradle.
+
 ## Official Kipita experience components
 - Smart Navigation
 - Trip Planning
