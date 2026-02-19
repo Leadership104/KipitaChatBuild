@@ -47,6 +47,12 @@ Template stubs are included as:
 
 If Android Studio reports that it cannot resolve `libs` aliases, verify the file exists at exactly `gradle/libs.versions.toml` and re-sync Gradle.
 
+
+## Build tooling baseline
+- Gradle runtime target is `9.2.1` via `gradle/wrapper/gradle-wrapper.properties` (text-only launcher scripts are included; no binary wrapper JAR is committed).
+- Android Gradle Plugin is version `9.0.1` via `gradle/libs.versions.toml`.
+- Native ABI filters are set for `arm64-v8a` (modern ARM devices) and `x86_64` (Android Studio emulator / Intel & AMD host machines).
+
 ## Official Kipita experience components
 - Smart Navigation
 - Trip Planning

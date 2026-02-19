@@ -14,7 +14,18 @@ echo "- Java:"
 java -version 2>&1 | head -n 2 || true
 
 echo "- Gradle:"
-gradle -v | head -n 20 || true
+if [[ -x "./gradlew" ]]; then
+  GRADLE_CMD=(./gradlew)
+else
+  GRADLE_CMD=(gradle)
+fi
+
+"${GRADLE_CMD[@]}" -v | head -n 20 || true
+if "${GRADLE_CMD[@]}" -v 2>/tmp/kipita_gradle_version.log | rg -q "Gradle 9\.2\.1"; then
+  echo "  OK: Gradle 9.2.1 detected"
+else
+  echo "  WARN: Gradle 9.2.1 not detected; install/use Gradle 9.2.1 for Android Studio and CI parity"
+fi
 
 # Validate version catalog + compose plugin wiring used by this project.
 echo "- Checking version catalog + Compose plugin wiring..."
@@ -90,7 +101,7 @@ if [[ -d "/root/.local/share/mise/installs/java/21.0.2" ]]; then
   export PATH="$JAVA_HOME/bin:$PATH"
 fi
 
-if gradle tasks >/tmp/kipita_gradle_tasks.log 2>&1; then
+if "${GRADLE_CMD[@]}" tasks >/tmp/kipita_gradle_tasks.log 2>&1; then
   echo "  OK: gradle tasks"
 else
   echo "  WARN: gradle tasks failed (likely network/plugin resolution). See /tmp/kipita_gradle_tasks.log"
