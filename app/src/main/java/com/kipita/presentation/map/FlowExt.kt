@@ -6,4 +6,4 @@ import androidx.compose.runtime.collectAsState
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
-fun <T> StateFlow<T>.collectAsStateWithLifecycleCompat(): State<T> = collectAsState(value)
+fun <T> StateFlow<T>.collectAsStateWithLifecycleCompat(): State<T> = collectAsState()

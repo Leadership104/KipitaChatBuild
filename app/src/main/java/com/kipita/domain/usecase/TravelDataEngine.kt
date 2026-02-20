@@ -34,15 +34,15 @@ class TravelDataEngine(
 
     fun computeSafetyScore(notices: List<TravelNotice>): SafetyScore {
         if (notices.isEmpty()) return SafetyScore.Unknown
-        val weighted = notices.sumOf {
-            when (it.severity) {
+        val weighted = notices.fold(0) { acc, notice ->
+            acc + when (notice.severity) {
                 SeverityLevel.LOW -> 1
                 SeverityLevel.MEDIUM -> 2
                 SeverityLevel.HIGH -> 4
                 SeverityLevel.CRITICAL -> 6
             }
         }
-        val rawScore = (100 - (weighted * 3)).coerceIn(0, 100)
+        val rawScore = (100 - (weighted * 5)).coerceIn(0, 100)
         val confidence = (notices.count { it.verified }.toDouble() / notices.size).coerceIn(0.0, 1.0)
         return SafetyScore.Value(rawScore, confidence)
     }

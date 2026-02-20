@@ -6,3 +6,19 @@
 # Firebase
 app/src/**/google-services.json
 *firebase-adminsdk*.json
+
+# Kotlin incremental compilation
+.kotlin/
+
+# IDE files
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# JVM heap dumps
+*.hprof
+
+# Claude Code
+.claude/
