@@ -4,7 +4,7 @@
 **/build/
 
 # Firebase
-app/src/**/google-services.json
+**/google-services.json
 *firebase-adminsdk*.json
 
 # Kotlin incremental compilation
