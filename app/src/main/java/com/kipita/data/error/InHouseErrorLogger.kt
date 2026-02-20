@@ -6,6 +6,11 @@ import com.kipita.data.local.ErrorLogDao
 import com.kipita.data.local.ErrorLogEntity
 import java.time.Instant
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 
 class InHouseErrorLogger(
     private val dao: ErrorLogDao,
@@ -24,22 +29,25 @@ class InHouseErrorLogger(
         flushUnsent()
     }
 
-    suspend fun flushUnsent() {
+    suspend fun flushUnsent() = withContext(Dispatchers.IO) {
         val unsent = dao.getUnsent()
-        if (unsent.isEmpty()) return
-        val sentIds = mutableListOf<String>()
-        unsent.forEach { entry ->
-            runCatching {
-                reportApiService.sendErrorReport(
-                    ErrorReportRequest(
-                        email = "info@kipita.com",
-                        tag = entry.tag,
-                        message = entry.message,
-                        stackTrace = entry.stackTrace,
-                        createdAtEpochMillis = entry.createdAtEpochMillis
-                    )
-                )
-            }.onSuccess { sentIds.add(entry.id) }
+        if (unsent.isEmpty()) return@withContext
+        val sentIds = coroutineScope {
+            unsent.map { entry ->
+                async {
+                    runCatching {
+                        reportApiService.sendErrorReport(
+                            ErrorReportRequest(
+                                email = "info@kipita.com",
+                                tag = entry.tag,
+                                message = entry.message,
+                                stackTrace = entry.stackTrace,
+                                createdAtEpochMillis = entry.createdAtEpochMillis
+                            )
+                        )
+                    }.fold(onSuccess = { entry.id }, onFailure = { null })
+                }
+            }.awaitAll().filterNotNull()
         }
         if (sentIds.isNotEmpty()) dao.markSent(sentIds)
     }

@@ -8,6 +8,8 @@ import com.kipita.domain.model.NoticeCategory
 import com.kipita.domain.model.TravelNotice
 import java.time.Instant
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 interface TravelRepository {
     suspend fun fetch(region: String): List<TravelNotice>
@@ -26,13 +28,13 @@ class SafetyRepository(
         region: String,
         category: NoticeCategory,
         remoteFetch: suspend () -> List<com.kipita.data.api.TravelNoticeDto>
-    ): List<TravelNotice> {
+    ): List<TravelNotice> = withContext(Dispatchers.IO) {
         val notices = runCatching { remoteFetch().mapNotNull(validator::normalize) }
             .getOrElse {
                 dao.findByCategory(category.name).map(TravelNoticeEntity::toDomain)
             }
         dao.upsertAll(notices.map { it.toEntity(category) })
-        return notices
+        notices
     }
 }
 
@@ -41,9 +43,11 @@ class HealthRepository(
     private val dao: TravelNoticeDao,
     private val validator: DataValidationLayer
 ) : TravelRepository {
-    override suspend fun fetch(region: String): List<TravelNotice> = runCatching {
-        apiService.getHealthNotices(region).mapNotNull(validator::normalize)
-    }.getOrElse { dao.findByCategory(NoticeCategory.HEALTH.name).map(TravelNoticeEntity::toDomain) }
+    override suspend fun fetch(region: String): List<TravelNotice> = withContext(Dispatchers.IO) {
+        runCatching {
+            apiService.getHealthNotices(region).mapNotNull(validator::normalize)
+        }.getOrElse { dao.findByCategory(NoticeCategory.HEALTH.name).map(TravelNoticeEntity::toDomain) }
+    }
 }
 
 class AdvisoryRepository(
@@ -51,9 +55,11 @@ class AdvisoryRepository(
     private val dao: TravelNoticeDao,
     private val validator: DataValidationLayer
 ) : TravelRepository {
-    override suspend fun fetch(region: String): List<TravelNotice> = runCatching {
-        apiService.getAdvisories(region).mapNotNull(validator::normalize)
-    }.getOrElse { dao.findByCategory(NoticeCategory.ADVISORY.name).map(TravelNoticeEntity::toDomain) }
+    override suspend fun fetch(region: String): List<TravelNotice> = withContext(Dispatchers.IO) {
+        runCatching {
+            apiService.getAdvisories(region).mapNotNull(validator::normalize)
+        }.getOrElse { dao.findByCategory(NoticeCategory.ADVISORY.name).map(TravelNoticeEntity::toDomain) }
+    }
 }
 
 private fun TravelNotice.toEntity(category: NoticeCategory): TravelNoticeEntity = TravelNoticeEntity(

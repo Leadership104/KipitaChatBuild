@@ -5,12 +5,14 @@ import com.kipita.data.local.NomadPlaceDao
 import com.kipita.data.local.NomadPlaceEntity
 import com.kipita.domain.model.NomadPlaceInfo
 import java.time.Instant
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class NomadRepository(
     private val api: NomadApiService,
     private val dao: NomadPlaceDao
 ) {
-    suspend fun refresh(country: String? = null): List<NomadPlaceInfo> {
+    suspend fun refresh(country: String? = null): List<NomadPlaceInfo> = withContext(Dispatchers.IO) {
         val remote = runCatching { api.getPlaces(country) }.getOrDefault(emptyList())
         if (remote.isNotEmpty()) {
             val mapped = remote.map {
@@ -28,9 +30,9 @@ class NomadRepository(
                 )
             }
             dao.upsertAll(mapped.map(NomadPlaceInfo::toEntity))
-            return mapped
+            return@withContext mapped
         }
-        return dao.getAll().map(NomadPlaceEntity::toDomain)
+        dao.getAll().map(NomadPlaceEntity::toDomain)
     }
 }
 

@@ -9,7 +9,9 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -20,7 +22,8 @@ class SettingsViewModel @Inject constructor(
 
     fun refreshLogs() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(logs = errorLogger.allLogs())
+            val logs = withContext(Dispatchers.IO) { errorLogger.allLogs() }
+            _state.value = _state.value.copy(logs = logs)
         }
     }
 

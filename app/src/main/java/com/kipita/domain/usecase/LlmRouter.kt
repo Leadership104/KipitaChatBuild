@@ -15,6 +15,10 @@ import com.kipita.domain.model.LlmPrompt
 import com.kipita.domain.model.LlmProvider
 import com.kipita.domain.model.LlmResult
 import java.time.Instant
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 private const val GEMINI_FLASH_LITE_MODEL = "gemini-2.5-flash-lite"
 private const val KIPITA_SYSTEM_INSTRUCTION =
@@ -100,22 +104,24 @@ class LlmRouter(
         }
     }
 
-    suspend fun askAll(input: String): List<LlmResult> = listOf(
-        ask(LlmPrompt(LlmProvider.OPENAI, input)),
-        ask(LlmPrompt(LlmProvider.CLAUDE, input)),
-        ask(LlmPrompt(LlmProvider.GEMINI, input))
-    )
+    suspend fun askAll(input: String): List<LlmResult> = coroutineScope {
+        val openAi = async { ask(LlmPrompt(LlmProvider.OPENAI, input)) }
+        val claude = async { ask(LlmPrompt(LlmProvider.CLAUDE, input)) }
+        val gemini = async { ask(LlmPrompt(LlmProvider.GEMINI, input)) }
+        listOf(openAi.await(), claude.await(), gemini.await())
+    }
 }
 
 class GeminiUsageLimiter(
     private val rpmLimit: Int = 30,
     private val rpdLimit: Int = 1500
 ) {
+    private val mutex = Mutex()
     private var dayKey: String = ""
     private var dayCount: Int = 0
     private val minuteBucket = ArrayDeque<Long>()
 
-    fun onRequest(now: Instant) {
+    suspend fun onRequest(now: Instant) = mutex.withLock {
         val day = now.toString().take(10)
         if (day != dayKey) {
             dayKey = day
@@ -133,13 +139,19 @@ class GeminiUsageLimiter(
     }
 }
 
-class GeminiContextCache {
-    private val map = mutableMapOf<String, String>()
+class GeminiContextCache(private val maxSize: Int = 20) {
+    private val map = object : LinkedHashMap<String, String>(maxSize + 1, 0.75f, true) {
+        override fun removeEldestEntry(eldest: Map.Entry<String, String>) = size > maxSize
+    }
+
     fun key(prompt: String): String = "kipita/${prompt.hashCode()}"
+
+    @Synchronized
     fun put(prompt: String, value: String) {
         map[key(prompt)] = value
     }
 
+    @Synchronized
     fun get(prompt: String): String? = map[key(prompt)]
 }
 
