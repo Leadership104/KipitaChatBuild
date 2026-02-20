@@ -1,0 +1,70 @@
+# Kipita cold-start baseline profile
+# Tells ART to AOT-compile these classes so JIT verification is skipped on first launch.
+#
+# Regenerate from real device/emulator usage:
+#   ./gradlew generateDevDebugBaselineProfile
+#
+# Flags: H=hot  S=startup  P=post-startup
+
+# ── Kipita app classes ────────────────────────────────────────────────────────
+HSPLcom/kipita/MainActivity;
+HSPLcom/kipita/KipitaApplication;
+
+# Presentation layer
+HSPLcom/kipita/presentation/main/KipitaAppKt;
+HSPLcom/kipita/presentation/theme/ThemeKt;
+HSPLcom/kipita/presentation/home/ExperienceScreenKt;
+HSPLcom/kipita/presentation/home/KipitaFeaturesKt;
+HSPLcom/kipita/presentation/map/MapScreenKt;
+HSPLcom/kipita/presentation/map/MapViewModel;
+HSPLcom/kipita/presentation/chat/ChatScreenKt;
+HSPLcom/kipita/presentation/chat/ChatViewModel;
+HSPLcom/kipita/presentation/ai/AiAssistantScreenKt;
+HSPLcom/kipita/presentation/ai/AiViewModel;
+HSPLcom/kipita/presentation/wallet/WalletScreenKt;
+HSPLcom/kipita/presentation/wallet/WalletViewModel;
+HSPLcom/kipita/presentation/settings/SettingsScreenKt;
+HSPLcom/kipita/presentation/settings/SettingsViewModel;
+
+# Domain layer
+HSPLcom/kipita/domain/usecase/AiOrchestrator;
+HSPLcom/kipita/domain/usecase/LlmRouter;
+HSPLcom/kipita/domain/usecase/TravelDataEngine;
+
+# Data layer
+HSPLcom/kipita/data/repository/MerchantRepository;
+HSPLcom/kipita/data/repository/NomadRepository;
+HSPLcom/kipita/data/repository/TravelRepository;
+HSPLcom/kipita/data/repository/CurrencyRepository;
+HSPLcom/kipita/data/repository/OfflineMapRepository;
+HSPLcom/kipita/data/error/InHouseErrorLogger;
+
+# DI modules (Hilt initialises these at startup)
+HSPLcom/kipita/di/NetworkModule;
+HSPLcom/kipita/di/AiModule;
+HSPLcom/kipita/di/TravelDataModule;
+HSPLcom/kipita/di/WalletModule;
+HSPLcom/kipita/di/MapModule;
+
+# Hilt-generated app component (verified for 566 ms in logcat)
+HSPLcom/kipita/DaggerKipitaApplication_HiltComponents_SingletonC;
+
+# ── Critical library classes (slow to JIT-verify per logcat) ─────────────────
+
+# Compose UI — GraphicsLayer verification took 439 ms+
+HSPLandroidx/compose/ui/graphics/layer/GraphicsLayer;
+HSPLandroidx/compose/ui/platform/AndroidComposeView;
+HSPLandroidx/compose/ui/layout/SubcomposeLayoutKt;
+
+# Coroutines Flow — FlowKt__ReduceKt verified at 900 ms+
+HSPLkotlinx/coroutines/flow/FlowKt__ReduceKt;
+HSPLkotlinx/coroutines/flow/FlowKt__LimitKt;
+HSPLkotlinx/coroutines/flow/internal/ChannelFlowKt;
+
+# Room
+HSPLandroidx/room/RoomDatabase;
+HSPLandroidx/room/coroutines/PassthroughConnection;
+
+# WorkManager
+HSPLandroidx/work/impl/WorkManagerImpl;
+HSPLandroidx/work/impl/background/greedy/GreedyScheduler;

@@ -113,6 +113,8 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
 
+    implementation(libs.profileinstaller)
+
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
