@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
@@ -31,8 +30,6 @@ fun AiAssistantScreen(paddingValues: PaddingValues, viewModel: AiViewModel = hil
     val alpha by animateFloatAsState(targetValue = if (response == null) 0.6f else 1f, animationSpec = spring(), label = "response-alpha")
 
     LaunchedEffect(Unit) { viewModel.analyze("global", prompt) }
-    val insight = viewModel.insight.collectAsStateWithLifecycleCompat().value
-    LaunchedEffect(Unit) { viewModel.analyze("global") }
 
     Column(
         modifier = Modifier
@@ -53,13 +50,6 @@ fun AiAssistantScreen(paddingValues: PaddingValues, viewModel: AiViewModel = hil
                 Text("Model: ${response?.modelUsed}")
                 Text("Citations: ${response?.citations?.joinToString()}")
                 Text("Map Action: ${response?.mapAction}")
-        Button(onClick = { viewModel.analyze("global") }) { Text("Refresh") }
-        AnimatedVisibility(visible = insight != null) {
-            Column {
-                Text(insight?.summary.orEmpty(), style = MaterialTheme.typography.bodyLarge)
-                Text("Confidence: ${insight?.confidence}")
-                Text("Timestamp: ${insight?.timestamp}")
-                Text("Sources: ${insight?.citedSources?.joinToString()}")
             }
         }
     }

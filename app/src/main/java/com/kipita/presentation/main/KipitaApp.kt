@@ -26,14 +26,6 @@ enum class MainRoute { EXPERIENCE, MAP, CHAT, AI, WALLET, SETTINGS }
 @Composable
 fun KipitaApp() {
     var route by rememberSaveable { mutableStateOf(MainRoute.EXPERIENCE) }
-import com.kipita.presentation.map.MapScreen
-import com.kipita.presentation.wallet.WalletScreen
-
-enum class MainRoute { MAP, AI, WALLET }
-
-@Composable
-fun KipitaApp() {
-    var route by rememberSaveable { mutableStateOf(MainRoute.MAP) }
 
     Scaffold(
         bottomBar = {
@@ -59,9 +51,6 @@ fun KipitaApp() {
                         MainRoute.AI -> AiAssistantScreen(padding)
                         MainRoute.WALLET -> WalletScreen(padding)
                         MainRoute.SETTINGS -> SettingsScreen(padding)
-                        MainRoute.MAP -> MapScreen(padding)
-                        MainRoute.AI -> AiAssistantScreen(padding)
-                        MainRoute.WALLET -> WalletScreen(padding)
                     }
                 }
             }

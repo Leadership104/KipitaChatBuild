@@ -12,9 +12,6 @@ import com.kipita.presentation.theme.KipitaTheme
 import com.kipita.work.MerchantTravelSyncWorker
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.concurrent.TimeUnit
-import com.kipita.presentation.main.KipitaApp
-import com.kipita.presentation.theme.KipitaTheme
-import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -28,8 +25,6 @@ class MainActivity : ComponentActivity() {
         val work = PeriodicWorkRequestBuilder<MerchantTravelSyncWorker>(6, TimeUnit.HOURS).build()
         WorkManager.getInstance(this)
             .enqueueUniquePeriodicWork("merchant-travel-sync", ExistingPeriodicWorkPolicy.UPDATE, work)
-    }
-        setContent { AppEntryPoint() }
     }
 }
 

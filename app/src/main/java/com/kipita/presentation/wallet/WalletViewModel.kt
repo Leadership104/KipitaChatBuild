@@ -17,7 +17,6 @@ class WalletViewModel @Inject constructor(
     private val walletApiService: WalletApiService,
     private val currencyRepository: CurrencyRepository,
     private val errorLogger: InHouseErrorLogger
-    private val walletApiService: WalletApiService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(WalletUiState())
@@ -48,12 +47,6 @@ class WalletViewModel @Inject constructor(
                     )
                 }
                 .onFailure { errorLogger.log("WalletViewModel.convert", it) }
-            val coinbase = runCatching { walletApiService.coinbaseBalance("Bearer $coinbaseToken") }.getOrNull()
-            val cashApp = runCatching { walletApiService.cashAppBalance("Bearer $cashAppToken") }.getOrNull()
-            _state.value = WalletUiState(
-                coinbaseBalance = coinbase?.btcBalance ?: 0.0,
-                cashAppBalance = cashApp?.btcBalance ?: 0.0
-            )
         }
     }
 }
@@ -64,5 +57,4 @@ data class WalletUiState(
     val conversionRate: Double? = null,
     val conversionValue: Double? = null,
     val conversionLabel: String = ""
-    val cashAppBalance: Double = 0.0
 )

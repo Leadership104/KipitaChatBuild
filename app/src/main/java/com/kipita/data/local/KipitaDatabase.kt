@@ -20,7 +20,4 @@ abstract class KipitaDatabase : RoomDatabase() {
     abstract fun nomadPlaceDao(): NomadPlaceDao
     abstract fun tripMessageDao(): TripMessageDao
     abstract fun errorLogDao(): ErrorLogDao
-@Database(entities = [TravelNoticeEntity::class], version = 1, exportSchema = false)
-abstract class KipitaDatabase : RoomDatabase() {
-    abstract fun travelNoticeDao(): TravelNoticeDao
 }
