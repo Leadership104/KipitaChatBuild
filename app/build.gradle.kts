@@ -12,14 +12,14 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.kipita"
+        applicationId = "com.mytum"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
-        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"kipita-a1694\"")
+        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"kipita-99351\"")
 
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
