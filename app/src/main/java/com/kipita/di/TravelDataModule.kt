@@ -3,6 +3,8 @@ package com.kipita.di
 import android.content.Context
 import androidx.room.Room
 import com.kipita.data.api.BtcMerchantApiService
+import net.sqlcipher.database.SQLiteDatabase
+import net.sqlcipher.database.SupportFactory
 import com.kipita.data.api.CurrencyApiService
 import com.kipita.data.api.ErrorReportApiService
 import com.kipita.data.api.GovernmentApiService
@@ -41,8 +43,15 @@ import javax.inject.Singleton
 object TravelDataModule {
     @Provides
     @Singleton
-    fun provideDb(@ApplicationContext context: Context): KipitaDatabase =
-        Room.databaseBuilder(context, KipitaDatabase::class.java, "kipita.db").fallbackToDestructiveMigration().build()
+    fun provideDb(@ApplicationContext context: Context): KipitaDatabase {
+        // SQLCipher AES-256 encrypted database (SOW requirement)
+        val passphrase = SQLiteDatabase.getBytes("kipita_secure_v1".toCharArray())
+        val factory = SupportFactory(passphrase)
+        return Room.databaseBuilder(context, KipitaDatabase::class.java, "kipita.db")
+            .openHelperFactory(factory)
+            .fallbackToDestructiveMigration()
+            .build()
+    }
 
     @Provides
     fun provideTravelDao(db: KipitaDatabase): TravelNoticeDao = db.travelNoticeDao()

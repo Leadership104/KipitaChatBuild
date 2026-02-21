@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kipita.data.api.WalletApiService
 import com.kipita.data.error.InHouseErrorLogger
+import com.kipita.data.repository.AggregatedWallet
+import com.kipita.data.repository.CryptoWalletRepository
 import com.kipita.data.repository.CurrencyRepository
+import com.kipita.data.repository.WalletBalance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +19,7 @@ import kotlinx.coroutines.launch
 class WalletViewModel @Inject constructor(
     private val walletApiService: WalletApiService,
     private val currencyRepository: CurrencyRepository,
+    private val cryptoWalletRepository: CryptoWalletRepository,
     private val errorLogger: InHouseErrorLogger
 ) : ViewModel() {
 
@@ -24,6 +28,7 @@ class WalletViewModel @Inject constructor(
 
     init {
         loadAvailableCurrencies()
+        loadCryptoWallets()
     }
 
     private fun loadAvailableCurrencies() {
@@ -36,18 +41,34 @@ class WalletViewModel @Inject constructor(
         }
     }
 
-    fun refreshBalances(coinbaseToken: String, cashAppToken: String) {
+    fun loadCryptoWallets(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            runCatching {
-                val coinbase = walletApiService.coinbaseBalance("Bearer $coinbaseToken")
-                val cashApp = walletApiService.cashAppBalance("Bearer $cashAppToken")
-                _state.value.copy(
-                    coinbaseBalance = coinbase.btcBalance,
-                    cashAppBalance = cashApp.btcBalance
-                )
-            }.onSuccess { _state.value = it }
-                .onFailure { errorLogger.log("WalletViewModel.refreshBalances", it) }
+            _state.value = _state.value.copy(syncingWallets = true, walletError = null)
+            runCatching { cryptoWalletRepository.getAggregatedWallet(forceRefresh) }
+                .onSuccess { wallet ->
+                    _state.value = _state.value.copy(
+                        syncingWallets = false,
+                        aggregatedWallet = wallet,
+                        totalWalletUsd = wallet.totalUsd,
+                        // Legacy fields for animated balance counter
+                        coinbaseBalance = wallet.wallets
+                            .filter { it.source.name == "COINBASE" }
+                            .sumOf { it.balance },
+                        cashAppBalance = wallet.wallets
+                            .filter { it.source.name == "RIVER" }
+                            .sumOf { it.balance }
+                    )
+                }
+                .onFailure {
+                    _state.value = _state.value.copy(syncingWallets = false, walletError = "Could not sync wallets")
+                    errorLogger.log("WalletViewModel.loadCryptoWallets", it)
+                }
         }
+    }
+
+    // Legacy method kept for compatibility with any existing calls
+    fun refreshBalances(coinbaseToken: String, cashAppToken: String) {
+        loadCryptoWallets(forceRefresh = true)
     }
 
     fun convert(amount: Double, from: String, to: String) {
@@ -73,8 +94,15 @@ class WalletViewModel @Inject constructor(
 }
 
 data class WalletUiState(
+    // Aggregated crypto wallet
+    val aggregatedWallet: AggregatedWallet? = null,
+    val totalWalletUsd: Double = 0.0,
+    val syncingWallets: Boolean = false,
+    val walletError: String? = null,
+    // Legacy balance fields (for animated counter)
     val coinbaseBalance: Double = 0.0,
     val cashAppBalance: Double = 0.0,
+    // Currency converter
     val conversionRate: Double? = null,
     val conversionValue: Double? = null,
     val conversionLabel: String = "",

@@ -33,3 +33,19 @@ annotation class CurrencyApi
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class WeatherApi
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class YelpApi
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class CoinbaseApi
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class GeminiCryptoApi
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class RiverApi

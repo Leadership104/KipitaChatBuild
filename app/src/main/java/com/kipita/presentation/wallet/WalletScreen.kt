@@ -67,6 +67,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kipita.data.repository.WalletBalance
+import com.kipita.data.repository.WalletSource
+import com.kipita.data.repository.WalletStatus
 import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
 import com.kipita.presentation.theme.KipitaBorder
 import com.kipita.presentation.theme.KipitaCardBg
@@ -189,6 +192,53 @@ fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hilt
                                     BalanceChip("Cash App", "₿ ${"%.4f".format(state.cashAppBalance)}", Modifier.weight(1f))
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            // Aggregated Crypto Wallets
+            item {
+                AnimatedVisibility(visible = visible, enter = fadeIn(tween(150)) + slideInVertically(tween(150)) { 20 }) {
+                    val wallet = state.aggregatedWallet
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Crypto Wallets",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                                color = KipitaOnSurface
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (state.syncingWallets) {
+                                    CircularProgressIndicator(color = KipitaRed, modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                    Spacer(Modifier.width(6.dp))
+                                }
+                                if (wallet != null) {
+                                    Text(
+                                        "${"$"}${"%.2f".format(state.totalWalletUsd)} total",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = KipitaGreenAccent
+                                    )
+                                }
+                            }
+                        }
+                        if (wallet != null) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                wallet.wallets.forEach { balance ->
+                                    WalletBalanceRow(balance)
+                                }
+                            }
+                        } else if (!state.syncingWallets) {
+                            Text(
+                                state.walletError ?: "Connect wallets in Settings to view live balances",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = KipitaTextSecondary,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
                         }
                     }
                 }
@@ -384,6 +434,72 @@ private fun CurrencyInputField(label: String, amount: String, currency: String, 
                     color = when (currency) { "BTC" -> Color(0xFFF57C00); "ETH" -> Color(0xFF5C6BC0); else -> KipitaOnSurface })
                 Text(" ▾", style = MaterialTheme.typography.labelSmall, color = KipitaTextTertiary)
             }
+        }
+    }
+}
+
+@Composable
+private fun WalletBalanceRow(balance: WalletBalance) {
+    val statusColor = when (balance.status) {
+        WalletStatus.SYNCED  -> KipitaGreenAccent
+        WalletStatus.SYNCING -> Color(0xFFFFA726) // amber
+        WalletStatus.ERROR   -> KipitaRed
+        WalletStatus.OFFLINE -> KipitaTextTertiary
+    }
+    val statusLabel = when (balance.status) {
+        WalletStatus.SYNCED  -> "synced"
+        WalletStatus.SYNCING -> "syncing"
+        WalletStatus.ERROR   -> "error"
+        WalletStatus.OFFLINE -> "offline"
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Source emoji badge
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(KipitaCardBg),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(balance.source.emoji, fontSize = 18.sp)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "${balance.source.label} · ${balance.assetCode}",
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = KipitaOnSurface
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(statusColor)
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(statusLabel, style = MaterialTheme.typography.labelSmall, color = statusColor)
+            }
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = "${"$"}${"%.2f".format(balance.balanceUsd)}",
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = KipitaOnSurface
+            )
+            val balanceStr = when (balance.assetCode) {
+                "BTC", "BTC_LN" -> "₿ ${"%.6f".format(balance.balance)}"
+                "ETH"           -> "Ξ ${"%.4f".format(balance.balance)}"
+                else            -> "${"%.2f".format(balance.balance)} ${balance.assetCode}"
+            }
+            Text(balanceStr, style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
         }
     }
 }
