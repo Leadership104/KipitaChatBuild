@@ -7,12 +7,14 @@ import com.kipita.data.api.CurrencyApiService
 import com.kipita.data.api.ErrorReportApiService
 import com.kipita.data.api.GovernmentApiService
 import com.kipita.data.api.NomadApiService
+import com.kipita.data.api.WeatherApiService
 import com.kipita.data.error.InHouseErrorLogger
 import com.kipita.data.local.KipitaDatabase
 import com.kipita.data.local.ErrorLogDao
 import com.kipita.data.local.MerchantDao
 import com.kipita.data.local.NomadPlaceDao
 import com.kipita.data.local.TravelNoticeDao
+import com.kipita.data.local.DirectMessageDao
 import com.kipita.data.local.TripMessageDao
 import com.kipita.data.repository.AdvisoryRepository
 import com.kipita.data.repository.CurrencyRepository
@@ -20,6 +22,8 @@ import com.kipita.data.repository.HealthRepository
 import com.kipita.data.repository.MerchantRepository
 import com.kipita.data.repository.NomadRepository
 import com.kipita.data.repository.OfflineMapRepository
+import com.kipita.data.repository.OfflineMessagingRepository
+import com.kipita.data.repository.WeatherRepository
 import com.kipita.data.repository.SafetyRepository
 import com.kipita.data.repository.TripChatRepository
 import com.kipita.data.validation.DataValidationLayer
@@ -51,6 +55,9 @@ object TravelDataModule {
 
     @Provides
     fun provideTripMessageDao(db: KipitaDatabase): TripMessageDao = db.tripMessageDao()
+
+    @Provides
+    fun provideDirectMessageDao(db: KipitaDatabase): DirectMessageDao = db.directMessageDao()
 
     @Provides
     fun provideErrorLogDao(db: KipitaDatabase): ErrorLogDao = db.errorLogDao()
@@ -97,7 +104,14 @@ object TravelDataModule {
     fun provideCurrencyRepository(service: CurrencyApiService): CurrencyRepository = CurrencyRepository(service)
 
     @Provides
+    fun provideWeatherRepository(service: WeatherApiService): WeatherRepository = WeatherRepository(service)
+
+    @Provides
     fun provideTripChatRepository(dao: TripMessageDao): TripChatRepository = TripChatRepository(dao)
+
+    @Provides
+    fun provideOfflineMessagingRepository(dao: DirectMessageDao): OfflineMessagingRepository =
+        OfflineMessagingRepository(dao)
 
     @Provides
     fun provideOfflineMapRepository(): OfflineMapRepository = OfflineMapRepository()

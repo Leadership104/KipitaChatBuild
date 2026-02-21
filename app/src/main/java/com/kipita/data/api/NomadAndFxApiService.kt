@@ -8,9 +8,17 @@ interface NomadApiService {
     suspend fun getPlaces(@Query("country") country: String? = null): List<NomadPlaceDto>
 }
 
+// Frankfurter.app: free ECB-sourced exchange rates, no API key required
+// GET https://api.frankfurter.app/latest?base=USD
 interface CurrencyApiService {
-    @GET("v1/latest")
-    suspend fun getRates(@Query("base") base: String): CurrencyRateDto
+    @GET("latest")
+    suspend fun getRates(
+        @Query("base") base: String,
+        @Query("symbols") symbols: String? = null
+    ): CurrencyRateDto
+
+    @GET("currencies")
+    suspend fun getCurrencies(): Map<String, String>
 }
 
 data class NomadPlaceDto(
@@ -26,8 +34,10 @@ data class NomadPlaceDto(
     val updatedAtEpochMillis: Long
 )
 
+// Frankfurter API response: {"amount":1.0,"base":"USD","date":"2026-02-21","rates":{...}}
 data class CurrencyRateDto(
+    val amount: Double = 1.0,
     val base: String,
-    val rates: Map<String, Double>,
-    val timestampEpochMillis: Long
+    val date: String = "",
+    val rates: Map<String, Double>
 )

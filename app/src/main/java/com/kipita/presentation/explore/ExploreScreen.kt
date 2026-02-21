@@ -178,6 +178,15 @@ fun ExploreScreen(paddingValues: PaddingValues) {
                         color = KipitaTextTertiary
                     )
                 }
+
+                // Data source pills
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    DataSourcePill("Nomad List", "💻")
+                    DataSourcePill("Open-Meteo", "🌡")
+                    DataSourcePill("BTCMap", "₿")
+                    DataSourcePill("ECB Rates", "💱")
+                }
             }
         }
 
@@ -201,6 +210,21 @@ fun ExploreScreen(paddingValues: PaddingValues) {
             }
             item { Spacer(Modifier.height(80.dp)) }
         }
+    }
+}
+
+@Composable
+private fun DataSourcePill(label: String, icon: String) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(KipitaCardBg)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(icon, fontSize = 10.sp)
+        Spacer(Modifier.width(3.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
     }
 }
 

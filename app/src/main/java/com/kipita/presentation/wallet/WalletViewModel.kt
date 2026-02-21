@@ -22,6 +22,20 @@ class WalletViewModel @Inject constructor(
     private val _state = MutableStateFlow(WalletUiState())
     val state: StateFlow<WalletUiState> = _state.asStateFlow()
 
+    init {
+        loadAvailableCurrencies()
+    }
+
+    private fun loadAvailableCurrencies() {
+        viewModelScope.launch {
+            runCatching { currencyRepository.getAvailableCurrencies() }
+                .onSuccess { currencies ->
+                    _state.value = _state.value.copy(availableCurrencies = currencies)
+                }
+                .onFailure { errorLogger.log("WalletViewModel.loadCurrencies", it) }
+        }
+    }
+
     fun refreshBalances(coinbaseToken: String, cashAppToken: String) {
         viewModelScope.launch {
             runCatching {
@@ -37,16 +51,23 @@ class WalletViewModel @Inject constructor(
     }
 
     fun convert(amount: Double, from: String, to: String) {
+        if (amount <= 0) return
         viewModelScope.launch {
+            _state.value = _state.value.copy(converting = true, error = null)
             runCatching { currencyRepository.convert(amount, from, to) }
                 .onSuccess { conversion ->
                     _state.value = _state.value.copy(
+                        converting = false,
                         conversionRate = conversion.rate,
                         conversionValue = conversion.convertedAmount,
-                        conversionLabel = "${conversion.from}→${conversion.to}"
+                        conversionLabel = "${conversion.from}→${conversion.to}",
+                        lastUpdated = conversion.timestamp.toString().take(10)
                     )
                 }
-                .onFailure { errorLogger.log("WalletViewModel.convert", it) }
+                .onFailure {
+                    _state.value = _state.value.copy(converting = false, error = "Rate unavailable — check your connection")
+                    errorLogger.log("WalletViewModel.convert", it)
+                }
         }
     }
 }
@@ -56,5 +77,9 @@ data class WalletUiState(
     val cashAppBalance: Double = 0.0,
     val conversionRate: Double? = null,
     val conversionValue: Double? = null,
-    val conversionLabel: String = ""
+    val conversionLabel: String = "",
+    val lastUpdated: String = "",
+    val converting: Boolean = false,
+    val error: String? = null,
+    val availableCurrencies: Map<String, String> = emptyMap()
 )
