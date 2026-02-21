@@ -13,11 +13,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Icon
@@ -41,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.kipita.presentation.ai.AiAssistantScreen
 import com.kipita.presentation.explore.ExploreScreen
 import com.kipita.presentation.profile.ProfileSetupScreen
+import com.kipita.presentation.settings.SettingsScreen
 import com.kipita.presentation.social.SocialScreen
 import com.kipita.presentation.trips.MyTripsScreen
 import com.kipita.presentation.wallet.WalletScreen
@@ -49,11 +52,11 @@ import com.kipita.presentation.theme.KipitaRed
 import com.kipita.presentation.theme.KipitaTextTertiary
 
 // ---------------------------------------------------------------------------
-// Navigation routes — 5 tabs, AI in the center (position 3)
-//   Trips | Explore | AI | Social | Wallet
+// Navigation routes — 6 tabs, AI in the center (position 3)
+//   Trips | Explore | AI | Social | Wallet | Settings
 // ---------------------------------------------------------------------------
 enum class MainRoute {
-    TRIPS, EXPLORE, AI, SOCIAL, WALLET
+    TRIPS, EXPLORE, AI, SOCIAL, WALLET, SETTINGS
 }
 
 private data class NavItem(
@@ -65,11 +68,12 @@ private data class NavItem(
 )
 
 private val navItems = listOf(
-    NavItem(MainRoute.TRIPS,   "Trips",   Icons.Filled.Flight,        Icons.Outlined.Flight),
-    NavItem(MainRoute.EXPLORE, "Explore", Icons.Filled.TravelExplore, Icons.Outlined.TravelExplore),
-    NavItem(MainRoute.AI,      "AI",      Icons.Filled.AutoAwesome,   Icons.Outlined.AutoAwesome,  isCenter = true),
-    NavItem(MainRoute.SOCIAL,  "Social",  Icons.Filled.Groups,        Icons.Outlined.Groups),
-    NavItem(MainRoute.WALLET,  "Wallet",  Icons.Filled.Wallet,        Icons.Outlined.Wallet)
+    NavItem(MainRoute.TRIPS,    "Trips",    Icons.Filled.Flight,        Icons.Outlined.Flight),
+    NavItem(MainRoute.EXPLORE,  "Explore",  Icons.Filled.TravelExplore, Icons.Outlined.TravelExplore),
+    NavItem(MainRoute.AI,       "AI",       Icons.Filled.AutoAwesome,   Icons.Outlined.AutoAwesome,  isCenter = true),
+    NavItem(MainRoute.SOCIAL,   "Social",   Icons.Filled.Groups,        Icons.Outlined.Groups),
+    NavItem(MainRoute.WALLET,   "Wallet",   Icons.Filled.Wallet,        Icons.Outlined.Wallet),
+    NavItem(MainRoute.SETTINGS, "Settings", Icons.Filled.Settings,      Icons.Outlined.Settings)
 )
 
 @Composable
@@ -162,8 +166,9 @@ fun KipitaApp() {
                             paddingValues = padding,
                             preFillPrompt = aiPreFill.also { aiPreFill = "" }
                         )
-                        MainRoute.SOCIAL  -> SocialScreen(padding)
-                        MainRoute.WALLET  -> WalletScreen(padding)
+                        MainRoute.SOCIAL    -> SocialScreen(padding)
+                        MainRoute.WALLET    -> WalletScreen(padding)
+                        MainRoute.SETTINGS  -> SettingsScreen(paddingValues = padding)
                     }
                 }
             }
