@@ -72,6 +72,10 @@ android {
 }
 
 kotlin {
+    // Override AGP's automatic JetBrains JDK request — accept any vendor (OpenJDK, etc.)
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
