@@ -31,6 +31,21 @@ interface YelpApiService {
     ): YelpSearchResponse
 
     /**
+     * Search by location string (city, address, state, country, ZIP, etc.)
+     * Used when user types a location manually or GPS is not available.
+     */
+    @GET("businesses/search")
+    suspend fun searchBusinessesByLocation(
+        @Header("Authorization") bearerToken: String,
+        @Query("location") location: String,
+        @Query("categories") categoryAlias: String,
+        @Query("open_now") openNow: Boolean = true,
+        @Query("limit") limit: Int = 20,
+        @Query("sort_by") sortBy: String = "distance",
+        @Query("attributes") attributes: String? = null
+    ): YelpSearchResponse
+
+    /**
      * Fetch full details (hours, phone, attributes) for a single business.
      */
     @GET("businesses/{id}")

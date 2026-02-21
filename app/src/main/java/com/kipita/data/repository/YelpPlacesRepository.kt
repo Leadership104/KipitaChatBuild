@@ -63,6 +63,35 @@ class YelpPlacesRepository @Inject constructor(
     }
 
     /**
+     * Fetch a single category by location string (city, address, etc.)
+     * Used when user types a location manually in the search bar.
+     */
+    suspend fun fetchCategoryByLocation(
+        locationString: String,
+        category: PlaceCategory
+    ): List<NearbyPlace> {
+        val apiKey = keystoreManager.getApiKey(KeystoreManager.YELP_API_KEY_ALIAS) ?: return emptyList()
+        val bearer = "Bearer $apiKey"
+        val cacheKey = "${category.name}@loc:${locationString.lowercase().trim()}"
+        val cached = cache[cacheKey]
+        if (cached != null && System.currentTimeMillis() - cached.first < cacheMaxAgeMs) return cached.second
+        return try {
+            val response = yelpApi.searchBusinessesByLocation(
+                bearerToken = bearer,
+                location = locationString,
+                categoryAlias = category.yelpAlias,
+                openNow = true,
+                attributes = category.attributes
+            )
+            val places = response.businesses.map { it.toNearbyPlace(category) }
+            cache[cacheKey] = Pair(System.currentTimeMillis(), places)
+            places
+        } catch (e: Exception) {
+            cache[cacheKey]?.second ?: emptyList()
+        }
+    }
+
+    /**
      * Fetch a single category, using in-memory cache if fresh.
      */
     suspend fun fetchCategory(

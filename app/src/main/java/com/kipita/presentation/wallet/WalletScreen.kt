@@ -123,44 +123,49 @@ private val popularCurrencyCodes = listOf("USD","EUR","GBP","JPY","SGD","AUD","C
 private data class PerkPartner(
     val name: String,
     val tagline: String,
-    val badge: String,       // emoji used as logo placeholder
-    val bgColor: Color,
-    val accentColor: Color,
+    val logoLetter: String,     // brand initials shown in the logo box
+    val logoBg: Color,          // solid background for the logo box
+    val logoTextColor: Color,   // letter color (usually white for dark bg)
+    val accentColor: Color,     // DETAILS button background + brand accent
     val url: String
 )
 
 private val kipitaPerks = listOf(
     PerkPartner(
-        name = "Fold",
-        tagline = "Earn Bitcoin rewards on every card purchase",
-        badge = "🔶",
-        bgColor = Color(0xFFFFF3E0),
-        accentColor = Color(0xFFFF6B35),
-        url = "https://foldapp.com"
+        name = "Kinesis",
+        tagline = "Gold & silver-backed digital currency system",
+        logoLetter = "K",
+        logoBg = Color(0xFFD4AF37),
+        logoTextColor = Color.White,
+        accentColor = Color(0xFFB8860B),
+        url = "https://kinesis.money"
     ),
     PerkPartner(
         name = "Swan Bitcoin",
-        tagline = "Automatic Bitcoin savings & IRA accounts",
-        badge = "🦢",
-        bgColor = Color(0xFFE8EEF9),
+        tagline = "Automatic Bitcoin savings, IRA & treasury accounts",
+        logoLetter = "S",
+        logoBg = Color(0xFF1B3A6B),
+        logoTextColor = Color.White,
         accentColor = Color(0xFF1B3A6B),
         url = "https://swanbitcoin.com"
     ),
     PerkPartner(
-        name = "Upside",
-        tagline = "Cash back on gas, groceries & restaurants",
-        badge = "⬆️",
-        bgColor = Color(0xFFE8F5E9),
-        accentColor = Color(0xFF22C55E),
-        url = "https://upside.com"
+        name = "Fold",
+        tagline = "Earn Bitcoin rewards on every card purchase",
+        logoLetter = "F",
+        logoBg = Color(0xFFFF6B35),
+        logoTextColor = Color.White,
+        accentColor = Color(0xFFE55A2B),
+        url = "https://foldapp.com"
     ),
     PerkPartner(
-        name = "Kinesis",
-        tagline = "Gold & silver-backed digital currency",
-        badge = "✨",
-        bgColor = Color(0xFFFFFBE6),
-        accentColor = Color(0xFFD4AF37),
-        url = "https://kinesis.money"
+        name = "Upside",
+        tagline = "Cash back on gas, groceries & restaurants",
+        logoLetter = "U",
+        logoBg = Color(0xFF22C55E),
+        logoTextColor = Color.White,
+        accentColor = Color(0xFF16A34A),
+        url = "https://upside.com"
     )
 )
 
@@ -614,7 +619,7 @@ private fun PriceTickerChip(
 }
 
 // ---------------------------------------------------------------------------
-// Kipita Perks card — partner brand tile with brand color + deep-link
+// Kipita Perks card — partner brand tile with logo box + DETAILS button
 // ---------------------------------------------------------------------------
 @Composable
 private fun PerkCard(perk: PerkPartner, onClick: () -> Unit) {
@@ -622,42 +627,57 @@ private fun PerkCard(perk: PerkPartner, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(perk.bgColor)
-            .clickable(onClick = onClick)
+            .background(Color.White)
+            .border(1.dp, KipitaBorder, RoundedCornerShape(16.dp))
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Brand logo box — solid brand color with bold letter initial
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(perk.accentColor.copy(alpha = 0.18f)),
+                .size(54.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(perk.logoBg),
             contentAlignment = Alignment.Center
         ) {
-            Text(perk.badge, fontSize = 22.sp)
+            Text(
+                perk.logoLetter,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                color = perk.logoTextColor
+            )
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 perk.name,
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
-                color = perk.accentColor
+                color = KipitaOnSurface
             )
             Text(
                 perk.tagline,
                 style = MaterialTheme.typography.bodySmall,
-                color = KipitaOnSurface.copy(alpha = 0.75f),
+                color = KipitaTextSecondary,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 2.dp)
             )
         }
-        Text(
-            "→",
-            style = MaterialTheme.typography.titleMedium,
-            color = perk.accentColor,
-            modifier = Modifier.padding(start = 8.dp)
-        )
+        Spacer(Modifier.width(10.dp))
+        // DETAILS button — branded color background
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(9.dp))
+                .background(perk.accentColor)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 11.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "DETAILS →",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = Color.White
+            )
+        }
     }
 }
 

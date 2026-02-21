@@ -87,11 +87,25 @@ private val quickActions = listOf(
 )
 
 @Composable
-fun AiAssistantScreen(paddingValues: PaddingValues, viewModel: AiViewModel = hiltViewModel()) {
+fun AiAssistantScreen(
+    paddingValues: PaddingValues,
+    viewModel: AiViewModel = hiltViewModel(),
+    preFillPrompt: String = ""
+) {
     val response by viewModel.response.collectAsStateWithLifecycleCompat()
-    var prompt by remember { mutableStateOf("") }
+    var prompt by remember { mutableStateOf(preFillPrompt) }
     var visible by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
+
+    // Auto-fire when pre-filled from another screen
+    LaunchedEffect(preFillPrompt) {
+        if (preFillPrompt.isNotBlank()) {
+            prompt = preFillPrompt
+            delay(300)
+            loading = true
+            viewModel.analyze("global", preFillPrompt)
+        }
+    }
 
     LaunchedEffect(Unit) {
         delay(80)

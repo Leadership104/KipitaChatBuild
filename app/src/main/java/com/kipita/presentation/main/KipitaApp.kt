@@ -13,15 +13,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Groups
-import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Icon
@@ -44,8 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kipita.presentation.ai.AiAssistantScreen
 import com.kipita.presentation.explore.ExploreScreen
-import com.kipita.presentation.map.MapScreen
-import com.kipita.presentation.places.PlacesScreen
 import com.kipita.presentation.profile.ProfileSetupScreen
 import com.kipita.presentation.social.SocialScreen
 import com.kipita.presentation.trips.MyTripsScreen
@@ -55,25 +49,26 @@ import com.kipita.presentation.theme.KipitaRed
 import com.kipita.presentation.theme.KipitaTextTertiary
 
 // ---------------------------------------------------------------------------
-// Navigation routes
+// Navigation routes — 5 tabs, AI in the center (position 3)
+//   Trips | Explore | AI | Social | Wallet
 // ---------------------------------------------------------------------------
 enum class MainRoute {
-    TRIPS, EXPLORE, PLACES, MAP, AI, WALLET
+    TRIPS, EXPLORE, AI, SOCIAL, WALLET
 }
 
 private data class NavItem(
     val route: MainRoute,
     val label: String,
     val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector
+    val unselectedIcon: ImageVector,
+    val isCenter: Boolean = false
 )
 
 private val navItems = listOf(
     NavItem(MainRoute.TRIPS,   "Trips",   Icons.Filled.Flight,        Icons.Outlined.Flight),
     NavItem(MainRoute.EXPLORE, "Explore", Icons.Filled.TravelExplore, Icons.Outlined.TravelExplore),
-    NavItem(MainRoute.PLACES,  "Places",  Icons.Filled.LocationOn,    Icons.Outlined.LocationOn),
-    NavItem(MainRoute.MAP,     "Map",     Icons.Filled.Map,           Icons.Outlined.Map),
-    NavItem(MainRoute.AI,      "AI",      Icons.Filled.AutoAwesome,   Icons.Outlined.AutoAwesome),
+    NavItem(MainRoute.AI,      "AI",      Icons.Filled.AutoAwesome,   Icons.Outlined.AutoAwesome,  isCenter = true),
+    NavItem(MainRoute.SOCIAL,  "Social",  Icons.Filled.Groups,        Icons.Outlined.Groups),
     NavItem(MainRoute.WALLET,  "Wallet",  Icons.Filled.Wallet,        Icons.Outlined.Wallet)
 )
 
@@ -81,6 +76,8 @@ private val navItems = listOf(
 fun KipitaApp() {
     var route by rememberSaveable { mutableStateOf(MainRoute.TRIPS) }
     var showProfile by rememberSaveable { mutableStateOf(false) }
+    // Cross-screen navigation callback (e.g. Explore → AI with pre-filled prompt)
+    var aiPreFill by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
         bottomBar = {
@@ -94,20 +91,35 @@ fun KipitaApp() {
                     val scale by animateFloatAsState(
                         targetValue = if (selected) 1.1f else 1f,
                         animationSpec = spring(stiffness = Spring.StiffnessMedium),
-                        label = "nav-icon-scale"
+                        label = "nav-scale"
                     )
-
                     NavigationBarItem(
                         selected = selected,
                         onClick = { route = item.route },
                         icon = {
-                            Icon(
-                                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                contentDescription = item.label,
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .scale(scale)
-                            )
+                            // Center AI button gets a red pill background when unselected too
+                            if (item.isCenter && !selected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .scale(scale)
+                                        .background(KipitaRed, androidx.compose.foundation.shape.CircleShape),
+                                    contentAlignment = androidx.compose.ui.Alignment.Center
+                                ) {
+                                    Icon(
+                                        item.unselectedIcon,
+                                        contentDescription = item.label,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            } else {
+                                Icon(
+                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = item.label,
+                                    modifier = Modifier.size(22.dp).scale(scale)
+                                )
+                            }
                         },
                         label = {
                             Text(
@@ -121,7 +133,7 @@ fun KipitaApp() {
                             selectedTextColor = KipitaRed,
                             unselectedIconColor = KipitaTextTertiary,
                             unselectedTextColor = KipitaTextTertiary,
-                            indicatorColor = Color(0xFFFFEBEE)
+                            indicatorColor = Color.Transparent
                         )
                     )
                 }
@@ -136,19 +148,21 @@ fun KipitaApp() {
             if (showProfile) {
                 ProfileSetupScreen(paddingValues = padding)
             } else {
-                Crossfade(
-                    targetState = route,
-                    label = "route-transition"
-                ) { destination ->
+                Crossfade(targetState = route, label = "route-transition") { destination ->
                     when (destination) {
-                        MainRoute.TRIPS   -> MyTripsScreen(padding)
-                        MainRoute.EXPLORE -> ExploreScreen(padding)
-                        MainRoute.PLACES  -> PlacesScreen(
+                        MainRoute.TRIPS   -> MyTripsScreen(
                             paddingValues = padding,
-                            onAiSuggest = { route = MainRoute.AI }
+                            onAiSuggest = { prompt -> aiPreFill = prompt; route = MainRoute.AI }
                         )
-                        MainRoute.MAP     -> MapScreen(padding)
-                        MainRoute.AI      -> AiAssistantScreen(padding)
+                        MainRoute.EXPLORE -> ExploreScreen(
+                            paddingValues = padding,
+                            onAiSuggest = { prompt -> aiPreFill = prompt; route = MainRoute.AI }
+                        )
+                        MainRoute.AI      -> AiAssistantScreen(
+                            paddingValues = padding,
+                            preFillPrompt = aiPreFill.also { aiPreFill = "" }
+                        )
+                        MainRoute.SOCIAL  -> SocialScreen(padding)
                         MainRoute.WALLET  -> WalletScreen(padding)
                     }
                 }
