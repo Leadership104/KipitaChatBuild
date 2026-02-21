@@ -236,95 +236,98 @@ private fun TripCard(trip: Trip, index: Int) {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column {
-            // Cover gradient placeholder
+            // Dark photo-style cover
+            val coverGradient = when (index % 4) {
+                0 -> listOf(Color(0xFF1A237E), Color(0xFF4A148C))
+                1 -> listOf(Color(0xFF880E4F), Color(0xFFBF360C))
+                2 -> listOf(Color(0xFF1B5E20), Color(0xFF004D40))
+                else -> listOf(Color(0xFF006064), Color(0xFF01579B))
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(110.dp)
-                    .background(
-                        Brush.linearGradient(
-                            colors = when (index % 4) {
-                                0 -> listOf(Color(0xFF667EEA), Color(0xFF764BA2))
-                                1 -> listOf(Color(0xFFFF6B6B), Color(0xFFFF8E53))
-                                2 -> listOf(Color(0xFF43B89C), Color(0xFF3AAFA9))
-                                else -> listOf(Color(0xFF4ECDC4), Color(0xFF44A6AC))
-                            }
-                        )
-                    )
+                    .height(130.dp)
+                    .background(Brush.linearGradient(colors = coverGradient))
             ) {
+                // Dark scrim for text readability
+                Box(
+                    modifier = Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(listOf(Color.Black.copy(0.1f), Color.Black.copy(0.5f)))
+                    )
+                )
+
                 // Countdown badge
                 Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(10.dp),
+                    modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
                     shape = RoundedCornerShape(8.dp),
-                    color = Color.White.copy(alpha = 0.92f)
+                    color = Color.Black.copy(alpha = 0.45f)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.Default.FlightTakeoff,
-                            contentDescription = null,
-                            tint = KipitaRed,
-                            modifier = Modifier.size(12.dp)
-                        )
+                        Icon(Icons.Default.FlightTakeoff, contentDescription = null, tint = Color.White, modifier = Modifier.size(11.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = "${trip.daysUntil}d",
+                            text = if (trip.daysUntil > 0) "In ${trip.daysUntil}d" else "Active",
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = KipitaRed
+                            color = Color.White
                         )
                     }
                 }
 
-                // Flag + emoji
+                // Country flag top-end
                 Text(
                     text = trip.countryFlag,
-                    fontSize = 32.sp,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                )
-            }
-
-            Column(modifier = Modifier.padding(14.dp)) {
-                Text(
-                    text = trip.title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = KipitaOnSurface,
-                    maxLines = 1
-                )
-                Text(
-                    text = "${trip.destination}, ${trip.country}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = KipitaTextSecondary,
-                    modifier = Modifier.padding(top = 2.dp)
+                    fontSize = 28.sp,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)
                 )
 
-                Spacer(Modifier.height(10.dp))
-
-                // Weather row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(trip.weatherIcon, fontSize = 14.sp)
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = "${trip.weatherHighC}° / ${trip.weatherLowC}°",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = KipitaTextSecondary
-                        )
-                    }
+                // Destination + title overlay at bottom
+                Column(modifier = Modifier.align(Alignment.BottomStart).padding(10.dp)) {
                     Text(
-                        text = "${trip.durationDays}d",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = KipitaTextTertiary
+                        text = trip.destination,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                        color = Color.White
+                    )
+                    Text(
+                        text = trip.title,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.80f)
                     )
                 }
+
+                // Weather badge bottom-end
+                Surface(
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.Black.copy(alpha = 0.45f)
+                ) {
+                    Text(
+                        text = "${trip.weatherIcon} ${trip.weatherHighC}°",
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = Color.White
+                    )
+                }
+            }
+
+            // Bottom info row
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${trip.country}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = KipitaTextSecondary
+                )
+                Text(
+                    text = "${trip.durationDays} days",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = KipitaRed
+                )
             }
         }
     }
@@ -351,12 +354,19 @@ private fun PastTripRow(trip: Trip, modifier: Modifier = Modifier) {
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(KipitaCardBg),
+                .size(52.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(
+                    Brush.linearGradient(
+                        listOf(Color(0xFF37474F), Color(0xFF263238))
+                    )
+                ),
             contentAlignment = Alignment.Center
         ) {
-            Text(trip.countryFlag, fontSize = 24.sp)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(trip.countryFlag, fontSize = 20.sp)
+                Text(trip.weatherIcon, fontSize = 11.sp)
+            }
         }
 
         Spacer(Modifier.width(14.dp))
