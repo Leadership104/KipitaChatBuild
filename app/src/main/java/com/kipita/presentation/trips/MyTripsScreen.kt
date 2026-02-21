@@ -68,7 +68,10 @@ import com.kipita.presentation.theme.KipitaTextTertiary
 import kotlinx.coroutines.delay
 
 @Composable
-fun MyTripsScreen(paddingValues: PaddingValues) {
+fun MyTripsScreen(
+    paddingValues: PaddingValues,
+    onAiSuggest: (String) -> Unit = {}
+) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(80)
@@ -106,6 +109,34 @@ fun MyTripsScreen(paddingValues: PaddingValues) {
                             color = KipitaTextSecondary,
                             modifier = Modifier.padding(top = 2.dp)
                         )
+                        Spacer(Modifier.height(14.dp))
+                        // AI Quick Actions row
+                        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            val prompts = listOf(
+                                "✈️ Plan a new trip" to "Help me plan my next international trip as a digital nomad. What are the best destinations for Q2 2026?",
+                                "🏨 Find hotels" to "What are the best hotels and accommodation options for digital nomads?",
+                                "📋 Packing list" to "Create a comprehensive packing list for a 3-month digital nomad trip to Southeast Asia",
+                                "💡 Visa tips" to "What are visa requirements and tips for long-term travel as a digital nomad?"
+                            )
+                            items(prompts.size) { i ->
+                                val (label, aiPrompt) = prompts[i]
+                                Surface(
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                                    color = KipitaRedLight
+                                ) {
+                                    Text(
+                                        text = label,
+                                        modifier = androidx.compose.ui.Modifier
+                                            .clickable { onAiSuggest(aiPrompt) }
+                                            .padding(horizontal = 12.dp, vertical = 7.dp),
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                                        ),
+                                        color = KipitaRed
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

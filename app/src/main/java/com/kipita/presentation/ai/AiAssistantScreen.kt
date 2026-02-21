@@ -76,18 +76,36 @@ private data class QuickAction(
 )
 
 private val quickActions = listOf(
-    QuickAction(Icons.Default.Map, "Plan Trip", "AI-powered itinerary", "Help me plan a 7-day trip", Color(0xFF4CAF50)),
-    QuickAction(Icons.Default.FlightTakeoff, "Find Flights", "Best routes & prices", "Find flights for my next trip", Color(0xFF2196F3)),
-    QuickAction(Icons.Default.LocationOn, "Suggest Destinations", "Based on your style", "Suggest a destination for a digital nomad", Color(0xFF9C27B0)),
-    QuickAction(Icons.Default.TravelExplore, "Travel Advisories", "Live safety reports", "What are the current travel advisories?", Color(0xFFFF5722))
+    QuickAction(Icons.Default.Map, "Plan Trip", "AI-powered itinerary",
+        "Help me plan a 7-day trip to Tokyo as a digital nomad with a Bitcoin budget. Include hotels, coworking spaces, restaurants and transport.", Color(0xFF4CAF50)),
+    QuickAction(Icons.Default.FlightTakeoff, "Find Flights", "Best routes & prices",
+        "What are the cheapest flight routes for a nomad traveling from the US to Southeast Asia? Include tips on budget airlines and layovers.", Color(0xFF2196F3)),
+    QuickAction(Icons.Default.LocationOn, "Nearby Places", "Hotels, dining & transport",
+        "Suggest the best hotels, restaurants, cafes and public transport options for a digital nomad. Include places that accept Bitcoin.", Color(0xFF9C27B0)),
+    QuickAction(Icons.Default.TravelExplore, "Travel Advisories", "Live safety reports",
+        "What are the current travel safety advisories, entry requirements and visa tips for the top digital nomad destinations in 2026?", Color(0xFFFF5722))
 )
 
 @Composable
-fun AiAssistantScreen(paddingValues: PaddingValues, viewModel: AiViewModel = hiltViewModel()) {
+fun AiAssistantScreen(
+    paddingValues: PaddingValues,
+    viewModel: AiViewModel = hiltViewModel(),
+    preFillPrompt: String = ""
+) {
     val response by viewModel.response.collectAsStateWithLifecycleCompat()
-    var prompt by remember { mutableStateOf("") }
+    var prompt by remember { mutableStateOf(preFillPrompt) }
     var visible by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
+
+    // Auto-fire when pre-filled from another screen
+    LaunchedEffect(preFillPrompt) {
+        if (preFillPrompt.isNotBlank()) {
+            prompt = preFillPrompt
+            delay(300)
+            loading = true
+            viewModel.analyze("global", preFillPrompt)
+        }
+    }
 
     LaunchedEffect(Unit) {
         delay(80)
@@ -211,11 +229,15 @@ fun AiAssistantScreen(paddingValues: PaddingValues, viewModel: AiViewModel = hil
                             )
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 val suggestions = listOf(
-                                    "Best digital nomad cities 2025",
+                                    "Best digital nomad cities 2026",
+                                    "Hotels near Shibuya that accept Bitcoin",
                                     "Is Bangkok safe right now?",
-                                    "Where can I pay with Bitcoin?",
+                                    "Where can I pay with Bitcoin nearby?",
                                     "Cheapest flights to Lisbon",
-                                    "Visa requirements for Japan"
+                                    "Visa requirements for Japan",
+                                    "Best coworking spaces in Bali",
+                                    "Car rental tips for road trips",
+                                    "How to use Lightning Network abroad"
                                 )
                                 items(suggestions.size) { i ->
                                     Surface(

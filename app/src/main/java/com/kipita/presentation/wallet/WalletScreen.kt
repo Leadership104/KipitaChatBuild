@@ -67,6 +67,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextOverflow
+import com.kipita.data.repository.WalletBalance
+import com.kipita.data.repository.WalletSource
+import com.kipita.data.repository.WalletStatus
 import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
 import com.kipita.presentation.theme.KipitaBorder
 import com.kipita.presentation.theme.KipitaCardBg
@@ -111,6 +116,58 @@ private val allCurrencies = listOf(
 )
 
 private val popularCurrencyCodes = listOf("USD","EUR","GBP","JPY","SGD","AUD","CAD","CHF","BTC","ETH")
+
+// ---------------------------------------------------------------------------
+// Kipita Perks — partner brands with deep-links
+// ---------------------------------------------------------------------------
+private data class PerkPartner(
+    val name: String,
+    val tagline: String,
+    val logoLetter: String,     // brand initials shown in the logo box
+    val logoBg: Color,          // solid background for the logo box
+    val logoTextColor: Color,   // letter color (usually white for dark bg)
+    val accentColor: Color,     // DETAILS button background + brand accent
+    val url: String
+)
+
+private val kipitaPerks = listOf(
+    PerkPartner(
+        name = "Kinesis",
+        tagline = "Gold & silver-backed digital currency system",
+        logoLetter = "K",
+        logoBg = Color(0xFFD4AF37),
+        logoTextColor = Color.White,
+        accentColor = Color(0xFFB8860B),
+        url = "https://kinesis.money"
+    ),
+    PerkPartner(
+        name = "Swan Bitcoin",
+        tagline = "Automatic Bitcoin savings, IRA & treasury accounts",
+        logoLetter = "S",
+        logoBg = Color(0xFF1B3A6B),
+        logoTextColor = Color.White,
+        accentColor = Color(0xFF1B3A6B),
+        url = "https://swanbitcoin.com"
+    ),
+    PerkPartner(
+        name = "Fold",
+        tagline = "Earn Bitcoin rewards on every card purchase",
+        logoLetter = "F",
+        logoBg = Color(0xFFFF6B35),
+        logoTextColor = Color.White,
+        accentColor = Color(0xFFE55A2B),
+        url = "https://foldapp.com"
+    ),
+    PerkPartner(
+        name = "Upside",
+        tagline = "Cash back on gas, groceries & restaurants",
+        logoLetter = "U",
+        logoBg = Color(0xFF22C55E),
+        logoTextColor = Color.White,
+        accentColor = Color(0xFF16A34A),
+        url = "https://upside.com"
+    )
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,6 +245,137 @@ fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hilt
                                     BalanceChip("Coinbase", "₿ ${"%.4f".format(state.coinbaseBalance)}", Modifier.weight(1f))
                                     BalanceChip("Cash App", "₿ ${"%.4f".format(state.cashAppBalance)}", Modifier.weight(1f))
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ----------------------------------------------------------------
+            // Live BTC / ETH / SOL Price Ticker (CoinGecko)
+            // ----------------------------------------------------------------
+            item {
+                AnimatedVisibility(visible = visible, enter = fadeIn(tween(120)) + slideInVertically(tween(120)) { 16 }) {
+                    val prices = state.cryptoPrices
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Live Prices",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = KipitaOnSurface
+                            )
+                            Text(
+                                "CoinGecko · 30s refresh",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = KipitaTextTertiary
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            PriceTickerChip(
+                                symbol = "₿ BTC",
+                                priceUsd = prices?.btcUsd ?: 0.0,
+                                change24h = prices?.btcChange24h ?: 0.0,
+                                modifier = Modifier.weight(1f)
+                            )
+                            PriceTickerChip(
+                                symbol = "Ξ ETH",
+                                priceUsd = prices?.ethUsd ?: 0.0,
+                                change24h = prices?.ethChange24h ?: 0.0,
+                                modifier = Modifier.weight(1f)
+                            )
+                            PriceTickerChip(
+                                symbol = "◎ SOL",
+                                priceUsd = prices?.solUsd ?: 0.0,
+                                change24h = prices?.solChange24h ?: 0.0,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Aggregated Crypto Wallets
+            item {
+                AnimatedVisibility(visible = visible, enter = fadeIn(tween(150)) + slideInVertically(tween(150)) { 20 }) {
+                    val wallet = state.aggregatedWallet
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Crypto Wallets",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                                color = KipitaOnSurface
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (state.syncingWallets) {
+                                    CircularProgressIndicator(color = KipitaRed, modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                    Spacer(Modifier.width(6.dp))
+                                }
+                                if (wallet != null) {
+                                    Text(
+                                        "${"$"}${"%.2f".format(state.totalWalletUsd)} total",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = KipitaGreenAccent
+                                    )
+                                }
+                            }
+                        }
+                        if (wallet != null) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                wallet.wallets.forEach { balance ->
+                                    WalletBalanceRow(balance)
+                                }
+                            }
+                        } else if (!state.syncingWallets) {
+                            Text(
+                                state.walletError ?: "Connect wallets in Settings to view live balances",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = KipitaTextSecondary,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ----------------------------------------------------------------
+            // Kipita Perks — partner brands with hyperlinks
+            // ----------------------------------------------------------------
+            item {
+                AnimatedVisibility(visible = visible, enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { 24 }) {
+                    val uriHandler = LocalUriHandler.current
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    "Kipita Perks",
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                                    color = KipitaOnSurface
+                                )
+                                Text(
+                                    "Partner benefits for travelers",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = KipitaTextSecondary,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            kipitaPerks.forEach { perk ->
+                                PerkCard(perk = perk, onClick = {
+                                    runCatching { uriHandler.openUri(perk.url) }
+                                })
                             }
                         }
                     }
@@ -384,6 +572,177 @@ private fun CurrencyInputField(label: String, amount: String, currency: String, 
                     color = when (currency) { "BTC" -> Color(0xFFF57C00); "ETH" -> Color(0xFF5C6BC0); else -> KipitaOnSurface })
                 Text(" ▾", style = MaterialTheme.typography.labelSmall, color = KipitaTextTertiary)
             }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Price ticker chip — compact BTC/ETH/SOL price card
+// ---------------------------------------------------------------------------
+@Composable
+private fun PriceTickerChip(
+    symbol: String,
+    priceUsd: Double,
+    change24h: Double,
+    modifier: Modifier = Modifier
+) {
+    val isPositive = change24h >= 0
+    val changeColor = if (isPositive) KipitaGreenAccent else KipitaRed
+    val changePrefix = if (isPositive) "+" else ""
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White)
+            .border(1.dp, KipitaBorder, RoundedCornerShape(14.dp))
+            .padding(10.dp)
+    ) {
+        Text(
+            symbol,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = KipitaTextSecondary
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = if (priceUsd > 0) "$${"%,.0f".format(priceUsd)}" else "—",
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = KipitaOnSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = if (priceUsd > 0) "$changePrefix${"%.1f".format(change24h)}%" else "offline",
+            style = MaterialTheme.typography.labelSmall,
+            color = if (priceUsd > 0) changeColor else KipitaTextTertiary,
+            modifier = Modifier.padding(top = 2.dp)
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Kipita Perks card — partner brand tile with logo box + DETAILS button
+// ---------------------------------------------------------------------------
+@Composable
+private fun PerkCard(perk: PerkPartner, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
+            .border(1.dp, KipitaBorder, RoundedCornerShape(16.dp))
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Brand logo box — solid brand color with bold letter initial
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(perk.logoBg),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                perk.logoLetter,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                color = perk.logoTextColor
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                perk.name,
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
+                color = KipitaOnSurface
+            )
+            Text(
+                perk.tagline,
+                style = MaterialTheme.typography.bodySmall,
+                color = KipitaTextSecondary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        // DETAILS button — branded color background
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(9.dp))
+                .background(perk.accentColor)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 11.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "DETAILS →",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = Color.White
+            )
+        }
+    }
+}
+
+@Composable
+private fun WalletBalanceRow(balance: WalletBalance) {
+    val statusColor = when (balance.status) {
+        WalletStatus.SYNCED  -> KipitaGreenAccent
+        WalletStatus.SYNCING -> Color(0xFFFFA726) // amber
+        WalletStatus.ERROR   -> KipitaRed
+        WalletStatus.OFFLINE -> KipitaTextTertiary
+    }
+    val statusLabel = when (balance.status) {
+        WalletStatus.SYNCED  -> "synced"
+        WalletStatus.SYNCING -> "syncing"
+        WalletStatus.ERROR   -> "error"
+        WalletStatus.OFFLINE -> "offline"
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Source emoji badge
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(KipitaCardBg),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(balance.source.emoji, fontSize = 18.sp)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "${balance.source.label} · ${balance.assetCode}",
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = KipitaOnSurface
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(statusColor)
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(statusLabel, style = MaterialTheme.typography.labelSmall, color = statusColor)
+            }
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = "${"$"}${"%.2f".format(balance.balanceUsd)}",
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = KipitaOnSurface
+            )
+            val balanceStr = when (balance.assetCode) {
+                "BTC", "BTC_LN" -> "₿ ${"%.6f".format(balance.balance)}"
+                "ETH"           -> "Ξ ${"%.4f".format(balance.balance)}"
+                else            -> "${"%.2f".format(balance.balance)} ${balance.assetCode}"
+            }
+            Text(balanceStr, style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
         }
     }
 }

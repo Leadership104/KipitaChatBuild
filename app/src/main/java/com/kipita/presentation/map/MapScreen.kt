@@ -33,6 +33,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Navigation
@@ -96,7 +97,11 @@ private val tokyoLandmarks = listOf(
 )
 
 @Composable
-fun MapScreen(paddingValues: PaddingValues, viewModel: MapViewModel = hiltViewModel()) {
+fun MapScreen(
+    paddingValues: PaddingValues,
+    viewModel: MapViewModel = hiltViewModel(),
+    onAiSuggest: (String) -> Unit = {}
+) {
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
     var selected by remember { mutableStateOf<String?>(null) }
     var mapScale by remember { mutableFloatStateOf(1f) }
@@ -235,6 +240,36 @@ fun MapScreen(paddingValues: PaddingValues, viewModel: MapViewModel = hiltViewMo
                         }
                     }
                 }
+            }
+        }
+
+        // Floating AI assistant button — above the bottom sheet
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn() + slideInVertically { 40 },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 96.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .shadow(8.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(KipitaRed)
+                    .clickable {
+                        onAiSuggest(
+                            "What Bitcoin-friendly restaurants, cafes, co-working spaces and shops are in this area? Show me the best places for a digital nomad traveler."
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.AutoAwesome,
+                    contentDescription = "Ask AI about this area",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
 
