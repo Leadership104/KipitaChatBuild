@@ -22,9 +22,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -74,6 +76,24 @@ import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
 import com.kipita.presentation.theme.KipitaWarning
 import kotlinx.coroutines.launch
+
+private data class LandmarkPin(
+    val name: String,
+    val emoji: String,
+    val distanceKm: Float,
+    val rating: Float,
+    val xFraction: Float,
+    val yFraction: Float,
+    val pinColor: Color
+)
+
+private val tokyoLandmarks = listOf(
+    LandmarkPin("Tokyo Tower", "🗼", 0.3f, 4.6f, 0.55f, 0.28f, Color(0xFFE53935)),
+    LandmarkPin("Senso-ji", "⛩️", 1.2f, 4.8f, 0.22f, 0.42f, Color(0xFFFF6F00)),
+    LandmarkPin("Shibuya Crossing", "🚦", 0.8f, 4.5f, 0.68f, 0.58f, Color(0xFF1565C0)),
+    LandmarkPin("Fab Cafe ₿", "☕", 0.4f, 4.7f, 0.40f, 0.52f, Color(0xFF2E7D32)),
+    LandmarkPin("Meiji Shrine", "🌳", 2.1f, 4.9f, 0.16f, 0.22f, Color(0xFF00695C))
+)
 
 @Composable
 fun MapScreen(paddingValues: PaddingValues, viewModel: MapViewModel = hiltViewModel()) {
@@ -130,6 +150,22 @@ fun MapScreen(paddingValues: PaddingValues, viewModel: MapViewModel = hiltViewMo
                     drawCircle(Color(0xFF4CAF50), radius = 7.dp.toPx() * mapScale, center = Offset(x, y), alpha = markerAlpha.value)
                     drawCircle(Color.White, radius = 3.dp.toPx() * mapScale, center = Offset(x, y), alpha = markerAlpha.value)
                 }
+            }
+
+            // Landmark pins overlay (composable, for rich labeled pins)
+            tokyoLandmarks.forEach { pin ->
+                LandmarkPinCard(
+                    pin = pin,
+                    alpha = markerAlpha.value,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(400.dp)
+                        .wrapContentSize(Alignment.TopStart)
+                        .offset(
+                            x = (pin.xFraction * 380).dp,
+                            y = (pin.yFraction * 360).dp
+                        )
+                )
             }
 
             if (state.loading) {
@@ -298,6 +334,50 @@ fun MapScreen(paddingValues: PaddingValues, viewModel: MapViewModel = hiltViewMo
             }
         }
     }
+}
+
+@Composable
+private fun LandmarkPinCard(pin: LandmarkPin, alpha: Float, modifier: Modifier = Modifier) {
+    var expanded by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (expanded) 1.05f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        label = "pin-scale"
+    )
+    Column(
+        modifier = modifier
+            .scale(scale)
+            .shadow(6.dp, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = (alpha * 0.96f).coerceIn(0f, 1f)))
+            .clickable { expanded = !expanded }
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(pin.emoji, fontSize = 13.sp)
+            Text(
+                pin.name,
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = KipitaOnSurface
+            )
+        }
+        if (expanded) {
+            Spacer(Modifier.height(3.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(10.dp))
+                Text("%.1f".format(pin.rating), style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
+                Text("·", color = KipitaTextTertiary, style = MaterialTheme.typography.labelSmall)
+                Text("%.1f km".format(pin.distanceKm), style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
+            }
+        }
+    }
+    // Pin stem
+    Box(
+        modifier = Modifier
+            .size(width = 2.dp, height = 8.dp)
+            .background(pin.pinColor.copy(alpha = alpha.coerceIn(0f, 1f)))
+    )
 }
 
 private fun DrawScope.drawMapGrid(scale: Float, offset: Offset) {

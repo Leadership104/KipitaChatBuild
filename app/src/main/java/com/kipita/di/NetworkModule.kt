@@ -10,12 +10,12 @@ import com.kipita.data.api.GovernmentApiService
 import com.kipita.data.api.NomadApiService
 import com.kipita.data.api.OpenAiApiService
 import com.kipita.data.api.WalletApiService
+import com.kipita.data.api.WeatherApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -27,21 +27,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideCertificatePinner(): CertificatePinner = CertificatePinner.Builder()
-        .add("api.kipita.app", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-        .add("api.openai.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-        .add("api.anthropic.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-        .add("generativelanguage.googleapis.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-        .add("api.btcmap.org", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-        .add("api.nomadlist.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-        .add("api.exchangerate.host", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-        .build()
-
-    @Provides
-    @Singleton
-    fun provideOkHttp(certificatePinner: CertificatePinner): OkHttpClient = OkHttpClient.Builder()
-        .certificatePinner(certificatePinner)
+    fun provideOkHttp(): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
+        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
         .build()
 
     @Provides
@@ -71,11 +60,22 @@ object NetworkModule {
         .addConverterFactory(MoshiConverterFactory.create())
         .build()
 
+    // Frankfurter.app: free, no API key, covers 30+ currencies with ECB data
     @Provides
     @Singleton
     @CurrencyApi
     fun provideCurrencyRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.exchangerate.host/")
+        .baseUrl("https://api.frankfurter.app/")
+        .client(okHttpClient)
+        .addConverterFactory(MoshiConverterFactory.create())
+        .build()
+
+    // Open-Meteo: free, no API key, real-time global weather
+    @Provides
+    @Singleton
+    @WeatherApi
+    fun provideWeatherRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
+        .baseUrl("https://api.open-meteo.com/")
         .client(okHttpClient)
         .addConverterFactory(MoshiConverterFactory.create())
         .build()
@@ -125,6 +125,9 @@ object NetworkModule {
 
     @Provides
     fun provideCurrencyApiService(@CurrencyApi retrofit: Retrofit): CurrencyApiService = retrofit.create(CurrencyApiService::class.java)
+
+    @Provides
+    fun provideWeatherApiService(@WeatherApi retrofit: Retrofit): WeatherApiService = retrofit.create(WeatherApiService::class.java)
 
     @Provides
     fun provideOpenAiApiService(@OpenAiApi retrofit: Retrofit): OpenAiApiService = retrofit.create(OpenAiApiService::class.java)

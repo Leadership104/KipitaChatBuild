@@ -113,32 +113,50 @@ object SampleData {
         ExploreDestination(
             id = "1", rank = 1, city = "Chiang Mai", country = "Thailand",
             coverImageUrl = "", costPerMonthUsd = 1200, wifiSpeedMbps = 52,
-            weatherSummary = "Warm & Sunny", weatherIcon = "☀️", isPopular = true,
+            weatherSummary = "Warm & Sunny · 28°C", weatherIcon = "☀️", isPopular = true,
             safetyScore = 8.2, tags = listOf("Affordable", "Digital Nomad")
         ),
         ExploreDestination(
             id = "2", rank = 2, city = "Lisbon", country = "Portugal",
             coverImageUrl = "", costPerMonthUsd = 1605, wifiSpeedMbps = 48,
-            weatherSummary = "Mild & Breezy", weatherIcon = "🌤", isPopular = true,
+            weatherSummary = "Mild & Breezy · 18°C", weatherIcon = "🌤", isPopular = true,
             safetyScore = 8.7, tags = listOf("Europe", "Food Scene")
         ),
         ExploreDestination(
             id = "3", rank = 3, city = "Medellín", country = "Colombia",
             coverImageUrl = "", costPerMonthUsd = 980, wifiSpeedMbps = 35,
-            weatherSummary = "Spring Year-Round", weatherIcon = "⛅", isPopular = false,
+            weatherSummary = "Spring Year-Round · 22°C", weatherIcon = "⛅", isPopular = false,
             safetyScore = 7.1, tags = listOf("Affordable", "Culture")
         ),
         ExploreDestination(
             id = "4", rank = 4, city = "Tallinn", country = "Estonia",
             coverImageUrl = "", costPerMonthUsd = 1450, wifiSpeedMbps = 61,
-            weatherSummary = "Cool & Clear", weatherIcon = "🌥", isPopular = false,
+            weatherSummary = "Cool & Clear · 4°C", weatherIcon = "🌥", isPopular = false,
             safetyScore = 9.1, tags = listOf("Tech Hub", "EU")
         ),
         ExploreDestination(
             id = "5", rank = 5, city = "Bali", country = "Indonesia",
             coverImageUrl = "", costPerMonthUsd = 1100, wifiSpeedMbps = 28,
-            weatherSummary = "Tropical", weatherIcon = "🌴", isPopular = true,
+            weatherSummary = "Tropical · 30°C", weatherIcon = "🌴", isPopular = true,
             safetyScore = 7.8, tags = listOf("Beach", "Wellness")
+        ),
+        ExploreDestination(
+            id = "6", rank = 6, city = "Bangkok", country = "Thailand",
+            coverImageUrl = "", costPerMonthUsd = 1350, wifiSpeedMbps = 44,
+            weatherSummary = "Hot & Humid · 33°C", weatherIcon = "☀️", isPopular = true,
+            safetyScore = 7.5, tags = listOf("Street Food", "Culture")
+        ),
+        ExploreDestination(
+            id = "7", rank = 7, city = "Barcelona", country = "Spain",
+            coverImageUrl = "", costPerMonthUsd = 1800, wifiSpeedMbps = 55,
+            weatherSummary = "Warm & Mediterranean · 20°C", weatherIcon = "🌤", isPopular = true,
+            safetyScore = 8.0, tags = listOf("Beach", "Europe")
+        ),
+        ExploreDestination(
+            id = "8", rank = 8, city = "Mexico City", country = "Mexico",
+            coverImageUrl = "", costPerMonthUsd = 1150, wifiSpeedMbps = 38,
+            weatherSummary = "Mild & Sunny · 24°C", weatherIcon = "⛅", isPopular = false,
+            safetyScore = 6.8, tags = listOf("Culture", "Food")
         )
     )
 
@@ -146,12 +164,16 @@ object SampleData {
         CommunityGroup("g1", "Tokyo Nomads", "Tokyo, Japan", 48, 3, "Anyone know good coworking spots near Shibuya?", "🗼"),
         CommunityGroup("g2", "Lisbon Digital", "Lisbon, Portugal", 126, 12, "Sunset boat trip this Friday — who's in?", "🏖"),
         CommunityGroup("g3", "Crypto Travelers", "Global", 312, 0, "New BTCMap merchants in SE Asia listing", "₿"),
-        CommunityGroup("g4", "Solo Female Travelers", "Global", 891, 7, "Safety tips for solo night travel in Asia", "✈️")
+        CommunityGroup("g4", "Solo Female Travelers", "Global", 891, 7, "Safety tips for solo night travel in Asia", "✈️"),
+        CommunityGroup("g5", "Bali Nomads", "Bali, Indonesia", 234, 5, "Best beach clubs for working with WiFi 🌴", "🏄"),
+        CommunityGroup("g6", "Budget Backpackers", "SE Asia", 512, 2, "Found $8/night gem in Chiang Mai!", "🎒")
     )
 
     val nearbyTravelers = listOf(
         NearbyTraveler("t1", "Alex Chen", "Lisbon, Portugal", "", 2, "Budget Explorer"),
         NearbyTraveler("t2", "Sofia Martins", "Lisbon, Portugal", "", 1, "Luxury Nomad"),
-        NearbyTraveler("t3", "James Park", "Porto, Portugal", "", 3, "Adventure Seeker")
+        NearbyTraveler("t3", "James Park", "Porto, Portugal", "", 3, "Adventure Seeker"),
+        NearbyTraveler("t4", "Maria Santos", "Barcelona, Spain", "", 1, "Culture Lover"),
+        NearbyTraveler("t5", "Kenji Tanaka", "Tokyo, Japan", "", 4, "Tech Nomad")
     )
 }

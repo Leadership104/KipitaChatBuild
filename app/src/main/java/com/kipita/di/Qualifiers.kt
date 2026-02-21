@@ -29,3 +29,7 @@ annotation class NomadApi
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class CurrencyApi
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class WeatherApi

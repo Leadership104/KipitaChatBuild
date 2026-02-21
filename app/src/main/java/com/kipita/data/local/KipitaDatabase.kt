@@ -9,9 +9,10 @@ import androidx.room.RoomDatabase
         MerchantEntity::class,
         NomadPlaceEntity::class,
         TripMessageEntity::class,
+        DirectMessageEntity::class,
         ErrorLogEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class KipitaDatabase : RoomDatabase() {
@@ -19,5 +20,6 @@ abstract class KipitaDatabase : RoomDatabase() {
     abstract fun merchantDao(): MerchantDao
     abstract fun nomadPlaceDao(): NomadPlaceDao
     abstract fun tripMessageDao(): TripMessageDao
+    abstract fun directMessageDao(): DirectMessageDao
     abstract fun errorLogDao(): ErrorLogDao
 }

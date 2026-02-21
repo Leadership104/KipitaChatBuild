@@ -178,6 +178,15 @@ fun ExploreScreen(paddingValues: PaddingValues) {
                         color = KipitaTextTertiary
                     )
                 }
+
+                // Data source pills
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    DataSourcePill("Nomad List", "💻")
+                    DataSourcePill("Open-Meteo", "🌡")
+                    DataSourcePill("BTCMap", "₿")
+                    DataSourcePill("ECB Rates", "💱")
+                }
             }
         }
 
@@ -201,6 +210,21 @@ fun ExploreScreen(paddingValues: PaddingValues) {
             }
             item { Spacer(Modifier.height(80.dp)) }
         }
+    }
+}
+
+@Composable
+private fun DataSourcePill(label: String, icon: String) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(KipitaCardBg)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(icon, fontSize = 10.sp)
+        Spacer(Modifier.width(3.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
     }
 }
 
@@ -301,36 +325,50 @@ private fun DestinationCard(destination: ExploreDestination, index: Int) {
             .clickable { pressed = !pressed }
     ) {
         Column {
-            // Image area with gradient + badges
+            // Image area: dark photo-style overlay
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(140.dp)
+                    .height(160.dp)
                     .background(Brush.linearGradient(colors = gradient))
             ) {
-                // Rank badge
-                Surface(
+                // Scrim for readability
+                Box(
                     modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(12.dp),
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Black.copy(alpha = 0.15f), Color.Black.copy(alpha = 0.55f))
+                            )
+                        )
+                )
+
+                // Weather emoji centered
+                Text(
+                    text = destination.weatherIcon,
+                    fontSize = 42.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+
+                // Rank badge top-start
+                Surface(
+                    modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
                     shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.95f)
+                    color = Color.White.copy(alpha = 0.92f)
                 ) {
                     Text(
                         text = "#${destination.rank}",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = KipitaOnSurface
                     )
                 }
 
-                // WiFi badge
+                // WiFi badge top-end
                 Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(12.dp),
+                    modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
                     shape = RoundedCornerShape(8.dp),
-                    color = Color.White.copy(alpha = 0.92f)
+                    color = Color.Black.copy(alpha = 0.45f)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -341,89 +379,75 @@ private fun DestinationCard(destination: ExploreDestination, index: Int) {
                         Text(
                             text = "${destination.wifiSpeedMbps} Mbps",
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = KipitaGreenAccent
+                            color = Color.White
                         )
                     }
                 }
 
-                // Popular badge
-                if (destination.isPopular) {
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(12.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color.White
-                    ) {
-                        Text(
-                            text = "Popular",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = KipitaOnSurface
-                        )
-                    }
-                }
-
-                // City name overlay
-                Text(
-                    text = "${destination.weatherIcon}",
-                    fontSize = 36.sp,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            // Card content
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
+                // City name + country as white text on scrim at bottom
+                Column(
+                    modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = destination.city,
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = KipitaOnSurface
-                        )
+                    Text(
+                        text = destination.city,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                        color = Color.White
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = destination.country,
                             style = MaterialTheme.typography.bodySmall,
-                            color = KipitaTextSecondary
+                            color = Color.White.copy(alpha = 0.85f)
                         )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "$${destination.costPerMonthUsd} / mo",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = KipitaOnSurface
-                        )
-                        Text(
-                            text = "nomad cost",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = KipitaTextTertiary
-                        )
+                        if (destination.isPopular) {
+                            Surface(shape = RoundedCornerShape(4.dp), color = KipitaRed) {
+                                Text(
+                                    "Popular",
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = Color.White
+                                )
+                            }
+                        }
                     }
                 }
 
-                Spacer(Modifier.height(10.dp))
-
-                // Weather + tags
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Safety score badge bottom-end
+                Surface(
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.Black.copy(alpha = 0.45f)
                 ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🛡", fontSize = 10.sp)
+                        Spacer(Modifier.width(3.dp))
+                        Text(
+                            "%.1f".format(destination.safetyScore),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+
+            // Card content
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
                     Text(
                         text = destination.weatherSummary,
                         style = MaterialTheme.typography.bodySmall,
                         color = KipitaTextSecondary
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
                         destination.tags.take(2).forEach { tag ->
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = KipitaCardBg
-                            ) {
+                            Surface(shape = RoundedCornerShape(6.dp), color = KipitaCardBg) {
                                 Text(
                                     text = tag,
                                     modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
@@ -433,6 +457,18 @@ private fun DestinationCard(destination: ExploreDestination, index: Int) {
                             }
                         }
                     }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "$${destination.costPerMonthUsd}",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                        color = KipitaOnSurface
+                    )
+                    Text(
+                        text = "/ month",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = KipitaTextTertiary
+                    )
                 }
             }
         }
