@@ -39,6 +39,7 @@ class KeystoreManager @Inject constructor(
         const val GEMINI_API_SECRET_ALIAS = "kipita_gemini_api_secret"
         const val RIVER_OAUTH_TOKEN_ALIAS = "kipita_river_oauth_token"
         const val RIVER_REFRESH_TOKEN_ALIAS = "kipita_river_refresh_token"
+        const val CASHAPP_OAUTH_TOKEN_ALIAS = "kipita_cashapp_oauth_token"
 
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
         private const val AES_GCM_ALGORITHM = "AES/GCM/NoPadding"

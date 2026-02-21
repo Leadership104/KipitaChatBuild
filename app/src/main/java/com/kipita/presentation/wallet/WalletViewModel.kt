@@ -5,14 +5,17 @@ import androidx.lifecycle.viewModelScope
 import com.kipita.data.api.WalletApiService
 import com.kipita.data.error.InHouseErrorLogger
 import com.kipita.data.repository.AggregatedWallet
+import com.kipita.data.repository.BitcoinPriceRepository
+import com.kipita.data.repository.CryptoPrices
 import com.kipita.data.repository.CryptoWalletRepository
 import com.kipita.data.repository.CurrencyRepository
-import com.kipita.data.repository.WalletBalance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -20,6 +23,7 @@ class WalletViewModel @Inject constructor(
     private val walletApiService: WalletApiService,
     private val currencyRepository: CurrencyRepository,
     private val cryptoWalletRepository: CryptoWalletRepository,
+    private val bitcoinPriceRepository: BitcoinPriceRepository,
     private val errorLogger: InHouseErrorLogger
 ) : ViewModel() {
 
@@ -29,6 +33,7 @@ class WalletViewModel @Inject constructor(
     init {
         loadAvailableCurrencies()
         loadCryptoWallets()
+        startPricePoll()
     }
 
     private fun loadAvailableCurrencies() {
@@ -41,6 +46,20 @@ class WalletViewModel @Inject constructor(
         }
     }
 
+    /** Poll BTC/ETH/SOL prices every 30 seconds from CoinGecko */
+    private fun startPricePoll() {
+        viewModelScope.launch {
+            while (isActive) {
+                runCatching { bitcoinPriceRepository.getPrices() }
+                    .onSuccess { prices ->
+                        _state.value = _state.value.copy(cryptoPrices = prices)
+                    }
+                    .onFailure { errorLogger.log("WalletViewModel.pricePoll", it) }
+                delay(30_000L)
+            }
+        }
+    }
+
     fun loadCryptoWallets(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             _state.value = _state.value.copy(syncingWallets = true, walletError = null)
@@ -50,7 +69,6 @@ class WalletViewModel @Inject constructor(
                         syncingWallets = false,
                         aggregatedWallet = wallet,
                         totalWalletUsd = wallet.totalUsd,
-                        // Legacy fields for animated balance counter
                         coinbaseBalance = wallet.wallets
                             .filter { it.source.name == "COINBASE" }
                             .sumOf { it.balance },
@@ -66,9 +84,17 @@ class WalletViewModel @Inject constructor(
         }
     }
 
-    // Legacy method kept for compatibility with any existing calls
+    fun refreshPrices() {
+        viewModelScope.launch {
+            runCatching { bitcoinPriceRepository.getPrices(forceRefresh = true) }
+                .onSuccess { prices -> _state.value = _state.value.copy(cryptoPrices = prices) }
+                .onFailure { errorLogger.log("WalletViewModel.refreshPrices", it) }
+        }
+    }
+
     fun refreshBalances(coinbaseToken: String, cashAppToken: String) {
         loadCryptoWallets(forceRefresh = true)
+        refreshPrices()
     }
 
     fun convert(amount: Double, from: String, to: String) {
@@ -94,6 +120,8 @@ class WalletViewModel @Inject constructor(
 }
 
 data class WalletUiState(
+    // Live crypto prices (CoinGecko)
+    val cryptoPrices: CryptoPrices? = null,
     // Aggregated crypto wallet
     val aggregatedWallet: AggregatedWallet? = null,
     val totalWalletUsd: Double = 0.0,

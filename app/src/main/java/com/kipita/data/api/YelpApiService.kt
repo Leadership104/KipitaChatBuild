@@ -106,15 +106,50 @@ enum class PlaceCategory(
     val yelpAlias: String,
     val iconSlug: String,
     val emoji: String,
-    val attributes: String? = null
+    val attributes: String? = null,
+    val groupTag: String = "General"
 ) {
-    SAFETY("Safety", "policestations", "police_shield", "🛡"),
-    URGENT_CARE("Urgent Care", "hospitals,emergencyrooms", "medical_cross", "🏥"),
-    RESTAURANTS("Restaurants", "restaurants", "fork_knife", "🍜", attributes = "hot_and_new"),
-    EV_CHARGING("EV Charging", "evchargingstations", "electric_car", "⚡"),
-    BANKS_ATMS("Banks/ATMs", "banks,atms", "bank", "🏦"),
-    CAFES("Cafes", "cafes", "coffee", "☕"),
-    PHARMACIES("Pharmacy", "drugstores", "pharmacy", "💊"),
-    TRANSPORT("Transport", "taxis,publictransport", "bus", "🚌"),
-    HOTELS("Hotels", "hotels", "hotel", "🏨")
+    // -----------------------------------------------------------------------
+    // Safety & Health
+    // -----------------------------------------------------------------------
+    SAFETY("Safety", "policestations", "police_shield", "🛡", groupTag = "Safety & Health"),
+    URGENT_CARE("Urgent Care", "hospitals,emergencyrooms", "medical_cross", "🏥", groupTag = "Safety & Health"),
+    PHARMACIES("Pharmacy", "drugstores", "pharmacy", "💊", groupTag = "Safety & Health"),
+    FITNESS("Fitness", "gyms,fitness", "dumbbell", "💪", groupTag = "Safety & Health"),
+
+    // -----------------------------------------------------------------------
+    // Travel & Lodging
+    // -----------------------------------------------------------------------
+    HOTELS("Hotels", "hotels", "hotel", "🏨", groupTag = "Travel & Lodging"),
+    VACATION_RENTALS("Vacation Rentals", "vacation_rentals", "house", "🏠", groupTag = "Travel & Lodging"),
+    AIRPORTS("Airport Services", "airports", "plane", "✈️", groupTag = "Travel & Lodging"),
+    TOURS("Tours & Activities", "tours,activities,culturalcenter", "compass", "🧭", groupTag = "Travel & Lodging"),
+
+    // -----------------------------------------------------------------------
+    // Transportation
+    // -----------------------------------------------------------------------
+    TRANSPORT("Public Transit", "taxis,publictransport,subway", "bus", "🚌", groupTag = "Transportation"),
+    CAR_RENTAL("Car Rental", "carrental", "car", "🚗", groupTag = "Transportation"),
+    EV_CHARGING("EV Charging", "evchargingstations", "electric_car", "⚡", groupTag = "Transportation"),
+    GAS_STATIONS("Gas & Fuel", "servicestations", "gas", "⛽", groupTag = "Transportation"),
+
+    // -----------------------------------------------------------------------
+    // Dining & Cafes
+    // -----------------------------------------------------------------------
+    RESTAURANTS("Restaurants", "restaurants", "fork_knife", "🍜", attributes = "hot_and_new", groupTag = "Dining"),
+    CAFES("Cafes", "cafes,coffee", "coffee", "☕", groupTag = "Dining"),
+    NIGHTLIFE("Bars & Nightlife", "bars,nightlife", "moon_stars", "🌙", groupTag = "Dining"),
+
+    // -----------------------------------------------------------------------
+    // Finance & Services
+    // -----------------------------------------------------------------------
+    BANKS_ATMS("Banks & ATMs", "banks,atms", "bank", "🏦", groupTag = "Finance & Services"),
+
+    // -----------------------------------------------------------------------
+    // Culture & Shopping
+    // -----------------------------------------------------------------------
+    ARTS("Arts & Culture", "artmuseums,museums", "art", "🎨", groupTag = "Culture & Shopping"),
+    SHOPPING("Shopping", "shopping,malls", "shopping_bag", "🛍", groupTag = "Culture & Shopping"),
+    PARKS("Parks & Nature", "parks,hiking", "tree", "🌳", groupTag = "Culture & Shopping"),
+    ENTERTAINMENT("Entertainment", "movietheaters,amusementparks,escape_games", "star", "🎭", groupTag = "Culture & Shopping")
 }

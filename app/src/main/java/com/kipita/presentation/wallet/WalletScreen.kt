@@ -67,6 +67,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextOverflow
 import com.kipita.data.repository.WalletBalance
 import com.kipita.data.repository.WalletSource
 import com.kipita.data.repository.WalletStatus
@@ -114,6 +116,53 @@ private val allCurrencies = listOf(
 )
 
 private val popularCurrencyCodes = listOf("USD","EUR","GBP","JPY","SGD","AUD","CAD","CHF","BTC","ETH")
+
+// ---------------------------------------------------------------------------
+// Kipita Perks — partner brands with deep-links
+// ---------------------------------------------------------------------------
+private data class PerkPartner(
+    val name: String,
+    val tagline: String,
+    val badge: String,       // emoji used as logo placeholder
+    val bgColor: Color,
+    val accentColor: Color,
+    val url: String
+)
+
+private val kipitaPerks = listOf(
+    PerkPartner(
+        name = "Fold",
+        tagline = "Earn Bitcoin rewards on every card purchase",
+        badge = "🔶",
+        bgColor = Color(0xFFFFF3E0),
+        accentColor = Color(0xFFFF6B35),
+        url = "https://foldapp.com"
+    ),
+    PerkPartner(
+        name = "Swan Bitcoin",
+        tagline = "Automatic Bitcoin savings & IRA accounts",
+        badge = "🦢",
+        bgColor = Color(0xFFE8EEF9),
+        accentColor = Color(0xFF1B3A6B),
+        url = "https://swanbitcoin.com"
+    ),
+    PerkPartner(
+        name = "Upside",
+        tagline = "Cash back on gas, groceries & restaurants",
+        badge = "⬆️",
+        bgColor = Color(0xFFE8F5E9),
+        accentColor = Color(0xFF22C55E),
+        url = "https://upside.com"
+    ),
+    PerkPartner(
+        name = "Kinesis",
+        tagline = "Gold & silver-backed digital currency",
+        badge = "✨",
+        bgColor = Color(0xFFFFFBE6),
+        accentColor = Color(0xFFD4AF37),
+        url = "https://kinesis.money"
+    )
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -197,6 +246,53 @@ fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hilt
                 }
             }
 
+            // ----------------------------------------------------------------
+            // Live BTC / ETH / SOL Price Ticker (CoinGecko)
+            // ----------------------------------------------------------------
+            item {
+                AnimatedVisibility(visible = visible, enter = fadeIn(tween(120)) + slideInVertically(tween(120)) { 16 }) {
+                    val prices = state.cryptoPrices
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Live Prices",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = KipitaOnSurface
+                            )
+                            Text(
+                                "CoinGecko · 30s refresh",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = KipitaTextTertiary
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            PriceTickerChip(
+                                symbol = "₿ BTC",
+                                priceUsd = prices?.btcUsd ?: 0.0,
+                                change24h = prices?.btcChange24h ?: 0.0,
+                                modifier = Modifier.weight(1f)
+                            )
+                            PriceTickerChip(
+                                symbol = "Ξ ETH",
+                                priceUsd = prices?.ethUsd ?: 0.0,
+                                change24h = prices?.ethChange24h ?: 0.0,
+                                modifier = Modifier.weight(1f)
+                            )
+                            PriceTickerChip(
+                                symbol = "◎ SOL",
+                                priceUsd = prices?.solUsd ?: 0.0,
+                                change24h = prices?.solChange24h ?: 0.0,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
+
             // Aggregated Crypto Wallets
             item {
                 AnimatedVisibility(visible = visible, enter = fadeIn(tween(150)) + slideInVertically(tween(150)) { 20 }) {
@@ -239,6 +335,43 @@ fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hilt
                                 color = KipitaTextSecondary,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
+                        }
+                    }
+                }
+            }
+
+            // ----------------------------------------------------------------
+            // Kipita Perks — partner brands with hyperlinks
+            // ----------------------------------------------------------------
+            item {
+                AnimatedVisibility(visible = visible, enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { 24 }) {
+                    val uriHandler = LocalUriHandler.current
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    "Kipita Perks",
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                                    color = KipitaOnSurface
+                                )
+                                Text(
+                                    "Partner benefits for travelers",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = KipitaTextSecondary,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            kipitaPerks.forEach { perk ->
+                                PerkCard(perk = perk, onClick = {
+                                    runCatching { uriHandler.openUri(perk.url) }
+                                })
+                            }
                         }
                     }
                 }
@@ -435,6 +568,96 @@ private fun CurrencyInputField(label: String, amount: String, currency: String, 
                 Text(" ▾", style = MaterialTheme.typography.labelSmall, color = KipitaTextTertiary)
             }
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Price ticker chip — compact BTC/ETH/SOL price card
+// ---------------------------------------------------------------------------
+@Composable
+private fun PriceTickerChip(
+    symbol: String,
+    priceUsd: Double,
+    change24h: Double,
+    modifier: Modifier = Modifier
+) {
+    val isPositive = change24h >= 0
+    val changeColor = if (isPositive) KipitaGreenAccent else KipitaRed
+    val changePrefix = if (isPositive) "+" else ""
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White)
+            .border(1.dp, KipitaBorder, RoundedCornerShape(14.dp))
+            .padding(10.dp)
+    ) {
+        Text(
+            symbol,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = KipitaTextSecondary
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = if (priceUsd > 0) "$${"%,.0f".format(priceUsd)}" else "—",
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = KipitaOnSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = if (priceUsd > 0) "$changePrefix${"%.1f".format(change24h)}%" else "offline",
+            style = MaterialTheme.typography.labelSmall,
+            color = if (priceUsd > 0) changeColor else KipitaTextTertiary,
+            modifier = Modifier.padding(top = 2.dp)
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Kipita Perks card — partner brand tile with brand color + deep-link
+// ---------------------------------------------------------------------------
+@Composable
+private fun PerkCard(perk: PerkPartner, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(perk.bgColor)
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(perk.accentColor.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(perk.badge, fontSize = 22.sp)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                perk.name,
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
+                color = perk.accentColor
+            )
+            Text(
+                perk.tagline,
+                style = MaterialTheme.typography.bodySmall,
+                color = KipitaOnSurface.copy(alpha = 0.75f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+        Text(
+            "→",
+            style = MaterialTheme.typography.titleMedium,
+            color = perk.accentColor,
+            modifier = Modifier.padding(start = 8.dp)
+        )
     }
 }
 

@@ -49,3 +49,11 @@ annotation class GeminiCryptoApi
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class RiverApi
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class CoinGeckoApi
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class CashAppApi

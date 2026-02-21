@@ -1,7 +1,9 @@
 package com.kipita.di
 
 import com.kipita.BuildConfig
+import com.kipita.data.api.BitcoinPriceApiService
 import com.kipita.data.api.BtcMerchantApiService
+import com.kipita.data.api.CashAppApiService
 import com.kipita.data.api.ClaudeApiService
 import com.kipita.data.api.CoinbaseApiService
 import com.kipita.data.api.CurrencyApiService
@@ -236,4 +238,38 @@ object NetworkModule {
     @Provides
     fun provideRiverApiService(@RiverApi retrofit: Retrofit): RiverApiService =
         retrofit.create(RiverApiService::class.java)
+
+    // -----------------------------------------------------------------------
+    // CoinGecko — free real-time BTC/ETH/SOL price API (no key required)
+    // -----------------------------------------------------------------------
+
+    @Provides
+    @Singleton
+    @CoinGeckoApi
+    fun provideCoinGeckoRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
+        .baseUrl("https://api.coingecko.com/api/v3/")
+        .client(okHttpClient)
+        .addConverterFactory(MoshiConverterFactory.create())
+        .build()
+
+    @Provides
+    fun provideBitcoinPriceApiService(@CoinGeckoApi retrofit: Retrofit): BitcoinPriceApiService =
+        retrofit.create(BitcoinPriceApiService::class.java)
+
+    // -----------------------------------------------------------------------
+    // CashApp Pay — template (plug-and-play when credentials obtained)
+    // -----------------------------------------------------------------------
+
+    @Provides
+    @Singleton
+    @CashAppApi
+    fun provideCashAppRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
+        .baseUrl("https://api.cash.app/")
+        .client(okHttpClient)
+        .addConverterFactory(MoshiConverterFactory.create())
+        .build()
+
+    @Provides
+    fun provideCashAppApiService(@CashAppApi retrofit: Retrofit): CashAppApiService =
+        retrofit.create(CashAppApiService::class.java)
 }

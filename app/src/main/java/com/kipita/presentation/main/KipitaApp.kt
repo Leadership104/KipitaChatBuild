@@ -13,12 +13,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.material.icons.outlined.Wallet
@@ -43,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.kipita.presentation.ai.AiAssistantScreen
 import com.kipita.presentation.explore.ExploreScreen
 import com.kipita.presentation.map.MapScreen
+import com.kipita.presentation.places.PlacesScreen
 import com.kipita.presentation.profile.ProfileSetupScreen
 import com.kipita.presentation.social.SocialScreen
 import com.kipita.presentation.trips.MyTripsScreen
@@ -51,8 +54,11 @@ import com.kipita.presentation.theme.KipitaNavBg
 import com.kipita.presentation.theme.KipitaRed
 import com.kipita.presentation.theme.KipitaTextTertiary
 
+// ---------------------------------------------------------------------------
+// Navigation routes
+// ---------------------------------------------------------------------------
 enum class MainRoute {
-    TRIPS, EXPLORE, MAP, SOCIAL, AI, WALLET
+    TRIPS, EXPLORE, PLACES, MAP, AI, WALLET
 }
 
 private data class NavItem(
@@ -63,12 +69,12 @@ private data class NavItem(
 )
 
 private val navItems = listOf(
-    NavItem(MainRoute.TRIPS, "Trips", Icons.Filled.Flight, Icons.Outlined.Flight),
+    NavItem(MainRoute.TRIPS,   "Trips",   Icons.Filled.Flight,        Icons.Outlined.Flight),
     NavItem(MainRoute.EXPLORE, "Explore", Icons.Filled.TravelExplore, Icons.Outlined.TravelExplore),
-    NavItem(MainRoute.MAP, "Map", Icons.Filled.Map, Icons.Outlined.Map),
-    NavItem(MainRoute.SOCIAL, "Social", Icons.Filled.Groups, Icons.Outlined.Groups),
-    NavItem(MainRoute.AI, "AI", Icons.Filled.AutoAwesome, Icons.Outlined.AutoAwesome),
-    NavItem(MainRoute.WALLET, "Wallet", Icons.Filled.Wallet, Icons.Outlined.Wallet)
+    NavItem(MainRoute.PLACES,  "Places",  Icons.Filled.LocationOn,    Icons.Outlined.LocationOn),
+    NavItem(MainRoute.MAP,     "Map",     Icons.Filled.Map,           Icons.Outlined.Map),
+    NavItem(MainRoute.AI,      "AI",      Icons.Filled.AutoAwesome,   Icons.Outlined.AutoAwesome),
+    NavItem(MainRoute.WALLET,  "Wallet",  Icons.Filled.Wallet,        Icons.Outlined.Wallet)
 )
 
 @Composable
@@ -135,12 +141,15 @@ fun KipitaApp() {
                     label = "route-transition"
                 ) { destination ->
                     when (destination) {
-                        MainRoute.TRIPS -> MyTripsScreen(padding)
+                        MainRoute.TRIPS   -> MyTripsScreen(padding)
                         MainRoute.EXPLORE -> ExploreScreen(padding)
-                        MainRoute.MAP -> MapScreen(padding)
-                        MainRoute.SOCIAL -> SocialScreen(padding)
-                        MainRoute.AI -> AiAssistantScreen(padding)
-                        MainRoute.WALLET -> WalletScreen(padding)
+                        MainRoute.PLACES  -> PlacesScreen(
+                            paddingValues = padding,
+                            onAiSuggest = { route = MainRoute.AI }
+                        )
+                        MainRoute.MAP     -> MapScreen(padding)
+                        MainRoute.AI      -> AiAssistantScreen(padding)
+                        MainRoute.WALLET  -> WalletScreen(padding)
                     }
                 }
             }
