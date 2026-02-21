@@ -67,9 +67,28 @@ class CryptoWalletRepository @Inject constructor(
     private val marketFeed: MarketDataWebSocket,
     private val keystoreManager: KeystoreManager
 ) {
-    // Cache aggregated balances (refreshed every 60s as per SOW)
-    private var cachedWallet: AggregatedWallet? = null
+    // ---------------------------------------------------------------------------
+    // ZERO-PERSISTENCE CONTRACT — Security requirement from SOW
+    //
+    // Financial balance data MUST NOT be written to any persistent storage:
+    //   ✗ SQLite / Room       ✗ SharedPreferences / DataStore
+    //   ✗ Disk files / logs   ✗ Crash reports / analytics events
+    //
+    // This @Volatile in-memory cache is the ONLY allowed storage. It is cleared
+    // automatically on process death and can be explicitly cleared below.
+    // ---------------------------------------------------------------------------
+
+    @Volatile private var cachedWallet: AggregatedWallet? = null
     private val cacheMaxAgeMs = 60_000L
+
+    /**
+     * Explicitly clear in-memory balance cache.
+     * Call when the app moves to background or user signs out to ensure
+     * financial data is not accessible without a live network fetch.
+     */
+    fun clearBalanceCache() {
+        cachedWallet = null
+    }
 
     /**
      * Returns the aggregated wallet. Fetches all three sources in parallel.

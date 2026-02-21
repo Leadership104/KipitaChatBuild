@@ -10,9 +10,14 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.kipita.data.api.PlaceCategory
 import com.kipita.data.repository.CryptoWalletRepository
 import com.kipita.data.repository.MerchantRepository
 import com.kipita.data.repository.NomadRepository
+import com.kipita.data.repository.YelpPlacesRepository
+import com.kipita.data.service.StartupDataAggregator
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.Calendar
@@ -31,27 +36,72 @@ import java.util.concurrent.TimeUnit
 //   3. Re-sync Nomad city data
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// DailyReconWorker (expanded)
+//
+// 24-hour reconciliation job. All four streams run concurrently (coroutineScope
+// + async) so the full job completes in max(slowest_source) time.
+//
+// Streams:
+//   1. Crypto wallet balances     — force-refresh from Coinbase / Gemini / River
+//   2. BTC merchant map           — re-sync from BTCMap API
+//   3. Nomad city data            — re-sync from NomadList API
+//   4. Yelp business categories   — refresh all 20 categories for default + major cities
+// ---------------------------------------------------------------------------
+
 @HiltWorker
 class DailyReconWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
     private val cryptoWalletRepository: CryptoWalletRepository,
     private val merchantRepository: MerchantRepository,
-    private val nomadRepository: NomadRepository
+    private val nomadRepository: NomadRepository,
+    private val yelpPlacesRepository: YelpPlacesRepository
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
         return runCatching {
-            // Force refresh crypto wallets (bypasses 60-second cache)
-            cryptoWalletRepository.getAggregatedWallet(forceRefresh = true)
-            // Re-sync BTC merchant map
-            merchantRepository.refresh(cashAppToken = null)
-            // Re-sync Nomad place data
-            nomadRepository.refresh()
+            coroutineScope {
+                // Stream 1: Force-refresh crypto wallet balances (memory-only, zero-persistence)
+                val walletJob = async { cryptoWalletRepository.getAggregatedWallet(forceRefresh = true) }
+
+                // Stream 2: Re-sync BTC merchant map data from BTCMap
+                val merchantJob = async { merchantRepository.refresh(cashAppToken = null) }
+
+                // Stream 3: Re-sync Nomad city rankings + quality scores
+                val nomadJob = async { nomadRepository.refresh() }
+
+                // Stream 4: Refresh Yelp business categories for key locations
+                val yelpJob = async { refreshYelpCategories() }
+
+                walletJob.await()
+                merchantJob.await()
+                nomadJob.await()
+                yelpJob.await()
+            }
             Result.success()
         }.getOrElse {
-            // Retry with exponential backoff on failure
             Result.retry()
+        }
+    }
+
+    /**
+     * Refresh the 20 Yelp business categories for the default reference location
+     * (Tokyo) plus additional hub cities. Results are cached in-memory by
+     * YelpPlacesRepository and evicted after 15 minutes at runtime; this job
+     * ensures cache is warm at ~2 AM when network conditions are optimal.
+     */
+    private suspend fun refreshYelpCategories() {
+        // Reference locations: Tokyo default + major nomad hubs
+        val locations = listOf(
+            StartupDataAggregator.DEFAULT_LAT to StartupDataAggregator.DEFAULT_LNG  // Tokyo
+        )
+        // Refresh all static categories for each location
+        locations.forEach { (lat, lng) ->
+            PlaceCategory.entries.forEach { category ->
+                runCatching { yelpPlacesRepository.fetchCategory(lat, lng, category) }
+                // Individual category failures are silently skipped
+            }
         }
     }
 

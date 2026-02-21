@@ -77,10 +77,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.LocalTaxi
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.kipita.data.api.PlaceCategory
 import com.kipita.data.repository.NearbyPlace
 import com.kipita.domain.model.ExploreDestination
 import com.kipita.domain.model.SampleData
+import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
 import com.kipita.presentation.theme.KipitaBorder
 import com.kipita.presentation.theme.KipitaCardBg
 import com.kipita.presentation.theme.KipitaGreenAccent
@@ -133,9 +137,11 @@ private val exploreCategories = listOf(
 @Composable
 fun ExploreScreen(
     paddingValues: PaddingValues,
-    onAiSuggest: (String) -> Unit = {}
+    onAiSuggest: (String) -> Unit = {},
+    viewModel: ExploreViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val exploreState by viewModel.state.collectAsStateWithLifecycleCompat()
     var visible by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     var selectedScope by remember { mutableStateOf(LocationScope.CITY) }
@@ -147,6 +153,14 @@ fun ExploreScreen(
     var detectedLon by remember { mutableStateOf<Double?>(null) }
 
     LaunchedEffect(Unit) { delay(80); visible = true }
+
+    // Auto-fetch Yelp results when user switches to Places tab
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == 1) {
+            if (searchText.isNotBlank()) viewModel.fetchByLocation(searchText, selectedCategory)
+            else viewModel.fetchByCoordinates(selectedCategory)
+        }
+    }
 
     // GPS permission launcher
     val gpsLauncher = rememberLauncherForActivityResult(
@@ -161,6 +175,8 @@ fun ExploreScreen(
                 if (loc != null) {
                     detectedLat = loc.latitude
                     detectedLon = loc.longitude
+                    // Notify ViewModel so transit deep-links use correct origin
+                    viewModel.updateUserLocation(loc.latitude, loc.longitude)
                     // Reverse geocode to city name
                     if (Geocoder.isPresent()) {
                         val geo = Geocoder(context, Locale.getDefault())
@@ -403,7 +419,21 @@ fun ExploreScreen(
                     visible = visible,
                     searchText = searchText,
                     selectedCategory = selectedCategory,
-                    onCategorySelect = { selectedCategory = it },
+                    onCategorySelect = { cat ->
+                        selectedCategory = cat
+                        // Trigger Yelp fetch when category changes
+                        if (searchText.isNotBlank()) {
+                            viewModel.fetchByLocation(searchText, cat)
+                        } else {
+                            viewModel.fetchByCoordinates(cat)
+                        }
+                    },
+                    places = exploreState.places,
+                    placesLoading = exploreState.loading,
+                    uberInstalled = exploreState.uberInstalled,
+                    lyftInstalled = exploreState.lyftInstalled,
+                    onBookUber = { place -> viewModel.bookUberToPlace(place) },
+                    onBookLyft = { place -> viewModel.bookLyftToPlace(place) },
                     onAiSuggest = onAiSuggest
                 )
             }
@@ -466,7 +496,7 @@ private fun DestinationsTab(
 }
 
 // ---------------------------------------------------------------------------
-// Tab 1: Places (Yelp category grid → place list)
+// Tab 1: Places (Yelp category grid → live place list + transit ride buttons)
 // ---------------------------------------------------------------------------
 @Composable
 private fun PlacesTab(
@@ -474,6 +504,12 @@ private fun PlacesTab(
     searchText: String,
     selectedCategory: PlaceCategory,
     onCategorySelect: (PlaceCategory) -> Unit,
+    places: List<NearbyPlace>,
+    placesLoading: Boolean,
+    uberInstalled: Boolean,
+    lyftInstalled: Boolean,
+    onBookUber: (NearbyPlace) -> Unit,
+    onBookLyft: (NearbyPlace) -> Unit,
     onAiSuggest: (String) -> Unit
 ) {
     LazyColumn(
@@ -525,6 +561,14 @@ private fun PlacesTab(
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                                 color = KipitaOnSurface
                             )
+                            if (placesLoading) {
+                                Spacer(Modifier.width(8.dp))
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(14.dp),
+                                    strokeWidth = 2.dp,
+                                    color = KipitaRed
+                                )
+                            }
                         }
                         // AI ask about this category
                         Surface(
@@ -548,25 +592,188 @@ private fun PlacesTab(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    // Empty state / API key prompt
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(KipitaCardBg)
-                            .padding(20.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(selectedCategory.emoji, fontSize = 32.sp)
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "Add Yelp API key in Settings to see live ${selectedCategory.label}${if (searchText.isNotBlank()) " in $searchText" else " nearby"}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = KipitaTextSecondary,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
+
+                    // Live Yelp results or empty/api-key placeholder
+                    if (places.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            places.forEach { place ->
+                                NearbyPlaceCard(
+                                    place = place,
+                                    uberInstalled = uberInstalled,
+                                    lyftInstalled = lyftInstalled,
+                                    onBookUber = { onBookUber(place) },
+                                    onBookLyft = { onBookLyft(place) }
+                                )
+                            }
                         }
+                    } else if (!placesLoading) {
+                        // Empty state — no API key configured yet
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(KipitaCardBg)
+                                .padding(20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(selectedCategory.emoji, fontSize = 32.sp)
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "Add Yelp API key in Settings to see live ${selectedCategory.label}${if (searchText.isNotBlank()) " in $searchText" else " nearby"}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = KipitaTextSecondary,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Nearby Place card with Uber / Lyft transit deep-link buttons
+// ---------------------------------------------------------------------------
+@Composable
+private fun NearbyPlaceCard(
+    place: NearbyPlace,
+    uberInstalled: Boolean,
+    lyftInstalled: Boolean,
+    onBookUber: () -> Unit,
+    onBookLyft: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White)
+            .border(1.dp, KipitaBorder, RoundedCornerShape(14.dp))
+            .clickable { expanded = !expanded }
+    ) {
+        // Main row
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Emoji badge
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(KipitaCardBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(place.emoji, fontSize = 20.sp)
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    place.name,
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = KipitaOnSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    place.address.ifBlank { place.category.label },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = KipitaTextSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(top = 3.dp)
+                ) {
+                    // Rating
+                    if (place.rating > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Star, null, tint = Color(0xFFFFB300), modifier = Modifier.size(12.dp))
+                            Text("${"%.1f".format(place.rating)}", style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
+                        }
+                    }
+                    // Distance
+                    if (place.distanceKm > 0) {
+                        Text(
+                            "${"%.1f".format(place.distanceKm)} km",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = KipitaTextTertiary
+                        )
+                    }
+                    // Open/closed badge
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = if (place.isOpen) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+                    ) {
+                        Text(
+                            if (place.isOpen) "Open" else "Closed",
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (place.isOpen) KipitaGreenAccent else KipitaRed
+                        )
+                    }
+                }
+            }
+        }
+
+        // Transit ride buttons — only shown when place has coordinates
+        if (expanded && place.latitude != null && place.longitude != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(KipitaCardBg)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Uber button
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF000000))
+                        .clickable(onClick = onBookUber)
+                        .padding(vertical = 9.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(Icons.Default.DirectionsCar, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            if (uberInstalled) "Uber" else "Get Uber",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
+                        )
+                    }
+                }
+                // Lyft button
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFFE91E8C))
+                        .clickable(onClick = onBookLyft)
+                        .padding(vertical = 9.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(Icons.Default.LocalTaxi, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            if (lyftInstalled) "Lyft" else "Get Lyft",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
+                        )
                     }
                 }
             }
