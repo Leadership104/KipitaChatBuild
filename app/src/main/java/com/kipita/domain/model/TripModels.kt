@@ -1,6 +1,80 @@
 package com.kipita.domain.model
 
+import com.kipita.data.local.TripEntity
 import java.time.LocalDate
+import org.json.JSONArray
+
+// ---------------------------------------------------------------------------
+// Itinerary domain models — used by TripDetailScreen
+// ---------------------------------------------------------------------------
+
+data class ItineraryActivity(
+    val time: String,        // "09:00"
+    val emoji: String,       // "⛩"
+    val title: String,       // "Senso-ji Temple"
+    val desc: String,        // Brief description
+    val location: String = ""
+)
+
+data class ItineraryDay(
+    val dayNumber: Int,
+    val label: String,       // "Arrival Day", "Culture & Food", …
+    val activities: List<ItineraryActivity>
+)
+
+// ---------------------------------------------------------------------------
+// TripEntity extension helpers — computed properties & domain conversion
+// ---------------------------------------------------------------------------
+
+val TripEntity.daysUntil: Int
+    get() {
+        val today = LocalDate.now().toEpochDay()
+        return if (startDateEpoch > today) (startDateEpoch - today).toInt() else 0
+    }
+
+val TripEntity.durationDays: Int
+    get() = ((endDateEpoch - startDateEpoch) + 1).toInt().coerceAtLeast(1)
+
+val TripEntity.startDate: LocalDate
+    get() = LocalDate.ofEpochDay(startDateEpoch)
+
+val TripEntity.endDate: LocalDate
+    get() = LocalDate.ofEpochDay(endDateEpoch)
+
+/** Parses the JSON itinerary stored in Room into typed domain objects. */
+fun TripEntity.parsedItinerary(): List<ItineraryDay> = runCatching {
+    val arr = JSONArray(itineraryJson)
+    (0 until arr.length()).map { i ->
+        val dayObj = arr.getJSONObject(i)
+        val items  = dayObj.getJSONArray("items")
+        ItineraryDay(
+            dayNumber  = dayObj.getInt("day"),
+            label      = dayObj.optString("label", "Day ${dayObj.getInt("day")}"),
+            activities = (0 until items.length()).map { j ->
+                val act = items.getJSONObject(j)
+                ItineraryActivity(
+                    time     = act.optString("time", ""),
+                    emoji    = act.optString("emoji", "📍"),
+                    title    = act.optString("title", "Activity"),
+                    desc     = act.optString("desc", ""),
+                    location = act.optString("loc", "")
+                )
+            }
+        )
+    }
+}.getOrElse { emptyList() }
+
+/** Parses the JSON travelers list stored in Room. */
+fun TripEntity.parsedTravelers(): List<String> = runCatching {
+    val arr = JSONArray(travelersJson)
+    (0 until arr.length()).map { arr.getString(it) }
+}.getOrElse { listOf("Me") }
+
+/** Parses the JSON invite list stored in Room. */
+fun TripEntity.parsedInvites(): List<String> = runCatching {
+    val arr = JSONArray(inviteListJson)
+    (0 until arr.length()).map { arr.getString(it) }
+}.getOrElse { emptyList() }
 
 data class Trip(
     val id: String,

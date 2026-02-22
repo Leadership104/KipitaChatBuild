@@ -10,10 +10,13 @@ import androidx.room.RoomDatabase
         NomadPlaceEntity::class,
         TripMessageEntity::class,
         DirectMessageEntity::class,
-        ErrorLogEntity::class
+        ErrorLogEntity::class,
+        TripEntity::class          // v6: full trip storage with itinerary/invite schema
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
+    // Note: TravelDataModule uses fallbackToDestructiveMigration() — safe for dev builds.
+    // Before Play Store release, replace with explicit Room migrations.
 )
 abstract class KipitaDatabase : RoomDatabase() {
     abstract fun travelNoticeDao(): TravelNoticeDao
@@ -22,4 +25,6 @@ abstract class KipitaDatabase : RoomDatabase() {
     abstract fun tripMessageDao(): TripMessageDao
     abstract fun directMessageDao(): DirectMessageDao
     abstract fun errorLogDao(): ErrorLogDao
+    abstract fun tripDao(): TripDao
 }
+
