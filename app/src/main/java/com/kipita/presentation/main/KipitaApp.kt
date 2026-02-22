@@ -26,14 +26,14 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Groups
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,7 +44,6 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -62,7 +61,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kipita.presentation.ai.AiAssistantScreen
+import com.kipita.presentation.common.KipitaErrorBoundary
 import com.kipita.presentation.explore.ExploreScreen
+import com.kipita.presentation.home.HomeScreen
 import com.kipita.presentation.map.MapScreen
 import com.kipita.presentation.profile.ProfileSetupScreen
 import com.kipita.presentation.settings.SettingsScreen
@@ -79,11 +80,12 @@ import com.kipita.presentation.trips.MyTripsScreen
 import com.kipita.presentation.wallet.WalletScreen
 
 // ---------------------------------------------------------------------------
-// Navigation routes — 6 tabs, AI in the center (position 3)
-//   Trips | Explore | AI | Social | Wallet | Settings
+// Navigation routes
+// 6 bottom-tab routes: HOME | EXPLORE | AI(centre) | TRIPS | WALLET | SOCIAL
+// SETTINGS is not in the nav bar — accessed via the top-right profile avatar menu
 // ---------------------------------------------------------------------------
 enum class MainRoute {
-    TRIPS, EXPLORE, AI, SOCIAL, WALLET, SETTINGS
+    HOME, EXPLORE, AI, TRIPS, WALLET, SOCIAL, SETTINGS
 }
 
 private data class NavItem(
@@ -95,27 +97,25 @@ private data class NavItem(
 )
 
 private val navItems = listOf(
-    NavItem(MainRoute.TRIPS,    "Trips",    Icons.Filled.Flight,        Icons.Outlined.Flight),
-    NavItem(MainRoute.EXPLORE,  "Explore",  Icons.Filled.TravelExplore, Icons.Outlined.TravelExplore),
-    NavItem(MainRoute.AI,       "AI",       Icons.Filled.AutoAwesome,   Icons.Outlined.AutoAwesome,  isCenter = true),
-    NavItem(MainRoute.SOCIAL,   "Social",   Icons.Filled.Groups,        Icons.Outlined.Groups),
-    NavItem(MainRoute.WALLET,   "Wallet",   Icons.Filled.Wallet,        Icons.Outlined.Wallet),
-    NavItem(MainRoute.SETTINGS, "Settings", Icons.Filled.Settings,      Icons.Outlined.Settings)
+    NavItem(MainRoute.HOME,    "Home",    Icons.Filled.Home,          Icons.Outlined.Home),
+    NavItem(MainRoute.EXPLORE, "Explore", Icons.Filled.TravelExplore, Icons.Outlined.TravelExplore),
+    NavItem(MainRoute.AI,      "AI",      Icons.Filled.AutoAwesome,   Icons.Outlined.AutoAwesome, isCenter = true),
+    NavItem(MainRoute.TRIPS,   "Trips",   Icons.Filled.Flight,        Icons.Outlined.Flight),
+    NavItem(MainRoute.WALLET,  "Wallet",  Icons.Filled.Wallet,        Icons.Outlined.Wallet),
+    NavItem(MainRoute.SOCIAL,  "Social",  Icons.Filled.Groups,        Icons.Outlined.Groups)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KipitaApp() {
-    var route by rememberSaveable { mutableStateOf(MainRoute.TRIPS) }
+    var route by rememberSaveable { mutableStateOf(MainRoute.HOME) }
     var showProfile by rememberSaveable { mutableStateOf(false) }
     var showMap by rememberSaveable { mutableStateOf(false) }
     var aiPreFill by rememberSaveable { mutableStateOf("") }
-    // User state
     var isGuest by rememberSaveable { mutableStateOf(true) }
     var userName by rememberSaveable { mutableStateOf("") }
     var showProfileMenu by rememberSaveable { mutableStateOf(false) }
 
-    // Determine if a back-navigation is available
     val canGoBack = showMap || showProfile
     val onBack: () -> Unit = {
         when {
@@ -172,7 +172,9 @@ fun KipitaApp() {
                                     Icon(
                                         imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
                                         contentDescription = item.label,
-                                        modifier = Modifier.size(22.dp).scale(scale)
+                                        modifier = Modifier
+                                            .size(22.dp)
+                                            .scale(scale)
                                     )
                                 }
                             },
@@ -202,47 +204,86 @@ fun KipitaApp() {
                 .background(Color(0xFFFAFAFA))
         ) {
             when {
-                showMap -> MapScreen(
-                    paddingValues = padding,
-                    onNavigateBack = { showMap = false },
-                    onAiSuggest = { prompt -> aiPreFill = prompt; showMap = false; route = MainRoute.AI }
-                )
-                showProfile -> ProfileSetupScreen(
-                    paddingValues = padding,
-                    onBack = { showProfile = false },
-                    onSave = { savedName ->
-                        if (savedName.isNotBlank()) {
-                            userName = savedName
-                            isGuest = false
+                showMap -> KipitaErrorBoundary("MapScreen") { _ ->
+                    MapScreen(
+                        paddingValues = padding,
+                        onNavigateBack = { showMap = false },
+                        onAiSuggest = { prompt ->
+                            aiPreFill = prompt
+                            showMap = false
+                            route = MainRoute.AI
                         }
-                        showProfile = false
-                    }
-                )
-                else -> Crossfade(targetState = route, label = "route-transition") { destination ->
+                    )
+                }
+
+                showProfile -> KipitaErrorBoundary("ProfileSetupScreen") { _ ->
+                    ProfileSetupScreen(
+                        paddingValues = padding,
+                        onBack = { showProfile = false },
+                        onSave = { savedName ->
+                            if (savedName.isNotBlank()) {
+                                userName = savedName
+                                isGuest = false
+                            }
+                            showProfile = false
+                        }
+                    )
+                }
+
+                else -> Crossfade(
+                    targetState = route,
+                    label = "route-transition"
+                ) { destination ->
                     when (destination) {
-                        MainRoute.TRIPS   -> MyTripsScreen(
-                            paddingValues = padding,
-                            onAiSuggest = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
-                            onOpenWallet = { route = MainRoute.WALLET },
-                            onOpenMap    = { showMap = true }
-                        )
-                        MainRoute.EXPLORE -> ExploreScreen(
-                            paddingValues = padding,
-                            onAiSuggest = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
-                            onOpenMap   = { showMap = true }
-                        )
-                        MainRoute.AI      -> AiAssistantScreen(
-                            paddingValues = padding,
-                            preFillPrompt = aiPreFill.also { aiPreFill = "" }
-                        )
-                        MainRoute.SOCIAL    -> SocialScreen(padding)
-                        MainRoute.WALLET    -> WalletScreen(padding)
-                        MainRoute.SETTINGS  -> SettingsScreen(paddingValues = padding)
+                        MainRoute.HOME -> KipitaErrorBoundary("HomeScreen") { _ ->
+                            HomeScreen(
+                                paddingValues = padding,
+                                onOpenWallet = { route = MainRoute.WALLET },
+                                onOpenMap    = { showMap = true },
+                                onOpenAI     = { prompt -> aiPreFill = prompt; route = MainRoute.AI }
+                            )
+                        }
+
+                        MainRoute.EXPLORE -> KipitaErrorBoundary("ExploreScreen") { _ ->
+                            ExploreScreen(
+                                paddingValues = padding,
+                                onAiSuggest = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
+                                onOpenMap   = { showMap = true }
+                            )
+                        }
+
+                        MainRoute.AI -> KipitaErrorBoundary("AiAssistantScreen") { _ ->
+                            AiAssistantScreen(
+                                paddingValues = padding,
+                                preFillPrompt = aiPreFill.also { aiPreFill = "" }
+                            )
+                        }
+
+                        MainRoute.TRIPS -> KipitaErrorBoundary("MyTripsScreen") { _ ->
+                            MyTripsScreen(
+                                paddingValues = padding,
+                                onAiSuggest  = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
+                                onOpenWallet = { route = MainRoute.WALLET },
+                                onOpenMap    = { showMap = true }
+                            )
+                        }
+
+                        MainRoute.WALLET -> KipitaErrorBoundary("WalletScreen") { _ ->
+                            WalletScreen(padding)
+                        }
+
+                        MainRoute.SOCIAL -> KipitaErrorBoundary("SocialScreen") { _ ->
+                            SocialScreen(padding)
+                        }
+
+                        MainRoute.SETTINGS -> KipitaErrorBoundary("SettingsScreen") { _ ->
+                            SettingsScreen(paddingValues = padding)
+                        }
                     }
                 }
             }
 
-            // Profile menu sheet
+            // Profile / account bottom sheet
             if (showProfileMenu) {
                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
                 ModalBottomSheet(
@@ -252,12 +293,12 @@ fun KipitaApp() {
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ) {
                     ProfileMenuContent(
-                        isGuest = isGuest,
-                        userName = userName,
-                        onSetupProfile = { showProfileMenu = false; showProfile = true },
+                        isGuest           = isGuest,
+                        userName          = userName,
+                        onSetupProfile    = { showProfileMenu = false; showProfile = true },
                         onContinueAsGuest = { isGuest = true; showProfileMenu = false },
-                        onSignOut = { isGuest = true; userName = ""; showProfileMenu = false },
-                        onSettings = { showProfileMenu = false; route = MainRoute.SETTINGS }
+                        onSignOut         = { isGuest = true; userName = ""; showProfileMenu = false },
+                        onSettings        = { showProfileMenu = false; route = MainRoute.SETTINGS }
                     )
                 }
             }
@@ -266,7 +307,7 @@ fun KipitaApp() {
 }
 
 // ---------------------------------------------------------------------------
-// Minimal top bar with silver back button + profile circle
+// Top bar — silver back button (←) + profile avatar, visible on every screen
 // ---------------------------------------------------------------------------
 @Composable
 private fun KipitaTopBar(
@@ -284,17 +325,13 @@ private fun KipitaTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Silver back button — minimal, always present but dimmed when no back target
+        // Silver back button — always reserves space; only visible/clickable when navigable
         Box(
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(
-                    if (canGoBack) Color(0xFFE0E0E0) else Color.Transparent
-                )
-                .then(
-                    if (canGoBack) Modifier.clickable(onClick = onBack) else Modifier
-                ),
+                .background(if (canGoBack) Color(0xFFE0E0E0) else Color.Transparent)
+                .then(if (canGoBack) Modifier.clickable(onClick = onBack) else Modifier),
             contentAlignment = Alignment.Center
         ) {
             if (canGoBack) {
@@ -307,7 +344,7 @@ private fun KipitaTopBar(
             }
         }
 
-        // User profile / guest circle at top right
+        // Profile / guest circle — always visible top-right on every screen
         Box(
             modifier = Modifier
                 .size(36.dp)
@@ -340,7 +377,7 @@ private fun KipitaTopBar(
 }
 
 // ---------------------------------------------------------------------------
-// Profile menu bottom sheet content
+// Profile menu — Sign In | Continue as Guest | User Profile | Settings
 // ---------------------------------------------------------------------------
 @Composable
 private fun ProfileMenuContent(
@@ -357,7 +394,7 @@ private fun ProfileMenuContent(
             .padding(horizontal = 20.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Avatar + name
+        // Avatar + name header
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(vertical = 8.dp)
@@ -396,7 +433,6 @@ private fun ProfileMenuContent(
         }
 
         if (isGuest) {
-            // Sign in / Create Profile
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -412,7 +448,6 @@ private fun ProfileMenuContent(
                     color = Color.White
                 )
             }
-            // Continue as guest
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -429,10 +464,9 @@ private fun ProfileMenuContent(
                 )
             }
         } else {
-            // Profile info options
             ProfileMenuItem("View / Edit Profile", onClick = onSetupProfile)
-            ProfileMenuItem("Settings", onClick = onSettings)
-            ProfileMenuItem("Sign Out", onClick = onSignOut, isDestructive = true)
+            ProfileMenuItem("Settings",            onClick = onSettings)
+            ProfileMenuItem("Sign Out",            onClick = onSignOut, isDestructive = true)
         }
 
         Spacer(Modifier.height(16.dp))
@@ -440,7 +474,11 @@ private fun ProfileMenuContent(
 }
 
 @Composable
-private fun ProfileMenuItem(label: String, onClick: () -> Unit, isDestructive: Boolean = false) {
+private fun ProfileMenuItem(
+    label: String,
+    onClick: () -> Unit,
+    isDestructive: Boolean = false
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -457,7 +495,7 @@ private fun ProfileMenuItem(label: String, onClick: () -> Unit, isDestructive: B
             color = if (isDestructive) Color(0xFFE53935) else KipitaOnSurface
         )
         Icon(
-            Icons.Default.ArrowBack, // reuse icon rotated 180 as chevron right
+            Icons.Default.ArrowBack,
             contentDescription = null,
             tint = KipitaTextTertiary,
             modifier = Modifier.size(16.dp)
