@@ -2,6 +2,7 @@ package com.kipita.presentation.settings
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -207,6 +208,115 @@ fun SettingsScreen(
                         onSave = { viewModel.saveCashAppToken(it) },
                         onClear = null   // CashApp clear not exposed yet — coming soon
                     )
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // ----------------------------------------------------------------
+            // Partner & Affiliate Links
+            // ----------------------------------------------------------------
+            item {
+                SectionHeader(title = "Partner Links & Affiliates")
+            }
+
+            item {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    val affiliates = listOf(
+                        AffiliateEntry(
+                            name       = "Fold",
+                            desc       = "Bitcoin rewards debit card — earn sats on every purchase",
+                            emoji      = "🟠",
+                            url        = "AFFILIATE_FOLD_URL"      // swap for your referral link
+                        ),
+                        AffiliateEntry(
+                            name       = "Swan Bitcoin",
+                            desc       = "Automated Bitcoin savings & accumulation platform",
+                            emoji      = "🦢",
+                            url        = "AFFILIATE_SWAN_URL"
+                        ),
+                        AffiliateEntry(
+                            name       = "Kinesis",
+                            desc       = "Digital gold & silver — spend, save, and earn yield",
+                            emoji      = "⚡",
+                            url        = "AFFILIATE_KINESIS_URL"
+                        ),
+                        AffiliateEntry(
+                            name       = "Upside",
+                            desc       = "Cash back on gas, groceries, and dining",
+                            emoji      = "⬆️",
+                            url        = "AFFILIATE_UPSIDE_URL"
+                        )
+                    )
+                    affiliates.forEachIndexed { index, affiliate ->
+                        AffiliateRow(entry = affiliate, context = context)
+                        if (index < affiliates.lastIndex) {
+                            Divider(color = BorderGray, thickness = 0.5.dp)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // ----------------------------------------------------------------
+            // Share Kipita
+            // ----------------------------------------------------------------
+            item {
+                SectionHeader(title = "Share")
+            }
+
+            item {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF0A0F1E))
+                        .clickable {
+                            runCatching {
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_SUBJECT, "Check out Kipita!")
+                                    putExtra(
+                                        Intent.EXTRA_TEXT,
+                                        "I've been using Kipita — the smartest travel + finance super app. Check it out: https://Kipita.com"
+                                    )
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "Share Kipita"))
+                            }
+                        }
+                        .padding(horizontal = 18.dp, vertical = 16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text("🚀", fontSize = 22.sp)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Share Kipita with Friends",
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp
+                            )
+                            Text(
+                                "kipita.com",
+                                color = TextMuted,
+                                fontSize = 12.sp
+                            )
+                        }
+                        Icon(
+                            Icons.Filled.ChevronRight,
+                            contentDescription = null,
+                            tint = TextMuted,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
                 Spacer(Modifier.height(16.dp))
             }
@@ -551,5 +661,63 @@ private fun ApiKeyField(
                 }
             }
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Affiliate link helpers
+// ---------------------------------------------------------------------------
+
+private data class AffiliateEntry(
+    val name: String,
+    val desc: String,
+    val emoji: String,
+    val url: String        // placeholder — swap with live referral/affiliate link
+)
+
+@Composable
+private fun AffiliateRow(entry: AffiliateEntry, context: android.content.Context) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                if (!entry.url.startsWith("AFFILIATE_")) {
+                    runCatching {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(entry.url)))
+                    }
+                }
+            }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(CardBg),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(entry.emoji, fontSize = 20.sp)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                entry.name,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = Color(0xFF111827)
+            )
+            Text(
+                entry.desc,
+                fontSize = 12.sp,
+                color = TextMuted
+            )
+        }
+        Icon(
+            Icons.Filled.ChevronRight,
+            contentDescription = null,
+            tint = BorderGray,
+            modifier = Modifier.size(18.dp)
+        )
     }
 }

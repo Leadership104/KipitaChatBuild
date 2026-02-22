@@ -1,5 +1,6 @@
 package com.kipita.presentation.main
 
+import android.content.Intent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -54,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -61,6 +63,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kipita.presentation.ai.AiAssistantScreen
+import com.kipita.presentation.auth.AuthScreen
 import com.kipita.presentation.common.KipitaErrorBoundary
 import com.kipita.presentation.explore.ExploreScreen
 import com.kipita.presentation.home.HomeScreen
@@ -77,6 +80,7 @@ import com.kipita.presentation.theme.KipitaRedLight
 import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
 import com.kipita.presentation.trips.MyTripsScreen
+import com.kipita.presentation.trips.TripDetailScreen
 import com.kipita.presentation.wallet.WalletScreen
 
 // ---------------------------------------------------------------------------
@@ -110,15 +114,19 @@ private val navItems = listOf(
 fun KipitaApp() {
     var route by rememberSaveable { mutableStateOf(MainRoute.HOME) }
     var showProfile by rememberSaveable { mutableStateOf(false) }
+    var showAuth by rememberSaveable { mutableStateOf(false) }
     var showMap by rememberSaveable { mutableStateOf(false) }
     var aiPreFill by rememberSaveable { mutableStateOf("") }
     var isGuest by rememberSaveable { mutableStateOf(true) }
     var userName by rememberSaveable { mutableStateOf("") }
     var showProfileMenu by rememberSaveable { mutableStateOf(false) }
+    var selectedTripId by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val canGoBack = showMap || showProfile
+    val canGoBack = showMap || showProfile || showAuth || selectedTripId != null
     val onBack: () -> Unit = {
         when {
+            selectedTripId != null -> selectedTripId = null
+            showAuth    -> showAuth = false
             showMap     -> showMap = false
             showProfile -> showProfile = false
             else        -> {}
@@ -136,7 +144,7 @@ fun KipitaApp() {
             )
         },
         bottomBar = {
-            if (!showMap && !showProfile) {
+            if (!showMap && !showProfile && !showAuth && selectedTripId == null) {
                 NavigationBar(
                     containerColor = KipitaNavBg,
                     tonalElevation = 0.dp,
@@ -204,6 +212,35 @@ fun KipitaApp() {
                 .background(Color(0xFFFAFAFA))
         ) {
             when {
+                selectedTripId != null -> KipitaErrorBoundary("TripDetailScreen") { _ ->
+                    TripDetailScreen(
+                        tripId = selectedTripId!!,
+                        paddingValues = padding,
+                        onBack = { selectedTripId = null },
+                        onAiSuggest = { prompt ->
+                            selectedTripId = null
+                            aiPreFill = prompt
+                            route = MainRoute.AI
+                        }
+                    )
+                }
+
+                showAuth -> KipitaErrorBoundary("AuthScreen") { _ ->
+                    AuthScreen(
+                        paddingValues = padding,
+                        onBack = { showAuth = false },
+                        onAuthSuccess = { displayName ->
+                            userName = displayName
+                            isGuest = false
+                            showAuth = false
+                        },
+                        onContinueAsGuest = {
+                            isGuest = true
+                            showAuth = false
+                        }
+                    )
+                }
+
                 showMap -> KipitaErrorBoundary("MapScreen") { _ ->
                     MapScreen(
                         paddingValues = padding,
@@ -264,7 +301,8 @@ fun KipitaApp() {
                                 paddingValues = padding,
                                 onAiSuggest  = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
                                 onOpenWallet = { route = MainRoute.WALLET },
-                                onOpenMap    = { showMap = true }
+                                onOpenMap    = { showMap = true },
+                                onTripClick  = { tripId -> selectedTripId = tripId }
                             )
                         }
 
@@ -295,7 +333,7 @@ fun KipitaApp() {
                     ProfileMenuContent(
                         isGuest           = isGuest,
                         userName          = userName,
-                        onSetupProfile    = { showProfileMenu = false; showProfile = true },
+                        onSetupProfile    = { showProfileMenu = false; if (isGuest) showAuth = true else showProfile = true },
                         onContinueAsGuest = { isGuest = true; showProfileMenu = false },
                         onSignOut         = { isGuest = true; userName = ""; showProfileMenu = false },
                         onSettings        = { showProfileMenu = false; route = MainRoute.SETTINGS }
@@ -388,6 +426,7 @@ private fun ProfileMenuContent(
     onSignOut: () -> Unit,
     onSettings: () -> Unit
 ) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -467,6 +506,41 @@ private fun ProfileMenuContent(
             ProfileMenuItem("View / Edit Profile", onClick = onSetupProfile)
             ProfileMenuItem("Settings",            onClick = onSettings)
             ProfileMenuItem("Sign Out",            onClick = onSignOut, isDestructive = true)
+        }
+
+        // Share Kipita — visible to all users (guest and signed-in)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(KipitaRedLight)
+                .clickable {
+                    runCatching {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, "Check out Kipita!")
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "I've been using Kipita — the smartest travel + finance super app. Check it out: https://Kipita.com"
+                            )
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, "Share Kipita"))
+                    }
+                }
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("🚀", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "Share Kipita with Friends",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = KipitaRed
+                )
+            }
         }
 
         Spacer(Modifier.height(16.dp))
