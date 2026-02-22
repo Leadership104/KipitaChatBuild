@@ -67,7 +67,11 @@ private val travelStyleOptions = listOf(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ProfileSetupScreen(paddingValues: PaddingValues) {
+fun ProfileSetupScreen(
+    paddingValues: PaddingValues,
+    onBack: () -> Unit = {},
+    onSave: (String) -> Unit = {}
+) {
     var visible by remember { mutableStateOf(false) }
     var isGroup by remember { mutableStateOf(false) }
     var displayName by remember { mutableStateOf("") }
@@ -279,6 +283,7 @@ fun ProfileSetupScreen(paddingValues: PaddingValues) {
                                 .background(KipitaRed)
                                 .clickable {
                                     setupComplete = true
+                                    onSave(displayName.ifBlank { groupName })
                                 }
                                 .padding(16.dp),
                             contentAlignment = Alignment.Center

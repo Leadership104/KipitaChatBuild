@@ -1,5 +1,11 @@
 package com.kipita.presentation.ai
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -67,6 +73,7 @@ import com.kipita.presentation.theme.KipitaRedLight
 import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
 import kotlinx.coroutines.delay
+import java.util.Locale
 
 private data class QuickAction(
     val icon: ImageVector,
@@ -97,6 +104,40 @@ fun AiAssistantScreen(
     var prompt by remember { mutableStateOf(preFillPrompt) }
     var visible by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
+    var isListening by remember { mutableStateOf(false) }
+
+    // Speech recognition launcher
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        isListening = false
+        if (result.resultCode == Activity.RESULT_OK) {
+            val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spokenText = matches?.firstOrNull()
+            if (!spokenText.isNullOrBlank()) {
+                prompt = spokenText
+                loading = true
+                viewModel.analyze("global", spokenText)
+            }
+        }
+    }
+
+    // Audio permission launcher
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Ask Kipita AI anything about travel...")
+            }
+            runCatching {
+                isListening = true
+                speechLauncher.launch(speechIntent)
+            }.onFailure { isListening = false }
+        }
+    }
 
     // Auto-fire when pre-filled from another screen
     LaunchedEffect(preFillPrompt) {
@@ -382,7 +423,23 @@ fun AiAssistantScreen(
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Mic, contentDescription = null, tint = KipitaTextTertiary, modifier = Modifier.size(20.dp))
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(if (isListening) KipitaRed.copy(alpha = 0.15f) else Color.Transparent)
+                        .clickable {
+                            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Mic,
+                        contentDescription = "Speak",
+                        tint = if (isListening) KipitaRed else KipitaTextTertiary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
                 Spacer(Modifier.width(10.dp))
                 BasicTextField(
                     value = prompt,

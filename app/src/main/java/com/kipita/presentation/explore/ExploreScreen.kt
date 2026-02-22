@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
@@ -138,6 +139,7 @@ private val exploreCategories = listOf(
 fun ExploreScreen(
     paddingValues: PaddingValues,
     onAiSuggest: (String) -> Unit = {},
+    onOpenMap: () -> Unit = {},
     viewModel: ExploreViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -354,16 +356,7 @@ fun ExploreScreen(
 
                 Spacer(Modifier.height(8.dp))
 
-                // Data source pills
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    DataSourcePill("Yelp", "📍")
-                    DataSourcePill("Nomad List", "💻")
-                    DataSourcePill("Open-Meteo", "🌡")
-                    DataSourcePill("BTCMap", "₿")
-                    DataSourcePill("ECB", "💱")
-                }
-
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(4.dp))
 
                 // Tab row: Destinations | Places
                 TabRow(
@@ -413,7 +406,8 @@ fun ExploreScreen(
                     visible = visible,
                     searchText = searchText,
                     scope = selectedScope,
-                    onAiSuggest = onAiSuggest
+                    onAiSuggest = onAiSuggest,
+                    onOpenMap = onOpenMap
                 )
                 1 -> PlacesTab(
                     visible = visible,
@@ -449,7 +443,8 @@ private fun DestinationsTab(
     visible: Boolean,
     searchText: String,
     scope: LocationScope,
-    onAiSuggest: (String) -> Unit
+    onAiSuggest: (String) -> Unit,
+    onOpenMap: () -> Unit = {}
 ) {
     val filtered = if (searchText.isBlank()) SampleData.destinations
     else SampleData.destinations.filter {
@@ -461,6 +456,51 @@ private fun DestinationsTab(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Interactive Map button
+        item {
+            AnimatedVisibility(visible = visible, enter = fadeIn(tween(80)) + slideInVertically(tween(80)) { 10 }) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                listOf(Color(0xFF1565C0), Color(0xFF0D47A1))
+                            )
+                        )
+                        .clickable(onClick = onOpenMap)
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.GridView,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Column {
+                            Text(
+                                "Open Interactive Map",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = Color.White
+                            )
+                            Text(
+                                "Yelp-powered local areas • BTC merchants • Nomad hubs",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.75f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // AI quick-prompt bar
         item {
             AnimatedVisibility(visible = visible, enter = fadeIn(tween(100)) + slideInVertically(tween(100)) { 16 }) {

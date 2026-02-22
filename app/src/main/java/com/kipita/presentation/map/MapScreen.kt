@@ -100,7 +100,8 @@ private val tokyoLandmarks = listOf(
 fun MapScreen(
     paddingValues: PaddingValues,
     viewModel: MapViewModel = hiltViewModel(),
-    onAiSuggest: (String) -> Unit = {}
+    onAiSuggest: (String) -> Unit = {},
+    onNavigateBack: (() -> Unit)? = null
 ) {
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
     var selected by remember { mutableStateOf<String?>(null) }
@@ -239,6 +240,46 @@ fun MapScreen(
                             )
                         }
                     }
+                }
+            }
+        }
+
+        // Orange BTCMap toggle button — prominent, above AI button
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn() + slideInVertically { 40 },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 160.dp)
+        ) {
+            val btcActive = state.activeOverlays.contains(OverlayType.BTC_MERCHANTS)
+            Box(
+                modifier = Modifier
+                    .shadow(6.dp, RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(if (btcActive) Color(0xFFF57C00) else Color.White)
+                    .border(
+                        width = 2.dp,
+                        color = Color(0xFFF57C00),
+                        shape = RoundedCornerShape(24.dp)
+                    )
+                    .clickable { viewModel.toggleOverlay(OverlayType.BTC_MERCHANTS) }
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        "₿",
+                        fontSize = 16.sp,
+                        color = if (btcActive) Color.White else Color(0xFFF57C00)
+                    )
+                    Text(
+                        "BTCMap",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (btcActive) Color.White else Color(0xFFF57C00)
+                    )
                 }
             }
         }
