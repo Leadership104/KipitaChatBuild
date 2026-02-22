@@ -110,6 +110,8 @@ fun MapScreen(
     val markerAlpha = remember { Animatable(0f) }
     var bottomSheetExpanded by remember { mutableStateOf(true) }
     var visible by remember { mutableStateOf(false) }
+    // Category filter for bottom sheet: "BTC" | "Food" | "Cafe"
+    var selectedPlaceFilter by remember { mutableStateOf("BTC") }
 
     LaunchedEffect(Unit) {
         viewModel.load("global")
@@ -361,9 +363,13 @@ fun MapScreen(
                                 color = KipitaOnSurface
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                PlaceCategoryPill("₿ BTC", true)
-                                PlaceCategoryPill("🍜 Food", false)
-                                PlaceCategoryPill("☕ Cafe", false)
+                                listOf("₿ BTC", "🍜 Food", "☕ Cafe").forEach { cat ->
+                                    PlaceCategoryPill(
+                                        label = cat,
+                                        selected = selectedPlaceFilter == cat,
+                                        onClick = { selectedPlaceFilter = cat }
+                                    )
+                                }
                             }
                         }
                     }
@@ -373,34 +379,108 @@ fun MapScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            // BTC merchants
-                            items(state.merchants.take(3)) { merchant ->
-                                NearbyPlaceCard(
-                                    emoji = "₿",
-                                    name = merchant.name,
-                                    subtitle = if (merchant.acceptsLightning) "Lightning + On-Chain" else "On-Chain BTC",
-                                    rating = 4.2f,
-                                    isFree = false,
-                                    distance = "0.3 km",
-                                    hasWifi = true,
-                                    verified = merchant.source
-                                )
+                            when (selectedPlaceFilter) {
+                                "₿ BTC" -> {
+                                    // Bitcoin merchants from BTCMap
+                                    if (state.merchants.isEmpty()) {
+                                        item {
+                                            Box(
+                                                modifier = Modifier.fillMaxWidth()
+                                                    .clip(RoundedCornerShape(14.dp))
+                                                    .background(KipitaCardBg)
+                                                    .padding(20.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    "₿ Toggle the orange BTCMap button to load Bitcoin merchants",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = KipitaTextSecondary,
+                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        items(state.merchants.take(5)) { merchant ->
+                                            NearbyPlaceCard(
+                                                emoji = "₿",
+                                                name = merchant.name,
+                                                subtitle = if (merchant.acceptsLightning) "⚡ Lightning + On-Chain" else "On-Chain BTC",
+                                                rating = 4.2f,
+                                                isFree = false,
+                                                distance = "0.3 km",
+                                                hasWifi = true,
+                                                verified = merchant.source
+                                            )
+                                        }
+                                    }
+                                }
+                                "🍜 Food" -> {
+                                    items(state.nomadPlaces.take(4)) { place ->
+                                        NearbyPlaceCard(
+                                            emoji = "🍜",
+                                            name = "${place.city} — Local Dining",
+                                            subtitle = "Cuisine nearby · ${place.country}",
+                                            rating = 4.1f,
+                                            isFree = false,
+                                            distance = "< 1 km",
+                                            hasWifi = false,
+                                            verified = "Yelp"
+                                        )
+                                    }
+                                    if (state.nomadPlaces.isEmpty()) {
+                                        item {
+                                            Box(
+                                                modifier = Modifier.fillMaxWidth()
+                                                    .clip(RoundedCornerShape(14.dp))
+                                                    .background(KipitaCardBg)
+                                                    .padding(20.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    "🍜 Add Yelp API key in Settings to see nearby restaurants",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = KipitaTextSecondary,
+                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                "☕ Cafe" -> {
+                                    items(state.nomadPlaces.take(3)) { place ->
+                                        NearbyPlaceCard(
+                                            emoji = "☕",
+                                            name = "${place.city} Café",
+                                            subtitle = "WiFi ${place.internetMbps} Mbps · Nomad-friendly",
+                                            rating = (place.safetyScore / 2).toFloat(),
+                                            isFree = false,
+                                            distance = "0.5 km",
+                                            hasWifi = true,
+                                            verified = "Nomad List"
+                                        )
+                                    }
+                                    if (state.nomadPlaces.isEmpty()) {
+                                        item {
+                                            Box(
+                                                modifier = Modifier.fillMaxWidth()
+                                                    .clip(RoundedCornerShape(14.dp))
+                                                    .background(KipitaCardBg)
+                                                    .padding(20.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    "☕ Add Yelp API key in Settings to see nearby cafés",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = KipitaTextSecondary,
+                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                            // Nomad places
-                            items(state.nomadPlaces.take(2)) { place ->
-                                NearbyPlaceCard(
-                                    emoji = "💻",
-                                    name = "${place.city}, ${place.country}",
-                                    subtitle = "Internet ${place.internetMbps} Mbps · Safety ${place.safetyScore}",
-                                    rating = (place.safetyScore / 2).toFloat(),
-                                    isFree = false,
-                                    distance = "Nomad hub",
-                                    hasWifi = true,
-                                    verified = "Nomad List"
-                                )
-                            }
-                            // Travel notices
-                            items(state.notices.take(3)) { notice ->
+                            // Travel notices always shown at the bottom
+                            items(state.notices.take(2)) { notice ->
                                 TravelNoticeCard(notice = notice)
                             }
                             item { Spacer(Modifier.height(80.dp)) }
@@ -498,11 +578,11 @@ private fun GlassButton(
 }
 
 @Composable
-private fun PlaceCategoryPill(label: String, selected: Boolean) {
+private fun PlaceCategoryPill(label: String, selected: Boolean, onClick: () -> Unit = {}) {
     Surface(
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
-            .clickable {},
+            .clickable(onClick = onClick),
         color = if (selected) KipitaRedLight else KipitaCardBg,
         shape = RoundedCornerShape(20.dp)
     ) {

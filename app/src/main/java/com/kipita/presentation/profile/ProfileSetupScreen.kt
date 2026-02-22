@@ -28,6 +28,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CameraAlt
@@ -36,13 +38,14 @@ import androidx.compose.material.icons.filled.HeadsetMic
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,6 +91,11 @@ fun ProfileSetupScreen(
     var groupName by remember { mutableStateOf("") }
     var selectedStyles by remember { mutableStateOf(setOf<String>()) }
     var setupComplete by remember { mutableStateOf(false) }
+    // Avatar photo picker
+    var avatarUri by remember { mutableStateOf<Uri?>(null) }
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri -> if (uri != null) avatarUri = uri }
     // Support form state
     var supportText by remember { mutableStateOf("") }
     var supportSent by remember { mutableStateOf(false) }
@@ -163,39 +171,51 @@ fun ProfileSetupScreen(
                 AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically { 30 }) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                         Box {
+                            // Avatar circle — shows picked photo or default icon
                             Box(
                                 modifier = Modifier
                                     .size(88.dp)
                                     .clip(CircleShape)
                                     .background(KipitaCardBg)
-                                    .border(2.dp, KipitaBorder, CircleShape),
+                                    .border(2.dp, if (avatarUri != null) KipitaRed else KipitaBorder, CircleShape)
+                                    .clickable { photoPickerLauncher.launch("image/*") },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    if (isGroup) Icons.Default.Group else Icons.Default.Person,
-                                    contentDescription = null,
-                                    tint = KipitaTextSecondary,
-                                    modifier = Modifier.size(40.dp)
-                                )
+                                if (avatarUri != null) {
+                                    AsyncImage(
+                                        model = avatarUri,
+                                        contentDescription = "Avatar",
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(
+                                        if (isGroup) Icons.Default.Group else Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = KipitaTextSecondary,
+                                        modifier = Modifier.size(40.dp)
+                                    )
+                                }
                             }
+                            // Camera badge — opens image picker
                             Box(
                                 modifier = Modifier
                                     .size(28.dp)
                                     .clip(CircleShape)
                                     .background(KipitaRed)
                                     .align(Alignment.BottomEnd)
-                                    .clickable {},
+                                    .clickable { photoPickerLauncher.launch("image/*") },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Default.CameraAlt, contentDescription = "Pick photo", tint = Color.White, modifier = Modifier.size(14.dp))
                             }
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "Add photo",
+                            text = if (avatarUri != null) "Change photo" else "Add photo",
                             style = MaterialTheme.typography.labelMedium,
                             color = KipitaRed,
-                            modifier = Modifier.clickable {}
+                            modifier = Modifier.clickable { photoPickerLauncher.launch("image/*") }
                         )
                     }
                 }
