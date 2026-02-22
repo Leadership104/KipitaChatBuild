@@ -4,8 +4,28 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.google.services)
-    alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.firebase.crashlytics) apply false
+}
+
+
+val enableFirebasePlugins = providers.gradleProperty("kipita.enableFirebase")
+    .map { it.equals("true", ignoreCase = true) }
+    .orElse(false)
+
+val hasAnyGoogleServicesConfig =
+    file("google-services.json").exists() ||
+        file("src/dev/google-services.json").exists() ||
+        file("src/staging/google-services.json").exists() ||
+        file("src/prod/google-services.json").exists()
+
+if (enableFirebasePlugins.get() && hasAnyGoogleServicesConfig) {
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
+} else {
+    logger.lifecycle(
+        "Skipping Google Services/Crashlytics. Set -Pkipita.enableFirebase=true and provide google-services.json for target flavor to enable."
+    )
 }
 
 android {
@@ -69,17 +89,19 @@ android {
         compose = true
         buildConfig = true
     }
+
+    lint {
+        checkReleaseBuilds = true
+        abortOnError = true
+    }
 }
 
 kotlin {
-    // Override AGP's automatic JetBrains JDK request — accept any vendor (OpenJDK, etc.)
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
+
 
 dependencies {
     implementation(libs.androidx.core.ktx)

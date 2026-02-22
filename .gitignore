@@ -22,3 +22,6 @@ Thumbs.db
 
 # Claude Code
 .claude/
+
+# Optional local Android Studio daemon JDK pin (do not commit)
+gradle/gradle-daemon-jvm.properties

@@ -1,0 +1,6 @@
+# Optional local-only file for Android Studio users.
+# Copy to gradle/gradle-daemon-jvm.properties when needed locally only.
+# This file is intentionally NOT committed (gitignored).
+#
+# Example for Android Studio bundled JBR/JDK 21:
+# toolchainVersion=21

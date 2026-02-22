@@ -200,8 +200,8 @@ fun MapScreen(
             ) {
                 GlassButton(
                     icon = Icons.Default.Layers,
-                    label = "Layers",
-                    onClick = {}
+                    label = if (bottomSheetExpanded) "Collapse" else "Layers",
+                    onClick = { bottomSheetExpanded = !bottomSheetExpanded }
                 )
                 GlassButton(
                     icon = Icons.Default.CloudDownload,
@@ -212,7 +212,9 @@ fun MapScreen(
                 GlassButton(
                     icon = Icons.Default.Navigation,
                     label = "Navigate",
-                    onClick = {}
+                    onClick = {
+                        onAiSuggest("Give me turn-by-turn transit and walking directions from my current location to the best nearby Bitcoin-friendly place.")
+                    }
                 )
 
                 Spacer(Modifier.weight(1f))
