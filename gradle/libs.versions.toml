@@ -1,6 +1,6 @@
 [versions]
 agp = "8.13.2"
-sqlcipher = "4.5.6"
+sqlcipher = "4.5.4"
 kotlin = "2.2.10"
 coreKtx = "1.13.1"
 activityCompose = "1.9.3"

@@ -429,8 +429,9 @@ fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hilt
                                 }
                                 Spacer(Modifier.height(12.dp))
                             }
-                            if (state.error != null) {
-                                Text(state.error, style = MaterialTheme.typography.bodySmall, color = KipitaRed, modifier = Modifier.padding(bottom = 8.dp))
+                            val errorMsg = state.error
+                            if (errorMsg != null) {
+                                Text(errorMsg, style = MaterialTheme.typography.bodySmall, color = KipitaRed, modifier = Modifier.padding(bottom = 8.dp))
                             }
                             Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(KipitaRed)
                                 .clickable(enabled = !state.converting) { viewModel.convert(amount.toDoubleOrNull() ?: 0.0, from, to) }

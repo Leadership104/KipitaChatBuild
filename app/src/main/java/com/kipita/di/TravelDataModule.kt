@@ -47,6 +47,25 @@ object TravelDataModule {
         // SQLCipher AES-256 encrypted database (SOW requirement)
         val passphrase = SQLiteDatabase.getBytes("kipita_secure_v1".toCharArray())
         val factory = SupportFactory(passphrase)
+
+        // Guard: if the existing database file is a plain (unencrypted) SQLite file
+        // from a prior install, SQLCipher cannot open it and the app crashes with
+        // "file is not a database". Detect this by checking the standard SQLite magic
+        // header ("SQLite format 3\0") which is absent from SQLCipher-encrypted files.
+        val dbFile = context.getDatabasePath("kipita.db")
+        if (dbFile.exists()) {
+            try {
+                val magic = ByteArray(16)
+                dbFile.inputStream().use { it.read(magic) }
+                val sqliteMagic = "SQLite format 3\u0000".toByteArray(Charsets.UTF_8)
+                if (magic.contentEquals(sqliteMagic)) {
+                    dbFile.delete()   // unencrypted file — let Room create a fresh encrypted DB
+                }
+            } catch (_: Exception) {
+                dbFile.delete()       // unreadable / corrupt — start fresh
+            }
+        }
+
         return Room.databaseBuilder(context, KipitaDatabase::class.java, "kipita.db")
             .openHelperFactory(factory)
             .fallbackToDestructiveMigration()

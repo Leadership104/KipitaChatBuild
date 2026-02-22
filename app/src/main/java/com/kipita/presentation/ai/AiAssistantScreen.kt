@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -370,7 +371,7 @@ fun AiAssistantScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, bottom = (paddingValues.calculateBottomPadding() + 12.dp))
+                .padding(start = 16.dp, end = 16.dp, bottom = (paddingValues.calculateBottomPadding() + 12.dp))
         ) {
             Row(
                 modifier = Modifier
