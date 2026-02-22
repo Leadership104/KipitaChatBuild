@@ -61,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kipita.presentation.ai.AiAssistantScreen
+import com.kipita.presentation.auth.AuthScreen
 import com.kipita.presentation.common.KipitaErrorBoundary
 import com.kipita.presentation.explore.ExploreScreen
 import com.kipita.presentation.home.HomeScreen
@@ -77,6 +78,7 @@ import com.kipita.presentation.theme.KipitaRedLight
 import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
 import com.kipita.presentation.trips.MyTripsScreen
+import com.kipita.presentation.trips.TripDetailScreen
 import com.kipita.presentation.wallet.WalletScreen
 
 // ---------------------------------------------------------------------------
@@ -110,15 +112,19 @@ private val navItems = listOf(
 fun KipitaApp() {
     var route by rememberSaveable { mutableStateOf(MainRoute.HOME) }
     var showProfile by rememberSaveable { mutableStateOf(false) }
+    var showAuth by rememberSaveable { mutableStateOf(false) }
     var showMap by rememberSaveable { mutableStateOf(false) }
     var aiPreFill by rememberSaveable { mutableStateOf("") }
     var isGuest by rememberSaveable { mutableStateOf(true) }
     var userName by rememberSaveable { mutableStateOf("") }
     var showProfileMenu by rememberSaveable { mutableStateOf(false) }
+    var selectedTripId by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val canGoBack = showMap || showProfile
+    val canGoBack = showMap || showProfile || showAuth || selectedTripId != null
     val onBack: () -> Unit = {
         when {
+            selectedTripId != null -> selectedTripId = null
+            showAuth    -> showAuth = false
             showMap     -> showMap = false
             showProfile -> showProfile = false
             else        -> {}
@@ -136,7 +142,7 @@ fun KipitaApp() {
             )
         },
         bottomBar = {
-            if (!showMap && !showProfile) {
+            if (!showMap && !showProfile && !showAuth && selectedTripId == null) {
                 NavigationBar(
                     containerColor = KipitaNavBg,
                     tonalElevation = 0.dp,
@@ -204,6 +210,35 @@ fun KipitaApp() {
                 .background(Color(0xFFFAFAFA))
         ) {
             when {
+                selectedTripId != null -> KipitaErrorBoundary("TripDetailScreen") { _ ->
+                    TripDetailScreen(
+                        tripId = selectedTripId!!,
+                        paddingValues = padding,
+                        onBack = { selectedTripId = null },
+                        onAiSuggest = { prompt ->
+                            selectedTripId = null
+                            aiPreFill = prompt
+                            route = MainRoute.AI
+                        }
+                    )
+                }
+
+                showAuth -> KipitaErrorBoundary("AuthScreen") { _ ->
+                    AuthScreen(
+                        paddingValues = padding,
+                        onBack = { showAuth = false },
+                        onAuthSuccess = { displayName ->
+                            userName = displayName
+                            isGuest = false
+                            showAuth = false
+                        },
+                        onContinueAsGuest = {
+                            isGuest = true
+                            showAuth = false
+                        }
+                    )
+                }
+
                 showMap -> KipitaErrorBoundary("MapScreen") { _ ->
                     MapScreen(
                         paddingValues = padding,
@@ -264,7 +299,8 @@ fun KipitaApp() {
                                 paddingValues = padding,
                                 onAiSuggest  = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
                                 onOpenWallet = { route = MainRoute.WALLET },
-                                onOpenMap    = { showMap = true }
+                                onOpenMap    = { showMap = true },
+                                onTripClick  = { tripId -> selectedTripId = tripId }
                             )
                         }
 
@@ -295,7 +331,7 @@ fun KipitaApp() {
                     ProfileMenuContent(
                         isGuest           = isGuest,
                         userName          = userName,
-                        onSetupProfile    = { showProfileMenu = false; showProfile = true },
+                        onSetupProfile    = { showProfileMenu = false; if (isGuest) showAuth = true else showProfile = true },
                         onContinueAsGuest = { isGuest = true; showProfileMenu = false },
                         onSignOut         = { isGuest = true; userName = ""; showProfileMenu = false },
                         onSettings        = { showProfileMenu = false; route = MainRoute.SETTINGS }
