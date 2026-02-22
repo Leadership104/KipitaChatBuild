@@ -1,5 +1,6 @@
 package com.kipita.presentation.main
 
+import android.content.Intent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -54,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -424,6 +426,7 @@ private fun ProfileMenuContent(
     onSignOut: () -> Unit,
     onSettings: () -> Unit
 ) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -503,6 +506,41 @@ private fun ProfileMenuContent(
             ProfileMenuItem("View / Edit Profile", onClick = onSetupProfile)
             ProfileMenuItem("Settings",            onClick = onSettings)
             ProfileMenuItem("Sign Out",            onClick = onSignOut, isDestructive = true)
+        }
+
+        // Share Kipita — visible to all users (guest and signed-in)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(KipitaRedLight)
+                .clickable {
+                    runCatching {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, "Check out Kipita!")
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "I've been using Kipita — the smartest travel + finance super app. Check it out: https://Kipita.com"
+                            )
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, "Share Kipita"))
+                    }
+                }
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("🚀", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "Share Kipita with Friends",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = KipitaRed
+                )
+            }
         }
 
         Spacer(Modifier.height(16.dp))

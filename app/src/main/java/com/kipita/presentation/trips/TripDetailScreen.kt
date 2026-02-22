@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +38,7 @@ import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.LocalTaxi
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -226,67 +229,109 @@ fun TripDetailScreen(
             }
         }
 
-        // ── Logistics bar ─────────────────────────────────────────────────────
+        // ── Book & Manage bar (5 options: Flight · Hotel · Car · Uber · Lyft) ──
         item {
             AnimatedVisibility(visible = true, enter = fadeIn() + slideInVertically { 20 }) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color.White)
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        .padding(vertical = 12.dp)
                 ) {
-                    LogisticChip(
-                        icon = Icons.Default.FlightTakeoff,
-                        label = "Flight",
-                        value = trip.flightNumber.ifBlank { "— Add flight" },
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            if (trip.flightNumber.isBlank()) {
-                                onAiSuggest("Find flights to ${trip.destination} around ${trip.startDate.format(dateFormatter)}")
-                            } else {
-                                runCatching {
-                                    context.startActivity(
-                                        Intent(Intent.ACTION_VIEW,
-                                            Uri.parse("https://www.google.com/flights?hl=en#flt=${trip.flightNumber}"))
-                                    )
+                    Text(
+                        "BOOK & MANAGE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = KipitaTextTertiary,
+                        modifier = Modifier.padding(horizontal = 16.dp, bottom = 8.dp),
+                        letterSpacing = 1.sp
+                    )
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // ✈️ Flights
+                        item {
+                            LogisticChip(
+                                icon = Icons.Default.FlightTakeoff,
+                                label = "Flights",
+                                value = trip.flightNumber.ifBlank { "Search" },
+                                onClick = {
+                                    val url = if (trip.flightNumber.isNotBlank())
+                                        "https://www.google.com/flights?hl=en#flt=${trip.flightNumber}"
+                                    else
+                                        "https://www.google.com/flights"
+                                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
                                 }
-                            }
+                            )
                         }
-                    )
-                    LogisticChip(
-                        icon = Icons.Default.Hotel,
-                        label = "Hotel",
-                        value = trip.hotelName.ifBlank { "— Add hotel" },
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            if (trip.hotelName.isBlank()) {
-                                onAiSuggest("Find hotels in ${trip.destination} for ${trip.durationDays} nights")
-                            } else {
-                                runCatching {
-                                    context.startActivity(
-                                        Intent(Intent.ACTION_VIEW,
-                                            Uri.parse("https://www.booking.com/searchresults.html?ss=${Uri.encode(trip.hotelName)}"))
-                                    )
+                        // 🏨 Hotels
+                        item {
+                            LogisticChip(
+                                icon = Icons.Default.Hotel,
+                                label = "Hotels",
+                                value = trip.hotelName.ifBlank { "Search" },
+                                onClick = {
+                                    val q = trip.hotelName.ifBlank { trip.destination }
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_VIEW,
+                                                Uri.parse("https://www.booking.com/searchresults.html?ss=${Uri.encode(q)}"))
+                                        )
+                                    }
                                 }
-                            }
+                            )
                         }
-                    )
-                    LogisticChip(
-                        icon = Icons.Default.DirectionsCar,
-                        label = "Transport",
-                        value = "Uber / Lyft",
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            runCatching {
-                                val uberIntent = Intent(Intent.ACTION_VIEW, Uri.parse("uber://"))
-                                if (uberIntent.resolveActivity(context.packageManager) != null)
-                                    context.startActivity(uberIntent)
-                                else
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://uber.com")))
-                            }
+                        // 🚗 Car Rental
+                        item {
+                            LogisticChip(
+                                icon = Icons.Default.DirectionsCar,
+                                label = "Car Rental",
+                                value = "Search",
+                                onClick = {
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_VIEW,
+                                                Uri.parse("https://www.rentalcars.com/en/searchresults/?dropoff=${Uri.encode(trip.destination)}"))
+                                        )
+                                    }
+                                }
+                            )
                         }
-                    )
+                        // 🚕 Uber
+                        item {
+                            LogisticChip(
+                                icon = Icons.Default.LocalTaxi,
+                                label = "Uber",
+                                value = "Request",
+                                onClick = {
+                                    runCatching {
+                                        val deep = Intent(Intent.ACTION_VIEW, Uri.parse("uber://"))
+                                        if (deep.resolveActivity(context.packageManager) != null)
+                                            context.startActivity(deep)
+                                        else
+                                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://uber.com")))
+                                    }
+                                }
+                            )
+                        }
+                        // 🟣 Lyft
+                        item {
+                            LogisticChip(
+                                icon = Icons.Default.LocalTaxi,
+                                label = "Lyft",
+                                value = "Request",
+                                onClick = {
+                                    runCatching {
+                                        val deep = Intent(Intent.ACTION_VIEW, Uri.parse("lyft://ridetype?id=lyft"))
+                                        if (deep.resolveActivity(context.packageManager) != null)
+                                            context.startActivity(deep)
+                                        else
+                                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://lyft.com")))
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
