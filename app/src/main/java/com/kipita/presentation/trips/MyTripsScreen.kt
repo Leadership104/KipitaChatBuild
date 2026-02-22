@@ -1,5 +1,7 @@
 package com.kipita.presentation.trips
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -28,17 +30,28 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.FlightTakeoff
+import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.LocalTaxi
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,7 +65,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,13 +82,22 @@ import com.kipita.presentation.theme.KipitaRedLight
 import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyTripsScreen(
     paddingValues: PaddingValues,
-    onAiSuggest: (String) -> Unit = {}
+    onAiSuggest: (String) -> Unit = {},
+    onOpenWallet: () -> Unit = {},
+    onOpenMap: () -> Unit = {}
 ) {
     var visible by remember { mutableStateOf(false) }
+    var selectedTripId by remember { mutableStateOf<String?>(null) }
+    var showPlanSheet by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+
     LaunchedEffect(Unit) {
         delay(80)
         visible = true
@@ -111,7 +136,7 @@ fun MyTripsScreen(
                         )
                         Spacer(Modifier.height(14.dp))
                         // AI Quick Actions row
-                        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             val prompts = listOf(
                                 "✈️ Plan a new trip" to "Help me plan my next international trip as a digital nomad. What are the best destinations for Q2 2026?",
                                 "🏨 Find hotels" to "What are the best hotels and accommodation options for digital nomads?",
@@ -121,16 +146,16 @@ fun MyTripsScreen(
                             items(prompts.size) { i ->
                                 val (label, aiPrompt) = prompts[i]
                                 Surface(
-                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                                    shape = RoundedCornerShape(20.dp),
                                     color = KipitaRedLight
                                 ) {
                                     Text(
                                         text = label,
-                                        modifier = androidx.compose.ui.Modifier
+                                        modifier = Modifier
                                             .clickable { onAiSuggest(aiPrompt) }
                                             .padding(horizontal = 12.dp, vertical = 7.dp),
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                                            fontWeight = FontWeight.SemiBold
                                         ),
                                         color = KipitaRed
                                     )
@@ -151,7 +176,11 @@ fun MyTripsScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             itemsIndexed(SampleData.upcomingTrips) { index, trip ->
-                                TripCard(trip = trip, index = index)
+                                TripCard(
+                                    trip = trip,
+                                    index = index,
+                                    onClick = { selectedTripId = trip.id }
+                                )
                             }
                         }
                     }
@@ -160,7 +189,7 @@ fun MyTripsScreen(
 
             item { Spacer(Modifier.height(28.dp)) }
 
-            // Past Trips section
+            // Past Trips section — no weather icons
             item {
                 AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically { 50 }) {
                     SectionHeader("Past Trips", "${SampleData.pastTrips.size} trips")
@@ -172,13 +201,16 @@ fun MyTripsScreen(
                     visible = visible,
                     enter = fadeIn() + slideInVertically { 40 + index * 20 }
                 ) {
-                    PastTripRow(trip = trip, modifier = Modifier.padding(horizontal = 20.dp, vertical = 5.dp))
+                    PastTripRow(
+                        trip = trip,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 5.dp)
+                    )
                 }
             }
 
             item { Spacer(Modifier.height(28.dp)) }
 
-            // Quick Tools
+            // Quick Tools — with functional links
             item {
                 AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically { 60 }) {
                     Column {
@@ -192,27 +224,83 @@ fun MyTripsScreen(
                             QuickToolCard(
                                 icon = Icons.Default.SwapHoriz,
                                 label = "Currency",
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = { onOpenWallet() }
                             )
                             QuickToolCard(
                                 icon = Icons.Default.Map,
                                 label = "Offline Maps",
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = { onOpenMap() }
                             )
                             QuickToolCard(
                                 icon = Icons.Default.Language,
                                 label = "Translate",
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    runCatching {
+                                        uriHandler.openUri("https://translate.google.com")
+                                    }
+                                }
                             )
                         }
                     }
                 }
             }
+
+            item { Spacer(Modifier.height(28.dp)) }
+
+            // Transport Options section
+            item {
+                AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically { 70 }) {
+                    Column {
+                        SectionHeader("Book Transport", "")
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            val transports = listOf(
+                                Triple(Icons.Default.FlightTakeoff, "Flights", "https://www.google.com/flights"),
+                                Triple(Icons.Default.Hotel, "Hotels", "https://www.booking.com"),
+                                Triple(Icons.Default.DirectionsCar, "Car Rental", "https://www.rentalcars.com"),
+                                Triple(Icons.Default.LocalTaxi, "Uber", "uber://"),
+                                Triple(Icons.Default.LocalTaxi, "Lyft", "lyft://"),
+                                Triple(Icons.Default.Anchor, "Cruise", "https://www.cruisecritic.com")
+                            )
+                            items(transports.size) { i ->
+                                val (icon, label, deepLink) = transports[i]
+                                TransportChip(
+                                    icon = icon,
+                                    label = label,
+                                    onClick = {
+                                        runCatching {
+                                            // Try app deep-link first, fall back to web
+                                            if (deepLink.startsWith("uber://") || deepLink.startsWith("lyft://")) {
+                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deepLink))
+                                                if (intent.resolveActivity(context.packageManager) != null) {
+                                                    context.startActivity(intent)
+                                                } else {
+                                                    val webUrl = if (label == "Uber") "https://uber.com" else "https://lyft.com"
+                                                    uriHandler.openUri(webUrl)
+                                                }
+                                            } else {
+                                                uriHandler.openUri(deepLink)
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item { Spacer(Modifier.height(28.dp)) }
         }
 
-        // FAB
+        // FAB — opens Plan Trip sheet
         FloatingActionButton(
-            onClick = {},
+            onClick = { showPlanSheet = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 20.dp, bottom = (paddingValues.calculateBottomPadding() + 16.dp)),
@@ -220,11 +308,267 @@ fun MyTripsScreen(
             contentColor = Color.White,
             shape = CircleShape
         ) {
-            Icon(Icons.Default.Add, contentDescription = "New Trip")
+            Icon(Icons.Default.Add, contentDescription = "Plan New Trip")
+        }
+    }
+
+    // Trip Itinerary Bottom Sheet (for upcoming trips)
+    val selectedTrip = SampleData.upcomingTrips.find { it.id == selectedTripId }
+    if (selectedTrip != null) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+        ModalBottomSheet(
+            onDismissRequest = { selectedTripId = null },
+            sheetState = sheetState,
+            containerColor = Color.White,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            TripItinerarySheet(trip = selectedTrip, onClose = { selectedTripId = null })
+        }
+    }
+
+    // Plan New Trip Bottom Sheet
+    if (showPlanSheet) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { showPlanSheet = false },
+            sheetState = sheetState,
+            containerColor = Color.White,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            PlanTripSheet(
+                onClose = { showPlanSheet = false },
+                onAiPlan = { prompt ->
+                    showPlanSheet = false
+                    onAiSuggest(prompt)
+                }
+            )
         }
     }
 }
 
+// ---------------------------------------------------------------------------
+// Trip Itinerary Bottom Sheet content
+// ---------------------------------------------------------------------------
+@Composable
+private fun TripItinerarySheet(trip: Trip, onClose: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    trip.destination,
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    color = KipitaOnSurface
+                )
+                Text(
+                    "${trip.country} · ${trip.durationDays} days",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = KipitaTextSecondary
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(KipitaCardBg)
+                    .clickable(onClick = onClose),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Close, null, tint = KipitaTextSecondary, modifier = Modifier.size(18.dp))
+            }
+        }
+
+        // Countdown
+        Surface(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = KipitaRedLight
+        ) {
+            Row(
+                modifier = Modifier.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.FlightTakeoff, null, tint = KipitaRed, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (trip.daysUntil > 0) "Departing in ${trip.daysUntil} days" else "Trip Active!",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = KipitaRed
+                )
+                Spacer(Modifier.weight(1f))
+                Text(trip.countryFlag, fontSize = 24.sp)
+            }
+        }
+
+        // Sample itinerary days
+        Text(
+            "Itinerary",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = KipitaOnSurface,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+
+        val itineraryItems = listOf(
+            "Day 1" to "Arrival & check-in · Explore neighborhood",
+            "Day 2" to "Local attractions · Street food tour",
+            "Day 3" to "Co-working space · Networking meetup",
+            "Day 4" to "Day trip to nearby area",
+            "Day 5" to "Culture & museums · Sunset view",
+            "Day 6" to "Shopping & local markets",
+            "Day 7" to "Buffer day · Departure prep"
+        )
+
+        itineraryItems.take(trip.durationDays.coerceAtMost(7)).forEach { (day, activity) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = KipitaRed
+                ) {
+                    Text(
+                        day,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    activity,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = KipitaOnSurface,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(32.dp))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Plan New Trip Bottom Sheet
+// ---------------------------------------------------------------------------
+@Composable
+private fun PlanTripSheet(onClose: () -> Unit, onAiPlan: (String) -> Unit) {
+    var destination by remember { mutableStateOf("") }
+    var duration by remember { mutableStateOf("7") }
+    var notes by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Plan New Trip",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = KipitaOnSurface
+            )
+            Box(
+                modifier = Modifier.size(36.dp).clip(CircleShape).background(KipitaCardBg).clickable(onClick = onClose),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Close, null, tint = KipitaTextSecondary, modifier = Modifier.size(18.dp))
+            }
+        }
+
+        OutlinedTextField(
+            value = destination,
+            onValueChange = { destination = it },
+            label = { Text("Destination") },
+            placeholder = { Text("Tokyo, Bali, Lisbon...", color = KipitaTextTertiary) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = KipitaRed,
+                unfocusedBorderColor = KipitaBorder
+            )
+        )
+
+        OutlinedTextField(
+            value = duration,
+            onValueChange = { duration = it },
+            label = { Text("Duration (days)") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = KipitaRed,
+                unfocusedBorderColor = KipitaBorder
+            )
+        )
+
+        OutlinedTextField(
+            value = notes,
+            onValueChange = { notes = it },
+            label = { Text("Notes / Preferences") },
+            placeholder = { Text("Budget, travel style, must-sees...", color = KipitaTextTertiary) },
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 3,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = KipitaRed,
+                unfocusedBorderColor = KipitaBorder
+            )
+        )
+
+        // Plan with AI button
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(if (destination.isNotBlank()) KipitaRed else KipitaCardBg)
+                .clickable(enabled = destination.isNotBlank()) {
+                    val prompt = buildString {
+                        append("Help me plan a ${duration}-day trip to $destination")
+                        if (notes.isNotBlank()) append(". Notes: $notes")
+                        append(". Include day-by-day itinerary, hotels, restaurants, co-working spaces, transport options (flights, car rental, Uber/Lyft), and any Bitcoin-friendly venues.")
+                    }
+                    onAiPlan(prompt)
+                }
+                .padding(vertical = 14.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Mic,
+                    null,
+                    tint = if (destination.isNotBlank()) Color.White else KipitaTextTertiary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Plan with AI",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (destination.isNotBlank()) Color.White else KipitaTextTertiary
+                )
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Section Header
+// ---------------------------------------------------------------------------
 @Composable
 private fun SectionHeader(title: String, subtitle: String) {
     Row(
@@ -249,8 +593,11 @@ private fun SectionHeader(title: String, subtitle: String) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Upcoming Trip card — clicks open itinerary
+// ---------------------------------------------------------------------------
 @Composable
-private fun TripCard(trip: Trip, index: Int) {
+private fun TripCard(trip: Trip, index: Int, onClick: () -> Unit) {
     var pressed by remember { mutableStateOf(false) }
     val elevation by animateDpAsState(
         targetValue = if (pressed) 2.dp else 6.dp,
@@ -262,12 +609,11 @@ private fun TripCard(trip: Trip, index: Int) {
         modifier = Modifier
             .width(220.dp)
             .shadow(elevation, RoundedCornerShape(20.dp))
-            .clickable { pressed = !pressed },
+            .clickable { pressed = !pressed; onClick() },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column {
-            // Dark photo-style cover
             val coverGradient = when (index % 4) {
                 0 -> listOf(Color(0xFF1A237E), Color(0xFF4A148C))
                 1 -> listOf(Color(0xFF880E4F), Color(0xFFBF360C))
@@ -280,7 +626,6 @@ private fun TripCard(trip: Trip, index: Int) {
                     .height(130.dp)
                     .background(Brush.linearGradient(colors = coverGradient))
             ) {
-                // Dark scrim for text readability
                 Box(
                     modifier = Modifier.fillMaxSize().background(
                         Brush.verticalGradient(listOf(Color.Black.copy(0.1f), Color.Black.copy(0.5f)))
@@ -297,7 +642,7 @@ private fun TripCard(trip: Trip, index: Int) {
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.FlightTakeoff, contentDescription = null, tint = Color.White, modifier = Modifier.size(11.dp))
+                        Icon(Icons.Default.FlightTakeoff, null, tint = Color.White, modifier = Modifier.size(11.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(
                             text = if (trip.daysUntil > 0) "In ${trip.daysUntil}d" else "Active",
@@ -307,14 +652,14 @@ private fun TripCard(trip: Trip, index: Int) {
                     }
                 }
 
-                // Country flag top-end
+                // Country flag
                 Text(
                     text = trip.countryFlag,
                     fontSize = 28.sp,
                     modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)
                 )
 
-                // Destination + title overlay at bottom
+                // Destination + title
                 Column(modifier = Modifier.align(Alignment.BottomStart).padding(10.dp)) {
                     Text(
                         text = trip.destination,
@@ -328,7 +673,7 @@ private fun TripCard(trip: Trip, index: Int) {
                     )
                 }
 
-                // Weather badge bottom-end
+                // Weather badge — only for upcoming trips
                 Surface(
                     modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp),
                     shape = RoundedCornerShape(8.dp),
@@ -343,14 +688,13 @@ private fun TripCard(trip: Trip, index: Int) {
                 }
             }
 
-            // Bottom info row
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${trip.country}",
+                    text = trip.country,
                     style = MaterialTheme.typography.bodySmall,
                     color = KipitaTextSecondary
                 )
@@ -364,6 +708,9 @@ private fun TripCard(trip: Trip, index: Int) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Past Trip row — NO weather icons
+// ---------------------------------------------------------------------------
 @Composable
 private fun PastTripRow(trip: Trip, modifier: Modifier = Modifier) {
     var pressed by remember { mutableStateOf(false) }
@@ -394,10 +741,8 @@ private fun PastTripRow(trip: Trip, modifier: Modifier = Modifier) {
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(trip.countryFlag, fontSize = 20.sp)
-                Text(trip.weatherIcon, fontSize = 11.sp)
-            }
+            // Only flag — no weather icon for past trips
+            Text(trip.countryFlag, fontSize = 24.sp)
         }
 
         Spacer(Modifier.width(14.dp))
@@ -418,12 +763,12 @@ private fun PastTripRow(trip: Trip, modifier: Modifier = Modifier) {
 
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "${trip.weatherIcon} ${trip.weatherHighC}°",
-                style = MaterialTheme.typography.bodySmall,
+                text = "${trip.durationDays}d",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = KipitaTextSecondary
             )
             Text(
-                text = "${trip.durationDays}d",
+                text = trip.country,
                 style = MaterialTheme.typography.labelSmall,
                 color = KipitaTextTertiary
             )
@@ -431,8 +776,16 @@ private fun PastTripRow(trip: Trip, modifier: Modifier = Modifier) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Quick Tool card — with onClick
+// ---------------------------------------------------------------------------
 @Composable
-private fun QuickToolCard(icon: ImageVector, label: String, modifier: Modifier = Modifier) {
+private fun QuickToolCard(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
+) {
     var pressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.94f else 1f,
@@ -445,7 +798,7 @@ private fun QuickToolCard(icon: ImageVector, label: String, modifier: Modifier =
             .scale(scale)
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
-            .clickable { pressed = !pressed }
+            .clickable { pressed = !pressed; onClick() }
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -465,6 +818,44 @@ private fun QuickToolCard(icon: ImageVector, label: String, modifier: Modifier =
             style = MaterialTheme.typography.labelMedium,
             color = KipitaOnSurface,
             fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Transport Chip
+// ---------------------------------------------------------------------------
+@Composable
+private fun TransportChip(icon: ImageVector, label: String, onClick: () -> Unit) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.94f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        label = "transport-scale"
+    )
+    Column(
+        modifier = Modifier
+            .scale(scale)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
+            .clickable { pressed = !pressed; onClick() }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(KipitaCardBg),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = label, tint = KipitaOnSurface, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+            color = KipitaOnSurface
         )
     }
 }

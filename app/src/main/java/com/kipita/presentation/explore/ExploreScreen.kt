@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
@@ -79,7 +80,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.LocalTaxi
+import androidx.compose.ui.layout.ContentScale
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.kipita.data.api.PlaceCategory
 import com.kipita.data.repository.NearbyPlace
 import com.kipita.domain.model.ExploreDestination
@@ -138,6 +141,7 @@ private val exploreCategories = listOf(
 fun ExploreScreen(
     paddingValues: PaddingValues,
     onAiSuggest: (String) -> Unit = {},
+    onOpenMap: () -> Unit = {},
     viewModel: ExploreViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -151,6 +155,9 @@ fun ExploreScreen(
     var locationLabel by remember { mutableStateOf("") }
     var detectedLat by remember { mutableStateOf<Double?>(null) }
     var detectedLon by remember { mutableStateOf<Double?>(null) }
+    // Sort mode: 0=Default, 1=Cost↑, 2=Safety↓, 3=WiFi↓
+    var sortMode by remember { mutableIntStateOf(0) }
+    val sortLabels = listOf("Filter", "Cost ↑", "Safety", "WiFi")
 
     LaunchedEffect(Unit) { delay(80); visible = true }
 
@@ -245,12 +252,12 @@ fun ExploreScreen(
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Filter
+                        // Filter button — cycles through sort modes
                         Surface(
                             modifier = Modifier
                                 .border(1.5.dp, KipitaRed, RoundedCornerShape(20.dp))
-                                .clickable {},
-                            color = Color.Transparent,
+                                .clickable { sortMode = (sortMode + 1) % sortLabels.size },
+                            color = if (sortMode > 0) KipitaRedLight else Color.Transparent,
                             shape = RoundedCornerShape(20.dp)
                         ) {
                             Row(
@@ -259,7 +266,7 @@ fun ExploreScreen(
                             ) {
                                 Icon(Icons.Default.FilterList, null, tint = KipitaRed, modifier = Modifier.size(14.dp))
                                 Spacer(Modifier.width(3.dp))
-                                Text("Filter", style = MaterialTheme.typography.labelSmall, color = KipitaRed)
+                                Text(sortLabels[sortMode], style = MaterialTheme.typography.labelSmall, color = KipitaRed)
                             }
                         }
                     }
@@ -354,16 +361,7 @@ fun ExploreScreen(
 
                 Spacer(Modifier.height(8.dp))
 
-                // Data source pills
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    DataSourcePill("Yelp", "📍")
-                    DataSourcePill("Nomad List", "💻")
-                    DataSourcePill("Open-Meteo", "🌡")
-                    DataSourcePill("BTCMap", "₿")
-                    DataSourcePill("ECB", "💱")
-                }
-
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(4.dp))
 
                 // Tab row: Destinations | Places
                 TabRow(
@@ -413,7 +411,9 @@ fun ExploreScreen(
                     visible = visible,
                     searchText = searchText,
                     scope = selectedScope,
-                    onAiSuggest = onAiSuggest
+                    sortMode = sortMode,
+                    onAiSuggest = onAiSuggest,
+                    onOpenMap = onOpenMap
                 )
                 1 -> PlacesTab(
                     visible = visible,
@@ -449,18 +449,71 @@ private fun DestinationsTab(
     visible: Boolean,
     searchText: String,
     scope: LocationScope,
-    onAiSuggest: (String) -> Unit
+    sortMode: Int = 0,
+    onAiSuggest: (String) -> Unit,
+    onOpenMap: () -> Unit = {}
 ) {
-    val filtered = if (searchText.isBlank()) SampleData.destinations
+    val base = if (searchText.isBlank()) SampleData.destinations
     else SampleData.destinations.filter {
         it.city.contains(searchText, ignoreCase = true) ||
             it.country.contains(searchText, ignoreCase = true)
+    }
+    val filtered = when (sortMode) {
+        1 -> base.sortedBy { it.costPerMonthUsd }
+        2 -> base.sortedByDescending { it.safetyScore }
+        3 -> base.sortedByDescending { it.wifiSpeedMbps }
+        else -> base
     }
 
     LazyColumn(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Interactive Map button
+        item {
+            AnimatedVisibility(visible = visible, enter = fadeIn(tween(80)) + slideInVertically(tween(80)) { 10 }) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                listOf(Color(0xFF1565C0), Color(0xFF0D47A1))
+                            )
+                        )
+                        .clickable(onClick = onOpenMap)
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.GridView,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Column {
+                            Text(
+                                "Open Interactive Map",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = Color.White
+                            )
+                            Text(
+                                "Yelp-powered local areas • BTC merchants • Nomad hubs",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.75f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // AI quick-prompt bar
         item {
             AnimatedVisibility(visible = visible, enter = fadeIn(tween(100)) + slideInVertically(tween(100)) { 16 }) {
@@ -922,14 +975,28 @@ private fun DestinationCard(destination: ExploreDestination, index: Int) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(160.dp)
-                    .background(Brush.linearGradient(colors = gradient))
             ) {
+                // Placeholder gradient — visible while photo loads or on error
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Brush.linearGradient(colors = gradient))
+                )
+                // Real location photo via Picsum Photos seeded by city name
+                // Free service, no API key needed, consistent per city seed
+                val photoSeed = destination.city.lowercase().replace(" ", "-")
+                AsyncImage(
+                    model = "https://picsum.photos/seed/$photoSeed/800/400",
+                    contentDescription = "${destination.city} photo",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                // Dark gradient overlay so text remains readable over any photo
                 Box(
                     modifier = Modifier.fillMaxSize().background(
-                        Brush.verticalGradient(listOf(Color.Black.copy(.15f), Color.Black.copy(.55f)))
+                        Brush.verticalGradient(listOf(Color.Black.copy(.10f), Color.Black.copy(.65f)))
                     )
                 )
-                Text(destination.weatherIcon, fontSize = 42.sp, modifier = Modifier.align(Alignment.Center))
                 Surface(
                     modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
                     shape = CircleShape, color = Color.White.copy(alpha = 0.92f)

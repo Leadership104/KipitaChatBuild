@@ -174,6 +174,7 @@ private val kipitaPerks = listOf(
 fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
     val animatedBalance = remember { Animatable(0f) }
+    var walletTab by remember { mutableStateOf(0) } // 0=Crypto, 1=Currency
     var amount by remember { mutableStateOf("100") }
     var from by remember { mutableStateOf("USD") }
     var to by remember { mutableStateOf("JPY") }
@@ -252,10 +253,47 @@ fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hilt
             }
 
             // ----------------------------------------------------------------
-            // Live BTC / ETH / SOL Price Ticker (CoinGecko)
+            // Currency / Crypto Toggle Tabs
             // ----------------------------------------------------------------
             item {
-                AnimatedVisibility(visible = visible, enter = fadeIn(tween(120)) + slideInVertically(tween(120)) { 16 }) {
+                AnimatedVisibility(visible = visible, enter = fadeIn()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 12.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(KipitaCardBg),
+                        horizontalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        listOf("₿ Crypto", "💱 Currency").forEachIndexed { index, label ->
+                            val selected = walletTab == index
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(if (selected) KipitaRed else Color.Transparent)
+                                    .clickable { walletTab = index }
+                                    .padding(vertical = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                                    ),
+                                    color = if (selected) Color.White else KipitaTextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ----------------------------------------------------------------
+            // Live BTC / ETH / SOL Price Ticker (CoinGecko) — Crypto Tab
+            // ----------------------------------------------------------------
+            item {
+                AnimatedVisibility(visible = visible && walletTab == 0, enter = fadeIn(tween(120)) + slideInVertically(tween(120)) { 16 }) {
                     val prices = state.cryptoPrices
                     Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
                         Row(
@@ -298,9 +336,9 @@ fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hilt
                 }
             }
 
-            // Aggregated Crypto Wallets
+            // Aggregated Crypto Wallets — Crypto Tab
             item {
-                AnimatedVisibility(visible = visible, enter = fadeIn(tween(150)) + slideInVertically(tween(150)) { 20 }) {
+                AnimatedVisibility(visible = visible && walletTab == 0, enter = fadeIn(tween(150)) + slideInVertically(tween(150)) { 20 }) {
                     val wallet = state.aggregatedWallet
                     Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
                         Row(
@@ -346,10 +384,10 @@ fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hilt
             }
 
             // ----------------------------------------------------------------
-            // Kipita Perks — partner brands with hyperlinks
+            // Kipita Perks — partner brands with hyperlinks — Crypto Tab
             // ----------------------------------------------------------------
             item {
-                AnimatedVisibility(visible = visible, enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { 24 }) {
+                AnimatedVisibility(visible = visible && walletTab == 0, enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { 24 }) {
                     val uriHandler = LocalUriHandler.current
                     Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
                         Row(
@@ -382,9 +420,9 @@ fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hilt
                 }
             }
 
-            // Currency Converter
+            // Currency Converter — Currency Tab
             item {
-                AnimatedVisibility(visible = visible, enter = fadeIn(tween(200)) + slideInVertically(tween(200)) { 30 }) {
+                AnimatedVisibility(visible = visible && walletTab == 1, enter = fadeIn(tween(200)) + slideInVertically(tween(200)) { 30 }) {
                     Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
                             Box(modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(KipitaRedLight), contentAlignment = Alignment.Center) {
@@ -451,9 +489,9 @@ fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hilt
                 }
             }
 
-            // Quick select
+            // Quick select — Currency Tab
             item {
-                AnimatedVisibility(visible = visible, enter = fadeIn(tween(300)) + slideInVertically(tween(300)) { 40 }) {
+                AnimatedVisibility(visible = visible && walletTab == 1, enter = fadeIn(tween(300)) + slideInVertically(tween(300)) { 40 }) {
                     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
                         Text("Popular Currencies", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = KipitaOnSurface, modifier = Modifier.padding(bottom = 12.dp))
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -471,9 +509,9 @@ fun WalletScreen(paddingValues: PaddingValues, viewModel: WalletViewModel = hilt
                 }
             }
 
-            // Tips
+            // Tips — Currency Tab
             item {
-                AnimatedVisibility(visible = visible, enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { 40 }) {
+                AnimatedVisibility(visible = visible && walletTab == 1, enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { 40 }) {
                     Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp).fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp)).background(Color(0xFF1A1A2E)).padding(16.dp)) {
                         Text("Traveler Tips", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold), color = Color.White, modifier = Modifier.padding(bottom = 8.dp))

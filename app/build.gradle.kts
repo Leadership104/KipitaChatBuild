@@ -121,6 +121,9 @@ dependencies {
 
     implementation(libs.profileinstaller)
 
+    // Image loading — Coil for destination photos (Unsplash / Picsum)
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

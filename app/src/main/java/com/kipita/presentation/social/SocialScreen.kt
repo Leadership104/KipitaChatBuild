@@ -31,12 +31,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import android.content.Intent
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
@@ -51,7 +53,10 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,6 +66,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
@@ -88,6 +94,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SocialScreen(paddingValues: PaddingValues, viewModel: SocialViewModel = hiltViewModel()) {
     var visible by remember { mutableStateOf(false) }
@@ -95,6 +102,9 @@ fun SocialScreen(paddingValues: PaddingValues, viewModel: SocialViewModel = hilt
     var searchText by remember { mutableStateOf("") }
     var openConversationId by remember { mutableStateOf<String?>(null) }
     var openConversationName by remember { mutableStateOf("") }
+    var inviteGroupId by remember { mutableStateOf<String?>(null) }
+    var inviteGroupName by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) { delay(80); visible = true }
 
@@ -152,15 +162,98 @@ fun SocialScreen(paddingValues: PaddingValues, viewModel: SocialViewModel = hilt
         }
 
         when (selectedTab) {
-            0 -> GroupsTab(visible, searchText, onOpenGroup = { id, name -> openConversationId = id; openConversationName = name })
+            0 -> GroupsTab(
+                visible = visible,
+                searchText = searchText,
+                onOpenGroup = { id, name -> openConversationId = id; openConversationName = name },
+                onInvite = { id, name -> inviteGroupId = id; inviteGroupName = name }
+            )
             1 -> TravelersTab(visible)
             2 -> DirectMessagesTab(visible, onOpenDm = { id, name -> openConversationId = id; openConversationName = name })
+        }
+    }
+
+    // Invite link sheet
+    if (inviteGroupId != null) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val inviteLink = "https://kipita.app/join/${inviteGroupId}"
+        ModalBottomSheet(
+            onDismissRequest = { inviteGroupId = null },
+            sheetState = sheetState,
+            containerColor = Color.White,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Invite to $inviteGroupName",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = KipitaOnSurface
+                )
+                Text(
+                    "Share this invite-only link to add members",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = KipitaTextSecondary
+                )
+                // Link display
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(KipitaCardBg)
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Link, null, tint = KipitaRed, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        inviteLink,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = KipitaOnSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                // Share button
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(KipitaRed)
+                        .clickable {
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, "Join me in the '$inviteGroupName' group on Kipita! $inviteLink")
+                                putExtra(Intent.EXTRA_SUBJECT, "Join my travel group on Kipita")
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Share Invite Link"))
+                        }
+                        .padding(vertical = 14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Share Invite Link",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = Color.White
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+            }
         }
     }
 }
 
 @Composable
-private fun GroupsTab(visible: Boolean, searchText: String, onOpenGroup: (String, String) -> Unit) {
+private fun GroupsTab(
+    visible: Boolean,
+    searchText: String,
+    onOpenGroup: (String, String) -> Unit,
+    onInvite: (String, String) -> Unit = { _, _ -> }
+) {
     val groups = if (searchText.isBlank()) SampleData.communityGroups
     else SampleData.communityGroups.filter { it.name.contains(searchText, ignoreCase = true) }
 
@@ -181,7 +274,11 @@ private fun GroupsTab(visible: Boolean, searchText: String, onOpenGroup: (String
         }
         itemsIndexed(groups) { index, group ->
             AnimatedVisibility(visible = visible, enter = fadeIn(tween(150 + index * 60)) + slideInHorizontally(tween(150 + index * 60)) { -30 }) {
-                GroupRow(group = group, onClick = { onOpenGroup(group.id, group.name) })
+                GroupRow(
+                    group = group,
+                    onClick = { onOpenGroup(group.id, group.name) },
+                    onInvite = { onInvite(group.id, group.name) }
+                )
             }
         }
         item { Spacer(Modifier.height(80.dp)) }
@@ -203,7 +300,7 @@ private fun ConnectCard(icon: androidx.compose.ui.graphics.vector.ImageVector, t
 }
 
 @Composable
-private fun GroupRow(group: CommunityGroup, onClick: () -> Unit) {
+private fun GroupRow(group: CommunityGroup, onClick: () -> Unit, onInvite: () -> Unit = {}) {
     Row(modifier = Modifier.fillMaxWidth().background(Color.White).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(modifier = Modifier.size(50.dp).clip(CircleShape).background(KipitaCardBg), contentAlignment = Alignment.Center) {
             Text(group.avatarEmoji, fontSize = 22.sp)
@@ -218,12 +315,22 @@ private fun GroupRow(group: CommunityGroup, onClick: () -> Unit) {
             Text(group.lastMessage, style = MaterialTheme.typography.bodySmall, color = KipitaTextSecondary, maxLines = 1, modifier = Modifier.padding(top = 2.dp))
         }
         Spacer(Modifier.width(8.dp))
-        Column(horizontalAlignment = Alignment.End) {
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            // Invite link button
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(KipitaRedLight)
+                    .clickable(onClick = onInvite)
+                    .padding(horizontal = 6.dp, vertical = 3.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Link, contentDescription = "Invite", tint = KipitaRed, modifier = Modifier.size(14.dp))
+            }
             if (group.unreadCount > 0) {
                 Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(KipitaRed), contentAlignment = Alignment.Center) {
                     Text("${group.unreadCount}", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = Color.White, fontSize = 10.sp)
                 }
-                Spacer(Modifier.height(4.dp))
             }
             Text("${group.memberCount}", style = MaterialTheme.typography.labelSmall, color = KipitaTextTertiary)
         }

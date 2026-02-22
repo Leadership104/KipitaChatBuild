@@ -26,17 +26,26 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.HeadsetMic
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,7 +76,12 @@ private val travelStyleOptions = listOf(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ProfileSetupScreen(paddingValues: PaddingValues) {
+fun ProfileSetupScreen(
+    paddingValues: PaddingValues,
+    onBack: () -> Unit = {},
+    onSave: (String) -> Unit = {}
+) {
+    val context = LocalContext.current
     var visible by remember { mutableStateOf(false) }
     var isGroup by remember { mutableStateOf(false) }
     var displayName by remember { mutableStateOf("") }
@@ -77,6 +91,14 @@ fun ProfileSetupScreen(paddingValues: PaddingValues) {
     var groupName by remember { mutableStateOf("") }
     var selectedStyles by remember { mutableStateOf(setOf<String>()) }
     var setupComplete by remember { mutableStateOf(false) }
+    // Avatar photo picker
+    var avatarUri by remember { mutableStateOf<Uri?>(null) }
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri -> if (uri != null) avatarUri = uri }
+    // Support form state
+    var supportText by remember { mutableStateOf("") }
+    var supportSent by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         delay(80)
@@ -149,39 +171,51 @@ fun ProfileSetupScreen(paddingValues: PaddingValues) {
                 AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically { 30 }) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                         Box {
+                            // Avatar circle — shows picked photo or default icon
                             Box(
                                 modifier = Modifier
                                     .size(88.dp)
                                     .clip(CircleShape)
                                     .background(KipitaCardBg)
-                                    .border(2.dp, KipitaBorder, CircleShape),
+                                    .border(2.dp, if (avatarUri != null) KipitaRed else KipitaBorder, CircleShape)
+                                    .clickable { photoPickerLauncher.launch("image/*") },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    if (isGroup) Icons.Default.Group else Icons.Default.Person,
-                                    contentDescription = null,
-                                    tint = KipitaTextSecondary,
-                                    modifier = Modifier.size(40.dp)
-                                )
+                                if (avatarUri != null) {
+                                    AsyncImage(
+                                        model = avatarUri,
+                                        contentDescription = "Avatar",
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(
+                                        if (isGroup) Icons.Default.Group else Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = KipitaTextSecondary,
+                                        modifier = Modifier.size(40.dp)
+                                    )
+                                }
                             }
+                            // Camera badge — opens image picker
                             Box(
                                 modifier = Modifier
                                     .size(28.dp)
                                     .clip(CircleShape)
                                     .background(KipitaRed)
                                     .align(Alignment.BottomEnd)
-                                    .clickable {},
+                                    .clickable { photoPickerLauncher.launch("image/*") },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Default.CameraAlt, contentDescription = "Pick photo", tint = Color.White, modifier = Modifier.size(14.dp))
                             }
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "Add photo",
+                            text = if (avatarUri != null) "Change photo" else "Add photo",
                             style = MaterialTheme.typography.labelMedium,
                             color = KipitaRed,
-                            modifier = Modifier.clickable {}
+                            modifier = Modifier.clickable { photoPickerLauncher.launch("image/*") }
                         )
                     }
                 }
@@ -279,6 +313,7 @@ fun ProfileSetupScreen(paddingValues: PaddingValues) {
                                 .background(KipitaRed)
                                 .clickable {
                                     setupComplete = true
+                                    onSave(displayName.ifBlank { groupName })
                                 }
                                 .padding(16.dp),
                             contentAlignment = Alignment.Center
@@ -301,6 +336,113 @@ fun ProfileSetupScreen(paddingValues: PaddingValues) {
                                 Text(
                                     text = "Profile set up successfully",
                                     style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF43A047)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Support & Feedback section ─────────────────────────────────
+            item {
+                AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically { 70 }) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                            .background(KipitaCardBg)
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.HeadsetMic,
+                                contentDescription = null,
+                                tint = KipitaRed,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Support & Feedback",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = KipitaOnSurface
+                            )
+                        }
+                        Text(
+                            "Found a bug or have feedback? Describe it below — your report will be sent directly to info@kipita.com.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = KipitaTextSecondary,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+
+                        OutlinedTextField(
+                            value = supportText,
+                            onValueChange = { supportText = it; supportSent = false },
+                            placeholder = { Text("Describe the issue or share your feedback...", color = KipitaTextTertiary) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                            singleLine = false,
+                            minLines = 3,
+                            maxLines = 6,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = KipitaRed,
+                                unfocusedBorderColor = KipitaBorder
+                            )
+                        )
+
+                        Spacer(Modifier.height(10.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                                .background(if (supportText.isNotBlank()) KipitaRed else KipitaBorder)
+                                .clickable(enabled = supportText.isNotBlank()) {
+                                    val subject = "Kipita App — Bug/Feedback Report"
+                                    val body = supportText
+                                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                        data = Uri.parse("mailto:info@kipita.com")
+                                        putExtra(Intent.EXTRA_SUBJECT, subject)
+                                        putExtra(Intent.EXTRA_TEXT, body)
+                                    }
+                                    runCatching { context.startActivity(intent) }
+                                    supportSent = true
+                                    supportText = ""
+                                }
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Send,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    "Send to info@kipita.com",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = Color.White
+                                )
+                            }
+                        }
+
+                        if (supportSent) {
+                            Spacer(Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color(0xFF43A047),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    "Report sent! Thank you.",
+                                    style = MaterialTheme.typography.labelSmall,
                                     color = Color(0xFF43A047)
                                 )
                             }
