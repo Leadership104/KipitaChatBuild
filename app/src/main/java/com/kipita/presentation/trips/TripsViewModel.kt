@@ -119,7 +119,7 @@ class TripsViewModel @Inject constructor(
                     country       = country,
                     countryFlag   = countryFlag,
                     startDateEpoch = today.plusDays(14).toEpochDay(),
-                    endDateEpoch   = today.plusDays(14 + durationDays - 1).toEpochDay(),
+                    endDateEpoch   = today.plusDays((14 + durationDays - 1).toLong()).toEpochDay(),
                     notesText     = aiSummary,
                     travelersJson = """["Me"]""",
                     status        = "UPCOMING",

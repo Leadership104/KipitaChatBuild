@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.calculateBottomPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -429,7 +428,7 @@ fun HomeScreen(
             onClick = { micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = paddingValues.calculateBottomPadding() + 16.dp),
+                .padding(end = 20.dp, bottom = 80.dp),
             containerColor = KipitaRed,
             contentColor = Color.White,
             shape = CircleShape
