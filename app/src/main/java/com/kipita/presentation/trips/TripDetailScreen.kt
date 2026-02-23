@@ -37,7 +37,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-importandroidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocalTaxi
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.CircularProgressIndicator
