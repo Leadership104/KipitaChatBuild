@@ -25,3 +25,8 @@ Thumbs.db
 
 # Optional local Android Studio daemon JDK pin (do not commit)
 gradle/gradle-daemon-jvm.properties
+
+# Codex local emulator prep artifacts
+.codex_android/
+emulator_*.log
+tmp_emu_*.log
