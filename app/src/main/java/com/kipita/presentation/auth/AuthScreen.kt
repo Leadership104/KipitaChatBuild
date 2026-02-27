@@ -369,6 +369,49 @@ fun AuthScreen(
                                 }
                             }
 
+                            // Privacy consent (GDPR / CCPA)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                androidx.compose.material3.Text(
+                                    text = "By creating an account you agree to our ",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = KipitaTextTertiary
+                                )
+                                androidx.compose.material3.Text(
+                                    text = "Privacy Policy",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = KipitaRed,
+                                    modifier = Modifier.clickable {
+                                        runCatching {
+                                            context.startActivity(
+                                                Intent(Intent.ACTION_VIEW, Uri.parse("https://kipita.com/privacy"))
+                                            )
+                                        }
+                                    }
+                                )
+                                androidx.compose.material3.Text(
+                                    text = " & ",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = KipitaTextTertiary
+                                )
+                                androidx.compose.material3.Text(
+                                    text = "Terms",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = KipitaRed,
+                                    modifier = Modifier.clickable {
+                                        runCatching {
+                                            context.startActivity(
+                                                Intent(Intent.ACTION_VIEW, Uri.parse("https://kipita.com/terms"))
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+
                             OAuthSection(context = context)
 
                             GuestFooter(

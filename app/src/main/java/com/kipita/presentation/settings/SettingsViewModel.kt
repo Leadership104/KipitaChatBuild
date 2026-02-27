@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kipita.data.error.InHouseErrorLogger
 import com.kipita.data.local.ErrorLogEntity
+import com.kipita.data.repository.AccountRepository
 import com.kipita.data.security.KeystoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -17,7 +18,8 @@ import kotlinx.coroutines.withContext
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val errorLogger: InHouseErrorLogger,
-    private val keystoreManager: KeystoreManager
+    private val keystoreManager: KeystoreManager,
+    private val accountRepository: AccountRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsUiState())
@@ -84,6 +86,28 @@ class SettingsViewModel @Inject constructor(
 
     fun clearRiverToken() = clearKey(KeystoreManager.RIVER_OAUTH_TOKEN_ALIAS,
         onDone = { _state.value = _state.value.copy(hasRiverToken = false, saveStatus = "River token removed") })
+
+    // -----------------------------------------------------------------------
+    // Account deletion (GDPR / CCPA)
+    // -----------------------------------------------------------------------
+
+    fun deleteAccount(onDeleted: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // Delete all user rows from the encrypted Room DB
+            accountRepository.deleteAccount()
+            // Wipe all keys from the hardware-backed KeyStore
+            val aliases = listOf(
+                KeystoreManager.GOOGLE_PLACES_API_KEY_ALIAS,
+                KeystoreManager.COINBASE_OAUTH_TOKEN_ALIAS,
+                KeystoreManager.GEMINI_API_KEY_ALIAS,
+                KeystoreManager.GEMINI_API_SECRET_ALIAS,
+                KeystoreManager.RIVER_OAUTH_TOKEN_ALIAS,
+                KeystoreManager.CASHAPP_OAUTH_TOKEN_ALIAS
+            )
+            aliases.forEach { runCatching { keystoreManager.deleteKey(it) } }
+            withContext(Dispatchers.Main) { onDeleted() }
+        }
+    }
 
     // -----------------------------------------------------------------------
     // Error logs

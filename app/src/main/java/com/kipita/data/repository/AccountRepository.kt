@@ -44,6 +44,10 @@ class AccountRepository @Inject constructor(
         return Result.success(user)
     }
 
+    suspend fun deleteAccount(): Result<Unit> = runCatching {
+        userDao.deleteAll()
+    }
+
     suspend fun signIn(email: String, password: String): Result<UserEntity> {
         val normalizedEmail = normalizeEmail(email)
         val user = userDao.getByEmail(normalizedEmail)

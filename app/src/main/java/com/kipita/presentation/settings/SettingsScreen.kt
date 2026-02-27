@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -50,6 +51,7 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -473,6 +475,103 @@ fun SettingsScreen(
                 item { Spacer(Modifier.height(16.dp)) }
             }
 
+            // ----------------------------------------------------------------
+            // Legal
+            // ----------------------------------------------------------------
+            item {
+                SectionHeader(title = "Legal")
+            }
+
+            item {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White)
+                ) {
+                    LegalRow(
+                        label = "Privacy Policy",
+                        url = "https://kipita.com/privacy",
+                        context = context
+                    )
+                    HorizontalDivider(color = BorderGray, thickness = 0.5.dp)
+                    LegalRow(
+                        label = "Terms of Service",
+                        url = "https://kipita.com/terms",
+                        context = context
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // ----------------------------------------------------------------
+            // Account deletion (GDPR / CCPA)
+            // ----------------------------------------------------------------
+            item {
+                SectionHeader(title = "Account")
+            }
+
+            item {
+                var showDeleteDialog by remember { mutableStateOf(false) }
+
+                if (showDeleteDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDeleteDialog = false },
+                        title = { Text("Delete Account", fontWeight = FontWeight.Bold) },
+                        text = {
+                            Text(
+                                "This will permanently delete your account and all local data, " +
+                                "including stored API keys and trip history. This cannot be undone.",
+                                color = Color(0xFF374151),
+                                fontSize = 14.sp
+                            )
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    showDeleteDialog = false
+                                    viewModel.deleteAccount {}
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = RedDanger)
+                            ) {
+                                Text("Delete My Account", color = Color.White)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDeleteDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White)
+                        .padding(16.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, RedDanger),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = RedDanger)
+                    ) {
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text("Delete My Account", fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
             // Bottom padding
             item { Spacer(Modifier.height(32.dp)) }
         }
@@ -674,6 +773,35 @@ private data class AffiliateEntry(
     val emoji: String,
     val url: String        // placeholder — swap with live referral/affiliate link
 )
+
+@Composable
+private fun LegalRow(label: String, url: String, context: android.content.Context) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                runCatching {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                }
+            }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF111827),
+            modifier = Modifier.weight(1f)
+        )
+        Icon(
+            Icons.Filled.ChevronRight,
+            contentDescription = null,
+            tint = BorderGray,
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}
 
 @Composable
 private fun AffiliateRow(entry: AffiliateEntry, context: android.content.Context) {

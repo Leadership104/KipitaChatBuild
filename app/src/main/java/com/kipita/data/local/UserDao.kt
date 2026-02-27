@@ -31,4 +31,7 @@ interface UserDao {
 
     @Query("SELECT * FROM users ORDER BY displayName ASC")
     fun observeAll(): Flow<List<UserEntity>>
+
+    @Query("DELETE FROM users")
+    suspend fun deleteAll()
 }

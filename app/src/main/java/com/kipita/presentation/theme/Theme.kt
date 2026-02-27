@@ -1,7 +1,9 @@
 package com.kipita.presentation.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -25,6 +27,24 @@ val KipitaWarning = Color(0xFFF57C00)
 val KipitaNavBg = Color(0xFFFFFFFF)
 val KipitaGreenAccent = Color(0xFF43A047)
 val KipitaBlueAccent = Color(0xFF1976D2)
+
+private val KipitaDarkColors = darkColorScheme(
+    primary = KipitaRed,
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF7B1515),
+    onPrimaryContainer = Color(0xFFFFCDD2),
+    secondary = Color(0xFF90CAF9),
+    onSecondary = Color(0xFF0D2137),
+    background = Color(0xFF121212),
+    onBackground = Color(0xFFE8E8E8),
+    surface = Color(0xFF1E1E1E),
+    onSurface = Color(0xFFE8E8E8),
+    surfaceVariant = Color(0xFF2C2C2C),
+    onSurfaceVariant = Color(0xFFAAAAAA),
+    outline = Color(0xFF3A3A3A),
+    error = Color(0xFFEF9A9A),
+    onError = Color(0xFF7B1515)
+)
 
 private val KipitaLightColors = lightColorScheme(
     primary = KipitaRed,
@@ -131,9 +151,12 @@ private val KipitaTypography = Typography(
 )
 
 @Composable
-fun KipitaTheme(content: @Composable () -> Unit) {
+fun KipitaTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
     MaterialTheme(
-        colorScheme = KipitaLightColors,
+        colorScheme = if (darkTheme) KipitaDarkColors else KipitaLightColors,
         typography = KipitaTypography,
         content = content
     )
