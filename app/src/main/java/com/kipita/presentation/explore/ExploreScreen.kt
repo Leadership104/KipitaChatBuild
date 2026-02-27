@@ -115,7 +115,7 @@ private enum class LocationScope(val label: String, val emoji: String) {
 }
 
 // ---------------------------------------------------------------------------
-// Places category groups (Yelp)
+// Places category groups (Google Places)
 // ---------------------------------------------------------------------------
 private data class CategoryGroup(val label: String, val categories: List<PlaceCategory>)
 private val exploreCategories = listOf(
@@ -460,7 +460,7 @@ fun ExploreScreen(
                     selectedCategory = selectedCategory,
                     onCategorySelect = { cat ->
                         selectedCategory = cat
-                        // Trigger Yelp fetch when category changes
+                        // Trigger Places fetch when category changes
                         if (searchText.isNotBlank()) {
                             viewModel.fetchByLocation(searchText, cat)
                         } else {
@@ -545,7 +545,7 @@ private fun DestinationsTab(
                                 color = Color.White
                             )
                             Text(
-                                "Yelp-powered local areas • BTC merchants • Nomad hubs",
+                                "Google Places • BTC merchants • Nomad hubs",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color.White.copy(alpha = 0.75f)
                             )
@@ -590,7 +590,7 @@ private fun DestinationsTab(
 }
 
 // ---------------------------------------------------------------------------
-// Tab 1: Places (Yelp category grid → live place list + transit ride buttons)
+// Tab 1: Places (Google Places category grid → live place list + transit ride buttons)
 // ---------------------------------------------------------------------------
 @Composable
 private fun PlacesTab(
@@ -689,7 +689,7 @@ private fun PlacesTab(
                     }
                     Spacer(Modifier.height(8.dp))
 
-                    // Live Yelp results or empty/api-key placeholder
+                    // Live Google Places results or empty state
                     if (places.isNotEmpty()) {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             places.forEach { place ->
@@ -718,7 +718,7 @@ private fun PlacesTab(
                                 Text(selectedCategory.emoji, fontSize = 32.sp)
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Add Yelp API key in Settings to see live ${selectedCategory.label}${if (searchText.isNotBlank()) " in $searchText" else " nearby"}",
+                                    "No ${selectedCategory.label}${if (searchText.isNotBlank()) " found in $searchText" else " found nearby"}. Try a different location or category.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = KipitaTextSecondary,
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center

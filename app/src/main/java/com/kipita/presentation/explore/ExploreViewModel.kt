@@ -21,7 +21,7 @@ import javax.inject.Inject
 // ExploreViewModel
 //
 // Powers the Explore screen's Places tab:
-//   • Fetches Yelp results for the selected category + location
+//   • Fetches Google Places results for the selected category + location
 //   • Exposes transit deep-link helpers (Uber / Lyft) for place cards
 //   • Tracks loading and error states without persisting anything to disk
 // ---------------------------------------------------------------------------
@@ -76,7 +76,7 @@ class ExploreViewModel @Inject constructor(
     }
 
     // -----------------------------------------------------------------------
-    // Yelp category fetching
+    // Google Places category fetching
     // -----------------------------------------------------------------------
 
     /**
@@ -123,7 +123,7 @@ class ExploreViewModel @Inject constructor(
     // -----------------------------------------------------------------------
 
     /**
-     * Request an Uber ride to a Yelp place.
+     * Request an Uber ride to a place.
      * Passes user's GPS origin + place's coordinates as destination.
      */
     fun bookUberToPlace(place: NearbyPlace) {
@@ -139,7 +139,7 @@ class ExploreViewModel @Inject constructor(
     }
 
     /**
-     * Request a Lyft ride to a Yelp place.
+     * Request a Lyft ride to a place.
      * Passes user's GPS origin + place's coordinates as destination.
      */
     fun bookLyftToPlace(place: NearbyPlace) {

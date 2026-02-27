@@ -11,7 +11,7 @@ import javax.inject.Singleton
 // TransitDeepLinkService
 //
 // Handles ride-booking deep-links to Uber and Lyft, passing destination
-// coordinates sourced directly from Yelp search results. This is the
+// coordinates sourced directly from Google Places search results. This is the
 // "Travel tab transit deep-linking" requirement from the SOW.
 //
 // Architecture:
@@ -46,9 +46,9 @@ class TransitDeepLinkService @Inject constructor(
      *
      * @param originLat  User's current latitude  (from GPS / last known)
      * @param originLng  User's current longitude (from GPS / last known)
-     * @param destLat    Yelp business latitude
-     * @param destLng    Yelp business longitude
-     * @param destName   Yelp business display name (shown in Uber app)
+     * @param destLat    Destination latitude
+     * @param destLng    Destination longitude
+     * @param destName   Place display name (shown in Uber app)
      */
     fun requestUberRide(
         originLat: Double,
@@ -84,9 +84,9 @@ class TransitDeepLinkService @Inject constructor(
      *
      * @param originLat  User's current latitude
      * @param originLng  User's current longitude
-     * @param destLat    Yelp business latitude
-     * @param destLng    Yelp business longitude
-     * @param destName   Yelp business display name (shown in Lyft app)
+     * @param destLat    Destination latitude
+     * @param destLng    Destination longitude
+     * @param destName   Place display name (shown in Lyft app)
      */
     fun requestLyftRide(
         originLat: Double,

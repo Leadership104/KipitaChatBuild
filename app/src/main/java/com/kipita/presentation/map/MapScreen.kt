@@ -32,7 +32,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Wifi
@@ -55,6 +54,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -68,7 +69,7 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.kipita.domain.model.NomadPlaceInfo
+import com.kipita.data.repository.NearbyPlace
 import com.kipita.domain.model.TravelNotice
 import com.kipita.presentation.theme.KipitaBorder
 import com.kipita.presentation.theme.KipitaCardBg
@@ -79,6 +80,9 @@ import com.kipita.presentation.theme.KipitaRedLight
 import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
 import com.kipita.presentation.theme.KipitaWarning
+
+// Category filters shown in the bottom sheet
+private val placeFilters = listOf("₿ BTC", "🍜 Food", "☕ Cafe", "🛍 Shops")
 
 @Composable
 fun MapScreen(
@@ -91,7 +95,7 @@ fun MapScreen(
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
     var bottomSheetExpanded by remember { mutableStateOf(true) }
     var visible by remember { mutableStateOf(false) }
-    var selectedPlaceFilter by remember { mutableStateOf("BTC") }
+    var selectedPlaceFilter by remember { mutableStateOf("₿ BTC") }
 
     val hasLocationPermission = remember {
         ContextCompat.checkSelfPermission(
@@ -99,7 +103,6 @@ fun MapScreen(
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // Default to user position when available, otherwise New York as placeholder
     val initialLat = if (state.userLat != 0.0) state.userLat else 40.7128
     val initialLng = if (state.userLng != 0.0) state.userLng else -74.0060
 
@@ -108,7 +111,8 @@ fun MapScreen(
     }
 
     LaunchedEffect(Unit) {
-        val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
+        val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE)
+                as android.location.LocationManager
         val loc = if (hasLocationPermission) {
             @Suppress("MissingPermission")
             lm.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
@@ -120,7 +124,7 @@ fun MapScreen(
         visible = true
     }
 
-    // Move camera when user location arrives
+    // Animate camera to user location when GPS arrives
     LaunchedEffect(state.userLat, state.userLng) {
         if (state.userLat != 0.0 && state.userLng != 0.0) {
             cameraPositionState.position = CameraPosition.fromLatLngZoom(
@@ -135,7 +139,7 @@ fun MapScreen(
             .background(Color(0xFFEFF3F9))
             .padding(paddingValues)
     ) {
-        // ── Google Map fills the background ───────────────────────────────
+        // ── Google Map ──────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -154,7 +158,7 @@ fun MapScreen(
                     mapToolbarEnabled = true
                 )
             ) {
-                // ── BTC Merchant markers (orange) ─────────────────────────
+                // BTC merchant markers (orange)
                 if (state.activeOverlays.contains(OverlayType.BTC_MERCHANTS)) {
                     state.merchants.forEach { merchant ->
                         Marker(
@@ -168,6 +172,44 @@ fun MapScreen(
                                 if (merchant.acceptsCashApp) append("💵 CashApp")
                             }.trim(),
                             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+                        )
+                    }
+                }
+
+                // Google Places markers for Food/Cafe/Shops
+                if (selectedPlaceFilter == "🍜 Food") {
+                    state.nearbyFoodPlaces.forEach { place ->
+                        val lat = place.latitude ?: return@forEach
+                        val lng = place.longitude ?: return@forEach
+                        Marker(
+                            state = MarkerState(position = LatLng(lat, lng)),
+                            title = place.name,
+                            snippet = place.address,
+                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                        )
+                    }
+                }
+                if (selectedPlaceFilter == "☕ Cafe") {
+                    state.nearbyCafePlaces.forEach { place ->
+                        val lat = place.latitude ?: return@forEach
+                        val lng = place.longitude ?: return@forEach
+                        Marker(
+                            state = MarkerState(position = LatLng(lat, lng)),
+                            title = place.name,
+                            snippet = place.address,
+                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
+                        )
+                    }
+                }
+                if (selectedPlaceFilter == "🛍 Shops") {
+                    state.nearbyShopPlaces.forEach { place ->
+                        val lat = place.latitude ?: return@forEach
+                        val lng = place.longitude ?: return@forEach
+                        Marker(
+                            state = MarkerState(position = LatLng(lat, lng)),
+                            title = place.name,
+                            snippet = place.address,
+                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)
                         )
                     }
                 }
@@ -212,7 +254,9 @@ fun MapScreen(
                     icon = Icons.Default.Navigation,
                     label = "Navigate",
                     onClick = {
-                        onAiSuggest("Give me turn-by-turn transit and walking directions from my current location to the best nearby Bitcoin-friendly place.")
+                        onAiSuggest(
+                            "Give me turn-by-turn transit and walking directions from my current location to the best nearby Bitcoin-friendly place."
+                        )
                     }
                 )
 
@@ -247,13 +291,13 @@ fun MapScreen(
             }
         }
 
-        // Orange BTCMap toggle button — prominent, above AI button
+        // Orange BTCMap toggle button
         AnimatedVisibility(
             visible = visible,
             enter = fadeIn() + slideInVertically { 40 },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 160.dp)
+                .padding(end = 16.dp, bottom = 170.dp)
         ) {
             val btcActive = state.activeOverlays.contains(OverlayType.BTC_MERCHANTS)
             Box(
@@ -287,13 +331,13 @@ fun MapScreen(
             }
         }
 
-        // Floating AI assistant button — above the bottom sheet
+        // Floating AI assistant button
         AnimatedVisibility(
             visible = visible,
             enter = fadeIn() + slideInVertically { 40 },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 96.dp)
+                .padding(end = 16.dp, bottom = 104.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -317,14 +361,14 @@ fun MapScreen(
             }
         }
 
-        // Bottom sheet: Nearby Places
+        // ── Bottom Sheet: Nearby Places ─────────────────────────────────────
         AnimatedVisibility(
             visible = visible,
             enter = fadeIn() + slideInVertically { 100 },
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             val sheetHeight by animateDpAsState(
-                targetValue = if (bottomSheetExpanded) 340.dp else 80.dp,
+                targetValue = if (bottomSheetExpanded) 360.dp else 80.dp,
                 animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
                 label = "sheet-height"
             )
@@ -363,8 +407,11 @@ fun MapScreen(
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                                 color = KipitaOnSurface
                             )
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf("₿ BTC", "🍜 Food", "☕ Cafe").forEach { cat ->
+                            // Filter pills — horizontally scrollable
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                items(placeFilters) { cat ->
                                     PlaceCategoryPill(
                                         label = cat,
                                         selected = selectedPlaceFilter == cat,
@@ -382,104 +429,107 @@ fun MapScreen(
                         ) {
                             when (selectedPlaceFilter) {
                                 "₿ BTC" -> {
-                                    // Bitcoin merchants from BTCMap
                                     if (state.merchants.isEmpty()) {
                                         item {
-                                            Box(
-                                                modifier = Modifier.fillMaxWidth()
-                                                    .clip(RoundedCornerShape(14.dp))
-                                                    .background(KipitaCardBg)
-                                                    .padding(20.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    "₿ Toggle the orange BTCMap button to load Bitcoin merchants",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = KipitaTextSecondary,
-                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                                )
-                                            }
+                                            EmptyNearbyCard(
+                                                "₿",
+                                                "Toggle the orange BTCMap button to load Bitcoin merchants in this area"
+                                            )
                                         }
                                     } else {
-                                        items(state.merchants.take(5)) { merchant ->
+                                        items(state.merchants) { merchant ->
                                             NearbyPlaceCard(
-                                                emoji = "₿",
-                                                name = merchant.name,
-                                                subtitle = if (merchant.acceptsLightning) "⚡ Lightning + On-Chain" else "On-Chain BTC",
-                                                rating = 4.2f,
-                                                isFree = false,
-                                                distance = "0.3 km",
-                                                hasWifi = true,
-                                                verified = merchant.source
+                                                emoji    = "₿",
+                                                name     = merchant.name,
+                                                address  = buildString {
+                                                    if (merchant.acceptsLightning) append("⚡ Lightning  ")
+                                                    if (merchant.acceptsOnchainBtc) append("₿ On-chain")
+                                                }.trim().ifBlank { "Bitcoin Merchant" },
+                                                rating   = 4.2f,
+                                                distance = "Nearby",
+                                                hasWifi  = false,
+                                                category = "BTC"
                                             )
                                         }
                                     }
                                 }
+
                                 "🍜 Food" -> {
-                                    items(state.nomadPlaces.take(4)) { place ->
-                                        NearbyPlaceCard(
-                                            emoji = "🍜",
-                                            name = "${place.city} — Local Dining",
-                                            subtitle = "Cuisine nearby · ${place.country}",
-                                            rating = 4.1f,
-                                            isFree = false,
-                                            distance = "< 1 km",
-                                            hasWifi = false,
-                                            verified = "Yelp"
-                                        )
-                                    }
-                                    if (state.nomadPlaces.isEmpty()) {
+                                    if (state.loading) {
+                                        item { LoadingNearbyCard("🍜", "Finding nearby restaurants...") }
+                                    } else if (state.nearbyFoodPlaces.isEmpty()) {
                                         item {
-                                            Box(
-                                                modifier = Modifier.fillMaxWidth()
-                                                    .clip(RoundedCornerShape(14.dp))
-                                                    .background(KipitaCardBg)
-                                                    .padding(20.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    "🍜 Add Yelp API key in Settings to see nearby restaurants",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = KipitaTextSecondary,
-                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                                )
-                                            }
+                                            EmptyNearbyCard(
+                                                "🍜",
+                                                "No restaurants found nearby. Try zooming out or searching a different area."
+                                            )
+                                        }
+                                    } else {
+                                        items(state.nearbyFoodPlaces) { place ->
+                                            NearbyPlaceCard(
+                                                emoji    = "🍜",
+                                                name     = place.name,
+                                                address  = place.address.ifBlank { "Nearby restaurant" },
+                                                rating   = place.rating.toFloat().coerceIn(0f, 5f),
+                                                distance = place.distanceLabel,
+                                                hasWifi  = false,
+                                                category = "Restaurant"
+                                            )
                                         }
                                     }
                                 }
+
                                 "☕ Cafe" -> {
-                                    items(state.nomadPlaces.take(3)) { place ->
-                                        NearbyPlaceCard(
-                                            emoji = "☕",
-                                            name = "${place.city} Café",
-                                            subtitle = "WiFi ${place.internetMbps} Mbps · Nomad-friendly",
-                                            rating = (place.safetyScore / 2).toFloat(),
-                                            isFree = false,
-                                            distance = "0.5 km",
-                                            hasWifi = true,
-                                            verified = "Nomad List"
-                                        )
-                                    }
-                                    if (state.nomadPlaces.isEmpty()) {
+                                    if (state.loading) {
+                                        item { LoadingNearbyCard("☕", "Finding nearby cafés...") }
+                                    } else if (state.nearbyCafePlaces.isEmpty()) {
                                         item {
-                                            Box(
-                                                modifier = Modifier.fillMaxWidth()
-                                                    .clip(RoundedCornerShape(14.dp))
-                                                    .background(KipitaCardBg)
-                                                    .padding(20.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    "☕ Add Yelp API key in Settings to see nearby cafés",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = KipitaTextSecondary,
-                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                                )
-                                            }
+                                            EmptyNearbyCard(
+                                                "☕",
+                                                "No cafés found nearby. Try searching a different location."
+                                            )
+                                        }
+                                    } else {
+                                        items(state.nearbyCafePlaces) { place ->
+                                            NearbyPlaceCard(
+                                                emoji    = "☕",
+                                                name     = place.name,
+                                                address  = place.address.ifBlank { "Nearby café" },
+                                                rating   = place.rating.toFloat().coerceIn(0f, 5f),
+                                                distance = place.distanceLabel,
+                                                hasWifi  = true,
+                                                category = "Café"
+                                            )
+                                        }
+                                    }
+                                }
+
+                                "🛍 Shops" -> {
+                                    if (state.loading) {
+                                        item { LoadingNearbyCard("🛍", "Finding nearby shops...") }
+                                    } else if (state.nearbyShopPlaces.isEmpty()) {
+                                        item {
+                                            EmptyNearbyCard(
+                                                "🛍",
+                                                "No shops found nearby. Try searching a different location."
+                                            )
+                                        }
+                                    } else {
+                                        items(state.nearbyShopPlaces) { place ->
+                                            NearbyPlaceCard(
+                                                emoji    = "🛍",
+                                                name     = place.name,
+                                                address  = place.address.ifBlank { "Nearby shop" },
+                                                rating   = place.rating.toFloat().coerceIn(0f, 5f),
+                                                distance = place.distanceLabel,
+                                                hasWifi  = false,
+                                                category = "Shop"
+                                            )
                                         }
                                     }
                                 }
                             }
+
                             // Travel notices always shown at the bottom
                             items(state.notices.take(2)) { notice ->
                                 TravelNoticeCard(notice = notice)
@@ -493,6 +543,16 @@ fun MapScreen(
     }
 }
 
+// Helper extension to format distance
+private val NearbyPlace.distanceLabel: String
+    get() = when {
+        distanceKm > 0.0 -> "%.1f km".format(distanceKm)
+        else -> "Nearby"
+    }
+
+// ---------------------------------------------------------------------------
+// Supporting composables
+// ---------------------------------------------------------------------------
 
 @Composable
 private fun GlassButton(
@@ -532,9 +592,62 @@ private fun PlaceCategoryPill(label: String, selected: Boolean, onClick: () -> U
         Text(
             text = label,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+            ),
             color = if (selected) KipitaRed else KipitaTextSecondary
         )
+    }
+}
+
+@Composable
+private fun EmptyNearbyCard(emoji: String, message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(KipitaCardBg)
+            .padding(20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(emoji, fontSize = 28.sp)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                message,
+                style = MaterialTheme.typography.bodySmall,
+                color = KipitaTextSecondary,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoadingNearbyCard(emoji: String, message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(KipitaCardBg)
+            .padding(20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                color = KipitaRed,
+                strokeWidth = 2.dp
+            )
+            Text(
+                message,
+                style = MaterialTheme.typography.bodySmall,
+                color = KipitaTextSecondary
+            )
+        }
     }
 }
 
@@ -542,75 +655,69 @@ private fun PlaceCategoryPill(label: String, selected: Boolean, onClick: () -> U
 private fun NearbyPlaceCard(
     emoji: String,
     name: String,
-    subtitle: String,
+    address: String,
     rating: Float,
-    isFree: Boolean,
     distance: String,
     hasWifi: Boolean,
-    verified: String
+    category: String
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(KipitaCardBg)
-            .clickable { expanded = !expanded }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Circle image / emoji icon (left aligned)
         Box(
             modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(48.dp)
+                .clip(CircleShape)
                 .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
-            Text(emoji, fontSize = 20.sp)
+            Text(emoji, fontSize = 22.sp)
         }
 
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(12.dp))
 
+        // Place details
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = name,
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = KipitaOnSurface,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
+            Spacer(Modifier.height(2.dp))
             Text(
-                text = subtitle,
+                text = address,
                 style = MaterialTheme.typography.bodySmall,
                 color = KipitaTextSecondary,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                // Rating
+            Spacer(Modifier.height(5.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Star rating
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(12.dp))
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFFFB300),
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(Modifier.width(2.dp))
                     Text(
-                        text = "%.1f".format(rating),
+                        text = if (rating > 0f) "%.1f".format(rating) else "—",
                         style = MaterialTheme.typography.labelSmall,
                         color = KipitaTextSecondary
                     )
-                }
-                // Free/paid
-                Surface(
-                    shape = RoundedCornerShape(4.dp),
-                    color = if (isFree) Color(0xFFE8F5E9) else KipitaCardBg
-                ) {
-                    Text(
-                        text = if (isFree) "Free" else "Paid",
-                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isFree) KipitaGreenAccent else KipitaTextSecondary
-                    )
-                }
-                // WiFi
-                if (hasWifi) {
-                    Icon(Icons.Default.Wifi, contentDescription = null, tint = KipitaGreenAccent, modifier = Modifier.size(11.dp))
                 }
                 // Distance
                 Text(
@@ -618,11 +725,33 @@ private fun NearbyPlaceCard(
                     style = MaterialTheme.typography.labelSmall,
                     color = KipitaTextTertiary
                 )
+                // WiFi indicator
+                if (hasWifi) {
+                    Icon(
+                        Icons.Default.Wifi,
+                        contentDescription = "WiFi",
+                        tint = KipitaGreenAccent,
+                        modifier = Modifier.size(11.dp)
+                    )
+                }
+                // Category badge
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = KipitaRedLight
+                ) {
+                    Text(
+                        text = category,
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = KipitaRed
+                    )
+                }
             }
         }
 
         Spacer(Modifier.width(8.dp))
 
+        // Go button
         Surface(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
@@ -633,9 +762,18 @@ private fun NearbyPlaceCard(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Navigation, contentDescription = null, tint = KipitaRed, modifier = Modifier.size(12.dp))
+                Icon(
+                    Icons.Default.Navigation,
+                    contentDescription = null,
+                    tint = KipitaRed,
+                    modifier = Modifier.size(12.dp)
+                )
                 Spacer(Modifier.width(3.dp))
-                Text("Go", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold), color = KipitaRed)
+                Text(
+                    "Go",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = KipitaRed
+                )
             }
         }
     }
@@ -709,7 +847,10 @@ private fun TravelNoticeCard(notice: TravelNotice) {
                     color = KipitaTextSecondary
                 )
                 Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(
                         text = "Verified: ${if (notice.verified) "✓" else "Unverified"}",
                         style = MaterialTheme.typography.labelSmall,

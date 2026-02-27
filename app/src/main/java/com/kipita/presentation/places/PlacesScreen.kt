@@ -160,7 +160,7 @@ fun PlacesScreen(
                                     )
                                     Spacer(Modifier.width(3.dp))
                                     Text(
-                                        "Yelp Fusion · open now · real-time",
+                                        "Google Places · open now · real-time",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = Color.White.copy(alpha = 0.65f)
                                     )
@@ -310,7 +310,7 @@ fun PlacesScreen(
                             CircularProgressIndicator(color = KipitaRed, modifier = Modifier.size(32.dp))
                             Spacer(Modifier.height(10.dp))
                             Text(
-                                "Searching Yelp nearby...",
+                                "Searching nearby places...",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = KipitaTextSecondary
                             )
@@ -342,7 +342,7 @@ fun PlacesScreen(
                                 color = KipitaOnSurface
                             )
                             Text(
-                                "Add your Yelp API key in Settings to see real-time results",
+                                "Try a different category or allow location access to see nearby places.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = KipitaTextSecondary,
                                 modifier = Modifier.padding(top = 6.dp)

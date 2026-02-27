@@ -20,7 +20,7 @@ import javax.inject.Singleton
 // GooglePlacesRepository
 //
 // Fetches real-time local business data from Google Places API (New) v1.
-// • Replaces the former Yelp Fusion integration.
+// • Google Places API (New) v1 — replaces legacy Yelp Fusion.
 // • API key sourced from BuildConfig.GOOGLE_PLACES_API_KEY (local.properties).
 // • Results are cached in-memory for 15 minutes for real-time feel.
 // • Used by the Map "Nearby Places" bottom sheet + Explore tab category grid.

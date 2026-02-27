@@ -25,90 +25,6 @@ class SettingsViewModel @Inject constructor(
     private val _state = MutableStateFlow(SettingsUiState())
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
-    init {
-        refreshKeyStatus()
-    }
-
-    // -----------------------------------------------------------------------
-    // API key status checks
-    // -----------------------------------------------------------------------
-
-    fun refreshKeyStatus() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _state.value = _state.value.copy(
-                hasGooglePlacesKey = keystoreManager.hasKey(KeystoreManager.GOOGLE_PLACES_API_KEY_ALIAS),
-                hasCoinbaseToken = keystoreManager.hasKey(KeystoreManager.COINBASE_OAUTH_TOKEN_ALIAS),
-                hasGeminiKey     = keystoreManager.hasKey(KeystoreManager.GEMINI_API_KEY_ALIAS),
-                hasGeminiSecret  = keystoreManager.hasKey(KeystoreManager.GEMINI_API_SECRET_ALIAS),
-                hasRiverToken    = keystoreManager.hasKey(KeystoreManager.RIVER_OAUTH_TOKEN_ALIAS),
-                hasCashAppToken  = keystoreManager.hasKey(KeystoreManager.CASHAPP_OAUTH_TOKEN_ALIAS)
-            )
-        }
-    }
-
-    // -----------------------------------------------------------------------
-    // Save keys (each value AES-GCM encrypted in hardware-backed KeyStore)
-    // -----------------------------------------------------------------------
-
-    fun saveGooglePlacesApiKey(key: String) = saveKey(KeystoreManager.GOOGLE_PLACES_API_KEY_ALIAS, key,
-        onDone = { _state.value = _state.value.copy(hasGooglePlacesKey = key.isNotBlank(), saveStatus = "Google Places key saved") })
-
-    fun saveCoinbaseToken(token: String) = saveKey(KeystoreManager.COINBASE_OAUTH_TOKEN_ALIAS, token,
-        onDone = { _state.value = _state.value.copy(hasCoinbaseToken = token.isNotBlank(), saveStatus = "Coinbase token saved") })
-
-    fun saveGeminiApiKey(key: String) = saveKey(KeystoreManager.GEMINI_API_KEY_ALIAS, key,
-        onDone = { _state.value = _state.value.copy(hasGeminiKey = key.isNotBlank(), saveStatus = "Gemini API key saved") })
-
-    fun saveGeminiApiSecret(secret: String) = saveKey(KeystoreManager.GEMINI_API_SECRET_ALIAS, secret,
-        onDone = { _state.value = _state.value.copy(hasGeminiSecret = secret.isNotBlank(), saveStatus = "Gemini secret saved") })
-
-    fun saveRiverToken(token: String) = saveKey(KeystoreManager.RIVER_OAUTH_TOKEN_ALIAS, token,
-        onDone = { _state.value = _state.value.copy(hasRiverToken = token.isNotBlank(), saveStatus = "River token saved") })
-
-    fun saveCashAppToken(token: String) = saveKey(KeystoreManager.CASHAPP_OAUTH_TOKEN_ALIAS, token,
-        onDone = { _state.value = _state.value.copy(hasCashAppToken = token.isNotBlank(), saveStatus = "CashApp token saved") })
-
-    // -----------------------------------------------------------------------
-    // Clear individual keys
-    // -----------------------------------------------------------------------
-
-    fun clearGooglePlacesApiKey() = clearKey(KeystoreManager.GOOGLE_PLACES_API_KEY_ALIAS,
-        onDone = { _state.value = _state.value.copy(hasGooglePlacesKey = false, saveStatus = "Google Places key removed") })
-
-    fun clearCoinbaseToken() = clearKey(KeystoreManager.COINBASE_OAUTH_TOKEN_ALIAS,
-        onDone = { _state.value = _state.value.copy(hasCoinbaseToken = false, saveStatus = "Coinbase token removed") })
-
-    fun clearGeminiKeys() {
-        clearKey(KeystoreManager.GEMINI_API_KEY_ALIAS) {}
-        clearKey(KeystoreManager.GEMINI_API_SECRET_ALIAS,
-            onDone = { _state.value = _state.value.copy(hasGeminiKey = false, hasGeminiSecret = false, saveStatus = "Gemini keys removed") })
-    }
-
-    fun clearRiverToken() = clearKey(KeystoreManager.RIVER_OAUTH_TOKEN_ALIAS,
-        onDone = { _state.value = _state.value.copy(hasRiverToken = false, saveStatus = "River token removed") })
-
-    // -----------------------------------------------------------------------
-    // Account deletion (GDPR / CCPA)
-    // -----------------------------------------------------------------------
-
-    fun deleteAccount(onDeleted: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            // Delete all user rows from the encrypted Room DB
-            accountRepository.deleteAccount()
-            // Wipe all keys from the hardware-backed KeyStore
-            val aliases = listOf(
-                KeystoreManager.GOOGLE_PLACES_API_KEY_ALIAS,
-                KeystoreManager.COINBASE_OAUTH_TOKEN_ALIAS,
-                KeystoreManager.GEMINI_API_KEY_ALIAS,
-                KeystoreManager.GEMINI_API_SECRET_ALIAS,
-                KeystoreManager.RIVER_OAUTH_TOKEN_ALIAS,
-                KeystoreManager.CASHAPP_OAUTH_TOKEN_ALIAS
-            )
-            aliases.forEach { runCatching { keystoreManager.deleteKey(it) } }
-            withContext(Dispatchers.Main) { onDeleted() }
-        }
-    }
-
     // -----------------------------------------------------------------------
     // Error logs
     // -----------------------------------------------------------------------
@@ -130,36 +46,27 @@ class SettingsViewModel @Inject constructor(
     }
 
     // -----------------------------------------------------------------------
-    // Internal helpers
+    // Account deletion (GDPR / CCPA) — clears all local data
     // -----------------------------------------------------------------------
 
-    private fun saveKey(alias: String, value: String, onDone: () -> Unit) {
-        if (value.isBlank()) return
+    fun deleteAccount(onDeleted: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            runCatching { keystoreManager.storeApiKey(alias, value.trim()) }
-            onDone()
-        }
-    }
-
-    private fun clearKey(alias: String, onDone: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            runCatching { keystoreManager.deleteKey(alias) }
-            onDone()
+            accountRepository.deleteAccount()
+            // Wipe any cached keys from hardware-backed KeyStore (GDPR compliance)
+            listOf(
+                KeystoreManager.GOOGLE_PLACES_API_KEY_ALIAS,
+                KeystoreManager.COINBASE_OAUTH_TOKEN_ALIAS,
+                KeystoreManager.GEMINI_API_KEY_ALIAS,
+                KeystoreManager.GEMINI_API_SECRET_ALIAS,
+                KeystoreManager.RIVER_OAUTH_TOKEN_ALIAS,
+                KeystoreManager.CASHAPP_OAUTH_TOKEN_ALIAS
+            ).forEach { runCatching { keystoreManager.deleteKey(it) } }
+            withContext(Dispatchers.Main) { onDeleted() }
         }
     }
 }
 
 data class SettingsUiState(
-    // API key / token presence flags (true = stored in KeyStore)
-    val hasGooglePlacesKey: Boolean = false,
-    val hasCoinbaseToken: Boolean = false,
-    val hasGeminiKey: Boolean     = false,
-    val hasGeminiSecret: Boolean  = false,
-    val hasRiverToken: Boolean    = false,
-    val hasCashAppToken: Boolean  = false,
-    // UI feedback
-    val saveStatus: String = "",
-    // Error log
     val logs: List<ErrorLogEntity> = emptyList(),
     val lastFlushStatus: String = ""
 )

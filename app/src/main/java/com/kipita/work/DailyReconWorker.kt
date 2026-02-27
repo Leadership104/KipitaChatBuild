@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit
 //   1. Crypto wallet balances     — force-refresh from Coinbase / Gemini / River
 //   2. BTC merchant map           — re-sync from BTCMap API
 //   3. Nomad city data            — re-sync from NomadList API
-//   4. Yelp business categories   — refresh all 20 categories for default + major cities
+//   4. Google Places categories   — refresh all categories for default + major cities
 // ---------------------------------------------------------------------------
 
 @HiltWorker
@@ -72,12 +72,12 @@ class DailyReconWorker @AssistedInject constructor(
                 val nomadJob = async { nomadRepository.refresh() }
 
                 // Stream 4: Refresh Google Places categories for key locations
-                val yelpJob = async { refreshPlacesCategories() }
+                val placesJob = async { refreshPlacesCategories() }
 
                 walletJob.await()
                 merchantJob.await()
                 nomadJob.await()
-                yelpJob.await()
+                placesJob.await()
             }
             Result.success()
         }.getOrElse {

@@ -20,7 +20,7 @@ class KipitaApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
-    // Middleware: concurrent fetch of wallets + prices + Yelp POIs on cold start
+    // Middleware: concurrent fetch of wallets + prices + Places on cold start
     @Inject
     lateinit var startupDataAggregator: StartupDataAggregator
 

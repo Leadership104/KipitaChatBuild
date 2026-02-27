@@ -22,7 +22,7 @@ import javax.inject.Singleton
 // Middleware service that concurrently fetches on app startup:
 //   1. Financial balances — Coinbase, Gemini, River  (parallel via CryptoWalletRepository)
 //   2. Live crypto prices  — CoinGecko free endpoint (no API key required)
-//   3. Local Yelp POIs     — for the detected / default user location
+//   3. Local Google Places — for the detected / default user location
 //
 // All three streams run simultaneously via coroutineScope + async so the
 // slowest source doesn't block the faster ones. Each stream uses a
@@ -110,7 +110,7 @@ class StartupDataAggregator @Inject constructor(
 
     /**
      * Called when GPS lock is acquired after initial startup.
-     * Re-fetches key Yelp POI categories for the new location.
+     * Re-fetches key Google Places categories for the new location.
      */
     fun onLocationAcquired(lat: Double, lng: Double) {
         aggregatorScope.launch {
