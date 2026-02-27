@@ -103,15 +103,7 @@
     .geo-btn{background:var(--navy);color:#fff;border:none;padding:12px 16px;border-radius:12px;font-size:18px;cursor:pointer;transition:opacity .2s}
     .geo-btn:hover{opacity:.8}
 
-    /* 4x4 category grid */
-    .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
-    @media(max-width:600px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
-    .cat-btn{background:var(--card-bg);border:2px solid var(--border);border-radius:16px;padding:16px 8px;text-align:center;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:6px}
-    .cat-btn:hover{border-color:var(--red);background:#fff5f5}
-    .cat-btn.active{border-color:var(--red);background:#fff5f5;box-shadow:0 0 0 3px rgba(255,82,82,.15)}
-    .cat-btn .cat-emoji{font-size:28px}
-    .cat-btn .cat-label{font-size:12px;font-weight:600;color:var(--text2)}
-    .cat-btn.active .cat-label{color:var(--red)}
+    /* 4x4 category grid — see enhanced version in Places 4×4 block below */
 
     /* Place cards */
     .places-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
@@ -218,12 +210,64 @@
     footer{background:var(--navy);color:#6b7280;text-align:center;padding:28px 24px;font-size:14px}
     footer a{color:#9ca3af;text-decoration:none}
 
+    /* ── Travel Booking Tiles ── */
+    .booking-wrap{padding:48px 24px;background:linear-gradient(180deg,#f0f4ff 0%,#fff 100%);border-bottom:1px solid var(--border)}
+    .booking-inner{max-width:1100px;margin:0 auto}
+    .booking-tiles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;margin-bottom:36px}
+    .booking-tile{background:#fff;border:2px solid var(--border);border-radius:20px;padding:24px 16px;cursor:pointer;transition:all .25s cubic-bezier(.34,1.4,.64,1);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;position:relative;outline:none;font-family:inherit}
+    .booking-tile:hover{box-shadow:0 10px 32px rgba(59,130,246,.18);transform:translateY(-4px);border-color:var(--blue)}
+    .booking-tile:active{transform:scale(.97)}
+    .booking-tile .tile-emoji{font-size:44px;transition:transform .2s}
+    .booking-tile:hover .tile-emoji{transform:scale(1.12)}
+    .booking-tile .tile-label{font-size:16px;font-weight:800;color:var(--text)}
+    .booking-tile .tile-sub{font-size:13px;color:var(--text2);line-height:1.4}
+    .tile-badge{position:absolute;top:12px;right:12px;background:var(--blue);color:#fff;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;letter-spacing:.3px}
+    .tile-badge.placeholder{background:#94a3b8}
+
+    /* ── Affiliate Tiles ── */
+    .affiliate-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+    .affiliate-tile{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:22px 16px;background:#fff;border:2px solid var(--border);border-radius:20px;text-decoration:none;color:var(--text);transition:all .25s cubic-bezier(.34,1.4,.64,1)}
+    .affiliate-tile:hover{box-shadow:0 8px 28px rgba(0,0,0,.1);transform:translateY(-3px);border-color:var(--btc)}
+    .affiliate-tile:active{transform:scale(.97)}
+    .affiliate-tile .aff-emoji{font-size:38px;transition:transform .2s}
+    .affiliate-tile:hover .aff-emoji{transform:scale(1.12)}
+    .affiliate-tile .aff-name{font-size:15px;font-weight:800}
+    .affiliate-tile .aff-desc{font-size:12px;color:var(--text2);line-height:1.5}
+    .affiliate-tile .aff-cta{margin-top:6px;background:var(--btc);color:#fff;padding:7px 16px;border-radius:10px;font-size:12px;font-weight:700}
+    .affiliate-tile.aff-btcmap .aff-cta{background:var(--navy)}
+
+    /* ── Full-screen Booking Iframe ── */
+    .iframe-modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.75);display:none;flex-direction:column}
+    .iframe-modal.open{display:flex}
+    .iframe-header{background:var(--navy);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0}
+    .iframe-header h4{font-size:16px;font-weight:700;flex:1}
+    .iframe-note{font-size:12px;color:#9ca3af}
+    .iframe-close{background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:background .2s}
+    .iframe-close:hover{background:rgba(255,255,255,.28)}
+    .iframe-body{flex:1;display:flex;overflow:hidden}
+    .iframe-body iframe{flex:1;border:0;width:100%;height:100%}
+    .iframe-fallback{flex:1;align-items:center;justify-content:center;flex-direction:column;gap:16px;background:#f8fafc;padding:32px;text-align:center;display:none}
+    .iframe-fallback p{color:var(--text2);font-size:15px;max-width:420px}
+    .iframe-fallback a{color:var(--red);font-weight:600}
+
+    /* ── Places 4×4 Category Grid (enhanced) ── */
+    .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:32px}
+    .cat-btn{background:var(--card-bg);border:2px solid var(--border);border-radius:18px;padding:22px 8px;text-align:center;cursor:pointer;transition:all .25s cubic-bezier(.34,1.56,.64,1);display:flex;flex-direction:column;align-items:center;gap:8px;outline:none;font-family:inherit;user-select:none}
+    .cat-btn:hover{border-color:var(--red);background:#fff5f5;transform:translateY(-4px);box-shadow:0 8px 24px rgba(255,82,82,.15)}
+    .cat-btn:active{transform:scale(.94)}
+    .cat-btn.active{border-color:var(--red);background:#fff5f5;box-shadow:0 0 0 3px rgba(255,82,82,.2),0 6px 20px rgba(255,82,82,.12);transform:translateY(-3px)}
+    .cat-btn .cat-emoji{font-size:34px;transition:transform .2s}
+    .cat-btn:hover .cat-emoji,.cat-btn.active .cat-emoji{transform:scale(1.15)}
+    .cat-btn .cat-label{font-size:12px;font-weight:700;color:var(--text2);line-height:1.3}
+    .cat-btn.active .cat-label{color:var(--red)}
+
     /* ── Responsive ── */
+    @media(max-width:900px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:640px){
       .nav-links{display:none}
       .hero h1{font-size:30px}
-      .cat-grid{grid-template-columns:repeat(2,1fr)}
       .sos-grid{grid-template-columns:1fr 1fr}
+      .cat-grid{grid-template-columns:repeat(2,1fr)}
     }
   </style>
 </head>
@@ -234,6 +278,7 @@
   <div class="logo">✈️&nbsp;Kip<span>ita</span></div>
   <div class="nav-links">
     <a href="#features">Features</a>
+    <a href="#booking">Book</a>
     <a href="#btcmap">BTC Map</a>
     <a href="#explore">Explore</a>
     <a href="#languages">Languages</a>
@@ -290,6 +335,102 @@
         <button class="wbtn" onclick="copyWalletAddr()">📋 Copy Address</button>
         <button class="wbtn danger" onclick="disconnectWallet()">Disconnect</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TRAVEL BOOKING + PARTNER TILES ── -->
+<div class="booking-wrap" id="booking">
+  <div class="booking-inner">
+    <h2 class="section-title">✈️ Book Travel</h2>
+    <p class="section-sub">Hotels, flights, cruises & experiences — opens in a secure in-app viewer.</p>
+
+    <!-- Travel Booking Tiles (Expedia placeholder — swap URL only when referral link is ready) -->
+    <!-- EXPEDIA_SWAP_GUIDE: Replace the `data-url` attribute on each tile with the referral URL.  -->
+    <!-- No JS refactoring needed — openBookingIframe() reads data-url at click time.            -->
+    <div class="booking-tiles-grid">
+      <button class="booking-tile"
+        data-label="Hotels" data-emoji="🏨"
+        data-url="https://www.expedia.com/Hotels"
+        onclick="openBookingIframe(this)">
+        <span class="tile-badge placeholder">Expedia</span>
+        <span class="tile-emoji">🏨</span>
+        <span class="tile-label">Hotels</span>
+        <span class="tile-sub">Find & book hotels worldwide</span>
+      </button>
+      <button class="booking-tile"
+        data-label="Cruises" data-emoji="🚢"
+        data-url="https://www.expedia.com/Cruises"
+        onclick="openBookingIframe(this)">
+        <span class="tile-badge placeholder">Expedia</span>
+        <span class="tile-emoji">🚢</span>
+        <span class="tile-label">Cruises</span>
+        <span class="tile-sub">Explore cruise packages</span>
+      </button>
+      <button class="booking-tile"
+        data-label="Flights" data-emoji="✈️"
+        data-url="https://www.expedia.com/Flights"
+        onclick="openBookingIframe(this)">
+        <span class="tile-badge placeholder">Expedia</span>
+        <span class="tile-emoji">✈️</span>
+        <span class="tile-label">Flights</span>
+        <span class="tile-sub">Search & book cheap flights</span>
+      </button>
+      <button class="booking-tile"
+        data-label="Entertainment" data-emoji="🎭"
+        data-url="https://www.expedia.com/Things-To-Do"
+        onclick="openBookingIframe(this)">
+        <span class="tile-badge placeholder">Expedia</span>
+        <span class="tile-emoji">🎭</span>
+        <span class="tile-label">Entertainment</span>
+        <span class="tile-sub">Tours, activities & experiences</span>
+      </button>
+    </div>
+
+    <!-- Crypto & BTC Partner Tiles -->
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:8px">₿ Crypto Partners</h3>
+    <p style="color:var(--text2);font-size:14px;margin-bottom:20px">Trusted platforms used by the Kipita community — opens in new tab.</p>
+    <div class="affiliate-grid">
+      <!-- BTC Map tile -->
+      <button class="affiliate-tile aff-btcmap"
+        onclick="openBookingIframe(this)"
+        data-label="BTC Map" data-emoji="🗺️"
+        data-url="https://btcmap.org/map">
+        <span class="aff-emoji">🗺️</span>
+        <span class="aff-name">BTC Map</span>
+        <span class="aff-desc">Find Bitcoin-accepting merchants worldwide. Community-maintained map.</span>
+        <span class="aff-cta">Open Map →</span>
+      </button>
+      <!-- Kinesis Money affiliate -->
+      <a class="affiliate-tile"
+        href="https://kms.kinesis.money/signup/KM00083150"
+        target="_blank" rel="noopener noreferrer"
+        onclick="trackAffiliate('kinesis')">
+        <span class="aff-emoji">🥇</span>
+        <span class="aff-name">Kinesis Money</span>
+        <span class="aff-desc">Gold & silver-backed digital money. Earn yields on your metals holdings.</span>
+        <span class="aff-cta">Sign Up →</span>
+      </a>
+      <!-- Swan Bitcoin affiliate -->
+      <a class="affiliate-tile"
+        href="https://www.swanbitcoin.com/kipita/"
+        target="_blank" rel="noopener noreferrer"
+        onclick="trackAffiliate('swan')">
+        <span class="aff-emoji">🦢</span>
+        <span class="aff-name">Swan Bitcoin</span>
+        <span class="aff-desc">The best way to accumulate Bitcoin. Auto-stack sats on your schedule.</span>
+        <span class="aff-cta">Stack Sats →</span>
+      </a>
+      <!-- Fold affiliate -->
+      <a class="affiliate-tile"
+        href="https://use.foldapp.com/r/MAJL4MYU"
+        target="_blank" rel="noopener noreferrer"
+        onclick="trackAffiliate('fold')">
+        <span class="aff-emoji">🃏</span>
+        <span class="aff-name">Fold</span>
+        <span class="aff-desc">Bitcoin rewards debit card. Earn sats on every purchase automatically.</span>
+        <span class="aff-cta">Get Card →</span>
+      </a>
     </div>
   </div>
 </div>
@@ -435,6 +576,35 @@
     <div class="new-trip-form">
       <input type="text" class="new-trip-input" id="newTripNameInput" placeholder="New trip name…" maxlength="40"/>
       <button class="confirm-add-btn" id="createAndAddBtn" onclick="createAndAdd()">Create &amp; Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── BOOKING IFRAME MODAL ── -->
+<!-- Sandboxed: allow-scripts, allow-same-origin, allow-forms, allow-popups      -->
+<!-- allow-popups-to-escape-sandbox lets the iframe open checkout in a new tab   -->
+<!-- No allow-top-navigation — prevents iframe from navigating parent page       -->
+<div class="iframe-modal" id="bookingIframeModal">
+  <div class="iframe-header">
+    <h4 id="iframeModalTitle">Loading…</h4>
+    <span class="iframe-note">🔒 Secure viewer</span>
+    <button class="iframe-close" onclick="closeBookingIframe()">✕ Close</button>
+  </div>
+  <div class="iframe-body">
+    <iframe id="bookingIframe"
+      src="about:blank"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+      title="Travel Booking"
+    ></iframe>
+    <div class="iframe-fallback" id="iframeFallback">
+      <p style="font-size:32px">🚫</p>
+      <p>This page cannot be displayed inside the viewer (the site blocks iframes).</p>
+      <a id="iframeFallbackLink" href="#" target="_blank" rel="noopener noreferrer"
+         style="display:inline-block;background:var(--red);color:#fff;padding:12px 24px;border-radius:12px;font-weight:700;font-size:15px;text-decoration:none">
+        Open in New Tab ↗
+      </a>
     </div>
   </div>
 </div>
@@ -1345,6 +1515,76 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (e.target === overlay) overlay.classList.remove('open');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Travel Booking Iframe
+// ─────────────────────────────────────────────────────────────────────────────
+// To swap Expedia placeholder for a referral link, update only the data-url
+// attribute on the button element in HTML — no JS changes required.
+
+let currentBookingUrl = '';
+
+function openBookingIframe(tileEl) {
+  const url = tileEl.dataset.url;
+  const label = tileEl.dataset.label || tileEl.querySelector('.tile-label,.aff-name')?.textContent || 'Booking';
+  const emoji = tileEl.dataset.emoji || tileEl.querySelector('.tile-emoji,.aff-emoji')?.textContent || '';
+
+  // Security: only allow HTTPS URLs
+  if (!url || !url.startsWith('https://')) return;
+  currentBookingUrl = url;
+
+  document.getElementById('iframeModalTitle').textContent = `${emoji} ${label}`;
+  document.getElementById('bookingIframe').src = url;
+  document.getElementById('iframeFallback').style.display = 'none';
+  document.getElementById('iframeFallbackLink').href = url;
+  document.getElementById('bookingIframeModal').classList.add('open');
+
+  trackAffiliate('booking_' + label.toLowerCase().replace(/\s+/g, '_'));
+}
+
+function closeBookingIframe() {
+  document.getElementById('bookingIframeModal').classList.remove('open');
+  // Blank the iframe to stop any media/loading
+  setTimeout(() => { document.getElementById('bookingIframe').src = 'about:blank'; }, 300);
+  currentBookingUrl = '';
+}
+
+// Show fallback if iframe load fails (e.g. X-Frame-Options block)
+document.getElementById('bookingIframe').addEventListener('load', function() {
+  try {
+    // If same-origin, we can check; cross-origin will just not error
+    const doc = this.contentDocument;
+    if (doc && doc.title === '') {
+      // Possibly blocked
+      document.getElementById('iframeFallback').style.display = 'flex';
+    }
+  } catch(_) {
+    // Cross-origin — assume loaded OK
+  }
+});
+
+// Close iframe modal on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('bookingIframeModal').classList.contains('open')) closeBookingIframe();
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Affiliate Click Tracking
+// ─────────────────────────────────────────────────────────────────────────────
+// All click data stays local (localStorage only — no server calls).
+// Extend this function to POST to your analytics endpoint when ready.
+
+function trackAffiliate(partner) {
+  try {
+    const KEY = 'kipita_affiliate_clicks';
+    const store = JSON.parse(localStorage.getItem(KEY) || '{}');
+    store[partner] = (store[partner] || 0) + 1;
+    store._last = { partner, ts: new Date().toISOString() };
+    localStorage.setItem(KEY, JSON.stringify(store));
+  } catch(_) {}
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Init
