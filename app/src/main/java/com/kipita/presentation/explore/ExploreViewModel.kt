@@ -3,13 +3,17 @@ package com.kipita.presentation.explore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kipita.data.api.PlaceCategory
+import com.kipita.data.local.SavedLocationEntity
 import com.kipita.data.repository.NearbyPlace
 import com.kipita.data.repository.GooglePlacesRepository
+import com.kipita.data.repository.SavedLocationsRepository
 import com.kipita.data.service.TransitDeepLinkService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,7 +29,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
     private val googlePlacesRepository: GooglePlacesRepository,
-    val transitService: TransitDeepLinkService
+    val transitService: TransitDeepLinkService,
+    private val savedLocationsRepository: SavedLocationsRepository
 ) : ViewModel() {
 
     data class ExploreUiState(
@@ -41,6 +46,19 @@ class ExploreViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(ExploreUiState())
     val state: StateFlow<ExploreUiState> = _state.asStateFlow()
+
+    /** Live list of saved/favorited place IDs for quick heart-icon state. */
+    val savedPlaceIds: StateFlow<Set<String>> = savedLocationsRepository.observeAll()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+        .let { flow ->
+            val ids = MutableStateFlow<Set<String>>(emptySet())
+            viewModelScope.launch { flow.collect { list -> ids.value = list.map { it.id }.toSet() } }
+            ids
+        }
 
     init {
         _state.value = _state.value.copy(
@@ -134,5 +152,25 @@ class ExploreViewModel @Inject constructor(
             destLng = destLng,
             destName = place.name
         )
+    }
+
+    // -----------------------------------------------------------------------
+    // Favorites / Saved locations
+    // -----------------------------------------------------------------------
+
+    fun toggleSaved(place: NearbyPlace) {
+        viewModelScope.launch {
+            savedLocationsRepository.toggle(
+                id         = place.id,
+                name       = place.name,
+                address    = place.address,
+                latitude   = place.latitude ?: 0.0,
+                longitude  = place.longitude ?: 0.0,
+                rating     = place.rating,
+                priceLevel = "",
+                types      = listOf(place.category.name),
+                photoUrl   = ""
+            )
+        }
     }
 }

@@ -88,6 +88,7 @@ class TripsViewModel @Inject constructor(
                     isAiGenerated     = false
                 )
                 repo.saveTrip(entity)
+                repo.deleteSampleTripsIfUserHasRealTrip()
                 onCreated(id)
             } catch (e: Exception) {
                 logger.log("TripsViewModel.createManualTrip", e)
@@ -126,6 +127,7 @@ class TripsViewModel @Inject constructor(
                     isAiGenerated = true
                 )
                 repo.saveTrip(entity)
+                repo.deleteSampleTripsIfUserHasRealTrip()
                 onCreated(id)
             } catch (e: Exception) {
                 logger.log("TripsViewModel.acceptAiTrip", e)

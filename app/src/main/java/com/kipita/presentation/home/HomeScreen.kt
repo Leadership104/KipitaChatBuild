@@ -125,7 +125,8 @@ fun HomeScreen(
     onOpenWallet: () -> Unit = {},
     onOpenMap: () -> Unit = {},
     onOpenAI: (String) -> Unit = {},
-    onOpenTranslate: () -> Unit = {}
+    onOpenTranslate: () -> Unit = {},
+    onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> }
 ) {
     var visible by remember { mutableStateOf(false) }
     var showPackingList by remember { mutableStateOf(false) }
@@ -303,7 +304,7 @@ fun HomeScreen(
                                         .clip(RoundedCornerShape(14.dp))
                                         .background(Color.White)
                                         .border(1.dp, KipitaBorder, RoundedCornerShape(14.dp))
-                                        .clickable { runCatching { uriHandler.openUri(url) } }
+                                        .clickable { onOpenWebView(url, label) }
                                         .padding(horizontal = 16.dp, vertical = 12.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
@@ -449,7 +450,10 @@ fun HomeScreen(
             containerColor = Color.White,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
-            PackingListSheet(onClose = { showPackingList = false })
+            PackingListSheet(
+                onClose = { showPackingList = false },
+                onOpenWebView = onOpenWebView
+            )
         }
     }
 
@@ -499,7 +503,10 @@ private fun QuickToolPill(tool: QuickTool, onClick: () -> Unit) {
 // Packing List Bottom Sheet — with manual items, USPS mail link, Visa Tips
 // ---------------------------------------------------------------------------
 @Composable
-private fun PackingListSheet(onClose: () -> Unit) {
+private fun PackingListSheet(
+    onClose: () -> Unit,
+    onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> }
+) {
     val context = LocalContext.current
     var checkedItems by remember { mutableStateOf(setOf<Int>()) }
     val customItems = remember { mutableStateListOf<PackingItem>() }
@@ -607,11 +614,7 @@ private fun PackingListSheet(onClose: () -> Unit) {
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFFFFF8E1))
                         .clickable {
-                            runCatching {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, Uri.parse("https://holdmail.usps.com/holdmail/"))
-                                )
-                            }
+                            onOpenWebView("https://holdmail.usps.com/holdmail/", "USPS Mail Hold")
                         }
                         .padding(14.dp)
                 ) {

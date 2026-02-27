@@ -1,10 +1,17 @@
 package com.kipita.data.repository
 
 import com.kipita.data.api.BtcMerchantApiService
+import com.kipita.data.api.acceptsLightning
+import com.kipita.data.api.acceptsOnchain
+import com.kipita.data.api.isDeleted
+import com.kipita.data.api.latitude
+import com.kipita.data.api.longitude
+import com.kipita.data.api.name
 import com.kipita.data.local.MerchantDao
 import com.kipita.data.local.MerchantEntity
 import com.kipita.domain.model.MerchantLocation
 import java.time.Instant
+import kotlin.math.abs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -12,21 +19,39 @@ class MerchantRepository(
     private val apiService: BtcMerchantApiService,
     private val merchantDao: MerchantDao
 ) {
-    suspend fun refresh(cashAppToken: String?): List<MerchantLocation> = withContext(Dispatchers.IO) {
-        val btcMap = runCatching { apiService.getBtcMapMerchants() }.getOrDefault(emptyList()).map {
-            MerchantLocation(
-                id = "btcmap-${it.id}",
-                name = it.name,
-                latitude = it.lat,
-                longitude = it.lon,
-                acceptsOnchainBtc = it.onchain ?: true,
-                acceptsLightning = it.lightning ?: false,
-                acceptsCashApp = false,
-                source = "btcmap.org",
-                lastVerified = Instant.ofEpochMilli(it.updatedAt ?: Instant.now().toEpochMilli()),
-                metadata = mapOf("source_type" to "open_data")
-            )
-        }
+    /**
+     * Refresh BTC merchant list from BTCMap v2 + optional CashApp.
+     * Filters to a ~50 km bounding box around [userLat]/[userLng] before
+     * persisting to Room, so we don't bloat local storage with global data.
+     * Falls back to cached Room data on network failure.
+     */
+    suspend fun refresh(
+        cashAppToken: String?,
+        userLat: Double = 0.0,
+        userLng: Double = 0.0
+    ): List<MerchantLocation> = withContext(Dispatchers.IO) {
+        val btcMap = runCatching { apiService.getBtcMapMerchants() }
+            .getOrDefault(emptyList())
+            .filter { !it.isDeleted && it.latitude != null && it.longitude != null }
+            .filter { dto ->
+                // ~0.45° ≈ 50 km bounding box (skipped when userLat==0)
+                if (userLat == 0.0 && userLng == 0.0) true
+                else abs(dto.latitude!! - userLat) < 0.45 && abs(dto.longitude!! - userLng) < 0.45
+            }
+            .map { dto ->
+                MerchantLocation(
+                    id = "btcmap-${dto.id}",
+                    name = dto.name,
+                    latitude = dto.latitude!!,
+                    longitude = dto.longitude!!,
+                    acceptsOnchainBtc = dto.acceptsOnchain,
+                    acceptsLightning = dto.acceptsLightning,
+                    acceptsCashApp = false,
+                    source = "btcmap.org",
+                    lastVerified = Instant.now(),
+                    metadata = mapOf("source_type" to "open_data")
+                )
+            }
         val cashApp = if (cashAppToken.isNullOrBlank()) emptyList() else runCatching {
             apiService.getCashAppMerchants("Bearer $cashAppToken")
         }.getOrDefault(emptyList()).map {

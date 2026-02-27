@@ -1,18 +1,16 @@
 package com.kipita.presentation.map
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,11 +20,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -36,6 +32,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Wifi
@@ -47,24 +44,30 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 import com.kipita.domain.model.NomadPlaceInfo
 import com.kipita.domain.model.TravelNotice
 import com.kipita.presentation.theme.KipitaBorder
@@ -76,25 +79,6 @@ import com.kipita.presentation.theme.KipitaRedLight
 import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
 import com.kipita.presentation.theme.KipitaWarning
-import kotlinx.coroutines.launch
-
-private data class LandmarkPin(
-    val name: String,
-    val emoji: String,
-    val distanceKm: Float,
-    val rating: Float,
-    val xFraction: Float,
-    val yFraction: Float,
-    val pinColor: Color
-)
-
-private val tokyoLandmarks = listOf(
-    LandmarkPin("Tokyo Tower", "🗼", 0.3f, 4.6f, 0.55f, 0.28f, Color(0xFFE53935)),
-    LandmarkPin("Senso-ji", "⛩️", 1.2f, 4.8f, 0.22f, 0.42f, Color(0xFFFF6F00)),
-    LandmarkPin("Shibuya Crossing", "🚦", 0.8f, 4.5f, 0.68f, 0.58f, Color(0xFF1565C0)),
-    LandmarkPin("Fab Cafe ₿", "☕", 0.4f, 4.7f, 0.40f, 0.52f, Color(0xFF2E7D32)),
-    LandmarkPin("Meiji Shrine", "🌳", 2.1f, 4.9f, 0.16f, 0.22f, Color(0xFF00695C))
-)
 
 @Composable
 fun MapScreen(
@@ -103,20 +87,46 @@ fun MapScreen(
     onAiSuggest: (String) -> Unit = {},
     onNavigateBack: (() -> Unit)? = null
 ) {
+    val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
-    var selected by remember { mutableStateOf<String?>(null) }
-    var mapScale by remember { mutableFloatStateOf(1f) }
-    var mapOffset by remember { mutableStateOf(Offset.Zero) }
-    val markerAlpha = remember { Animatable(0f) }
     var bottomSheetExpanded by remember { mutableStateOf(true) }
     var visible by remember { mutableStateOf(false) }
-    // Category filter for bottom sheet: "BTC" | "Food" | "Cafe"
     var selectedPlaceFilter by remember { mutableStateOf("BTC") }
 
+    val hasLocationPermission = remember {
+        ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    // Default to user position when available, otherwise New York as placeholder
+    val initialLat = if (state.userLat != 0.0) state.userLat else 40.7128
+    val initialLng = if (state.userLng != 0.0) state.userLng else -74.0060
+
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(LatLng(initialLat, initialLng), 13f)
+    }
+
     LaunchedEffect(Unit) {
-        viewModel.load("global")
-        launch { markerAlpha.animateTo(1f, spring(stiffness = Spring.StiffnessLow)) }
+        val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
+        val loc = if (hasLocationPermission) {
+            @Suppress("MissingPermission")
+            lm.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
+                ?: lm.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
+        } else null
+        val lat = loc?.latitude ?: 40.7128
+        val lng = loc?.longitude ?: -74.0060
+        viewModel.load("global", lat, lng)
         visible = true
+    }
+
+    // Move camera when user location arrives
+    LaunchedEffect(state.userLat, state.userLng) {
+        if (state.userLat != 0.0 && state.userLng != 0.0) {
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(
+                LatLng(state.userLat, state.userLng), 13f
+            )
+        }
     }
 
     Box(
@@ -125,60 +135,49 @@ fun MapScreen(
             .background(Color(0xFFEFF3F9))
             .padding(paddingValues)
     ) {
-        // Map canvas fills the background
+        // ── Google Map fills the background ───────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(400.dp)
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        mapScale = (mapScale * zoom).coerceIn(0.8f, 4f)
-                        mapOffset += pan
+                .height(420.dp)
+        ) {
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                properties = MapProperties(
+                    isMyLocationEnabled = hasLocationPermission,
+                    mapType = com.google.maps.android.compose.MapType.NORMAL
+                ),
+                uiSettings = MapUiSettings(
+                    zoomControlsEnabled = true,
+                    myLocationButtonEnabled = hasLocationPermission,
+                    mapToolbarEnabled = true
+                )
+            ) {
+                // ── BTC Merchant markers (orange) ─────────────────────────
+                if (state.activeOverlays.contains(OverlayType.BTC_MERCHANTS)) {
+                    state.merchants.forEach { merchant ->
+                        Marker(
+                            state = MarkerState(
+                                position = LatLng(merchant.latitude, merchant.longitude)
+                            ),
+                            title = merchant.name,
+                            snippet = buildString {
+                                if (merchant.acceptsLightning) append("⚡ Lightning  ")
+                                if (merchant.acceptsOnchainBtc) append("₿ On-chain  ")
+                                if (merchant.acceptsCashApp) append("💵 CashApp")
+                            }.trim(),
+                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+                        )
                     }
                 }
-        ) {
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(400.dp)
-                    .background(Color(0xFFD4E3F7))
-            ) {
-                drawMapGrid(mapScale, mapOffset)
-                val merchants = if (state.activeOverlays.contains(OverlayType.BTC_MERCHANTS)) state.merchants else emptyList()
-                val nomads = if (state.activeOverlays.contains(OverlayType.NOMAD)) state.nomadPlaces else emptyList()
-                merchants.forEachIndexed { index, _ ->
-                    val x = (size.width * ((index % 6) + 1) / 7f) * mapScale + mapOffset.x
-                    val y = (size.height * ((index / 6) + 1) / 4f) * mapScale + mapOffset.y
-                    drawCircle(Color(0xFFF57C00), radius = 9.dp.toPx() * mapScale, center = Offset(x, y), alpha = markerAlpha.value)
-                    drawCircle(Color.White, radius = 4.dp.toPx() * mapScale, center = Offset(x, y), alpha = markerAlpha.value)
-                }
-                nomads.forEachIndexed { index, _ ->
-                    val x = (size.width * ((index % 4) + 1) / 5f) * mapScale + mapOffset.x
-                    val y = (size.height * ((index / 4) + 1) / 3f) * mapScale + mapOffset.y
-                    drawCircle(Color(0xFF4CAF50), radius = 7.dp.toPx() * mapScale, center = Offset(x, y), alpha = markerAlpha.value)
-                    drawCircle(Color.White, radius = 3.dp.toPx() * mapScale, center = Offset(x, y), alpha = markerAlpha.value)
-                }
-            }
-
-            // Landmark pins overlay (composable, for rich labeled pins)
-            tokyoLandmarks.forEach { pin ->
-                LandmarkPinCard(
-                    pin = pin,
-                    alpha = markerAlpha.value,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp)
-                        .wrapContentSize(Alignment.TopStart)
-                        .offset(
-                            x = (pin.xFraction * 380).dp,
-                            y = (pin.yFraction * 360).dp
-                        )
-                )
             }
 
             if (state.loading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center).size(32.dp),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(32.dp),
                     color = KipitaRed,
                     strokeWidth = 2.dp
                 )
@@ -494,64 +493,6 @@ fun MapScreen(
     }
 }
 
-@Composable
-private fun LandmarkPinCard(pin: LandmarkPin, alpha: Float, modifier: Modifier = Modifier) {
-    var expanded by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        targetValue = if (expanded) 1.05f else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium),
-        label = "pin-scale"
-    )
-    Column(
-        modifier = modifier
-            .scale(scale)
-            .shadow(6.dp, RoundedCornerShape(12.dp))
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.White.copy(alpha = (alpha * 0.96f).coerceIn(0f, 1f)))
-            .clickable { expanded = !expanded }
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(pin.emoji, fontSize = 13.sp)
-            Text(
-                pin.name,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = KipitaOnSurface
-            )
-        }
-        if (expanded) {
-            Spacer(Modifier.height(3.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(10.dp))
-                Text("%.1f".format(pin.rating), style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
-                Text("·", color = KipitaTextTertiary, style = MaterialTheme.typography.labelSmall)
-                Text("%.1f km".format(pin.distanceKm), style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
-            }
-        }
-    }
-    // Pin stem
-    Box(
-        modifier = Modifier
-            .size(width = 2.dp, height = 8.dp)
-            .background(pin.pinColor.copy(alpha = alpha.coerceIn(0f, 1f)))
-    )
-}
-
-private fun DrawScope.drawMapGrid(scale: Float, offset: Offset) {
-    val gridColor = Color(0xFFBDD7F0)
-    val step = 40.dp.toPx() * scale
-    var x = offset.x % step
-    while (x < size.width) {
-        drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 0.5f)
-        x += step
-    }
-    var y = offset.y % step
-    while (y < size.height) {
-        drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 0.5f)
-        y += step
-    }
-}
 
 @Composable
 private fun GlassButton(
@@ -609,16 +550,10 @@ private fun NearbyPlaceCard(
     verified: String
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        if (expanded) 1f else 0.98f,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium),
-        label = "place-scale"
-    )
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .scale(scale)
             .clip(RoundedCornerShape(14.dp))
             .background(KipitaCardBg)
             .clickable { expanded = !expanded }

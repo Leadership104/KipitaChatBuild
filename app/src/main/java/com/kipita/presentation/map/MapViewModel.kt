@@ -28,12 +28,16 @@ class MapViewModel @Inject constructor(
     private val _state = MutableStateFlow(MapUiState())
     val state: StateFlow<MapUiState> = _state.asStateFlow()
 
-    fun load(region: String) {
+    fun load(region: String, userLat: Double = 0.0, userLng: Double = 0.0) {
         viewModelScope.launch {
-            _state.value = _state.value.copy(loading = true)
+            _state.value = _state.value.copy(loading = true, userLat = userLat, userLng = userLng)
             runCatching {
                 val notices = travelDataEngine.collectRegionNotices(region)
-                val merchants = merchantRepository.refresh(cashAppToken = null)
+                val merchants = merchantRepository.refresh(
+                    cashAppToken = null,
+                    userLat = userLat,
+                    userLng = userLng
+                )
                 val nomadPlaces = nomadRepository.refresh()
                 val isOfflineReady = offlineMapRepository.isRegionAvailableOffline(region)
                 MapUiState(
@@ -42,7 +46,9 @@ class MapViewModel @Inject constructor(
                     merchants = merchants,
                     nomadPlaces = nomadPlaces,
                     activeOverlays = _state.value.activeOverlays,
-                    offlineReady = isOfflineReady
+                    offlineReady = isOfflineReady,
+                    userLat = userLat,
+                    userLng = userLng
                 )
             }.onSuccess { _state.value = it }
                 .onFailure {
@@ -77,5 +83,7 @@ data class MapUiState(
     val merchants: List<MerchantLocation> = emptyList(),
     val nomadPlaces: List<NomadPlaceInfo> = emptyList(),
     val activeOverlays: Set<OverlayType> = setOf(OverlayType.BTC_MERCHANTS, OverlayType.SAFETY, OverlayType.HEALTH, OverlayType.NOMAD),
-    val offlineReady: Boolean = false
+    val offlineReady: Boolean = false,
+    val userLat: Double = 0.0,
+    val userLng: Double = 0.0
 )

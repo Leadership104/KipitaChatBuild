@@ -59,4 +59,12 @@ interface TripDao {
         "WHERE endDateEpoch < :todayEpoch AND status != 'PAST'"
     )
     suspend fun markExpiredTripsAsPast(todayEpoch: Long)
+
+    /** Returns the count of non-sample trips (real user trips). */
+    @Query("SELECT COUNT(*) FROM trips WHERE isSample = 0")
+    suspend fun countRealTrips(): Int
+
+    /** Removes all sample / onboarding trips. Called after user saves their first real trip. */
+    @Query("DELETE FROM trips WHERE isSample = 1")
+    suspend fun deleteSampleTrips()
 }

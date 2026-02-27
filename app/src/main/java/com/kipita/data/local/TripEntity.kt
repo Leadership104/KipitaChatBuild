@@ -45,6 +45,7 @@ data class TripEntity(
     // Meta
     val createdBy: String = "",
     val isAiGenerated: Boolean = false,
+    val isSample: Boolean = false,
 
     // Lifecycle status: "UPCOMING" | "ACTIVE" | "PAST"
     val status: String = "UPCOMING",

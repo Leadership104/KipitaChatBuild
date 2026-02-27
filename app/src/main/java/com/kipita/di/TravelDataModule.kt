@@ -21,8 +21,10 @@ import com.kipita.data.local.TravelNoticeDao
 import com.kipita.data.local.DirectMessageDao
 import com.kipita.data.local.InviteDao
 import com.kipita.data.local.TripMessageDao
+import com.kipita.data.local.SavedLocationDao
 import com.kipita.data.local.UserDao
 import com.kipita.data.repository.AdvisoryRepository
+import com.kipita.data.repository.SavedLocationsRepository
 import com.kipita.data.repository.CurrencyRepository
 import com.kipita.data.repository.HealthRepository
 import com.kipita.data.repository.MerchantRepository
@@ -45,6 +47,30 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object TravelDataModule {
+    private val MIGRATION_9_10 = object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Add sample-trip flag to trips table
+            db.execSQL("ALTER TABLE trips ADD COLUMN isSample INTEGER NOT NULL DEFAULT 0")
+            // New saved_locations table for user-favorited places
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS saved_locations (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    address TEXT NOT NULL,
+                    latitude REAL NOT NULL,
+                    longitude REAL NOT NULL,
+                    rating REAL NOT NULL,
+                    priceLevel TEXT NOT NULL,
+                    types TEXT NOT NULL,
+                    photoUrl TEXT NOT NULL,
+                    savedAtEpochMillis INTEGER NOT NULL
+                )
+                """
+            )
+        }
+    }
+
     private val MIGRATION_8_9 = object : Migration(8, 9) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE trips ADD COLUMN userSentiment TEXT NOT NULL DEFAULT ''")
@@ -128,7 +154,7 @@ object TravelDataModule {
 
         return Room.databaseBuilder(context, KipitaDatabase::class.java, "kipita.db")
             .openHelperFactory(factory)
-            .addMigrations(MIGRATION_7_8, MIGRATION_8_9)
+            .addMigrations(MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
             .build()
     }
 
@@ -155,6 +181,14 @@ object TravelDataModule {
 
     @Provides
     fun provideUserDao(db: KipitaDatabase): UserDao = db.userDao()
+
+    @Provides
+    fun provideSavedLocationDao(db: KipitaDatabase): SavedLocationDao = db.savedLocationDao()
+
+    @Provides
+    @Singleton
+    fun provideSavedLocationsRepository(dao: SavedLocationDao): SavedLocationsRepository =
+        SavedLocationsRepository(dao)
 
     @Provides
     fun provideSourceVerificationLayer(): SourceVerificationLayer = SourceVerificationLayer(

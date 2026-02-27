@@ -161,7 +161,7 @@ fun ExploreScreen(
 
     LaunchedEffect(Unit) { delay(80); visible = true }
 
-    // Auto-fetch Yelp results when user switches to Places tab
+    // Auto-fetch results when user switches to Places tab
     LaunchedEffect(selectedTab) {
         if (selectedTab == 1) {
             if (searchText.isNotBlank()) viewModel.fetchByLocation(searchText, selectedCategory)
@@ -206,6 +206,41 @@ fun ExploreScreen(
                 }
             } catch (_: Exception) {}
             isLocating = false
+        }
+    }
+
+    // Auto-request GPS on first composition — immediately fetches nearby places
+    LaunchedEffect(Unit) {
+        val hasPerm = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (hasPerm) {
+            isLocating = true
+            try {
+                val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                val loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                    ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                if (loc != null) {
+                    detectedLat = loc.latitude
+                    detectedLon = loc.longitude
+                    viewModel.updateUserLocation(loc.latitude, loc.longitude)
+                    if (Geocoder.isPresent()) {
+                        val geo = Geocoder(context, Locale.getDefault())
+                        @Suppress("DEPRECATION")
+                        val addresses = geo.getFromLocation(loc.latitude, loc.longitude, 1)
+                        if (!addresses.isNullOrEmpty()) {
+                            val addr = addresses[0]
+                            locationLabel = listOfNotNull(
+                                addr.locality ?: addr.subAdminArea, addr.adminArea
+                            ).joinToString(", ")
+                        }
+                    }
+                    viewModel.fetchByCoordinates(selectedCategory, loc.latitude, loc.longitude)
+                }
+            } catch (_: Exception) {}
+            isLocating = false
+        } else {
+            gpsLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 

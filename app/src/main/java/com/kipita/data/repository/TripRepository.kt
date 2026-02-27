@@ -88,64 +88,54 @@ class TripRepository @Inject constructor(
     }
 
     /**
-     * Seeds Room from SampleData on first launch so the app is never blank.
-     * API_READY: Remove this function once production data is connected.
+     * Seeds a single example/onboarding trip on first launch so the app is
+     * never blank. Marked with isSample=true so it can be removed once the
+     * user confirms their first real trip.
+     * API_READY: Remove once production data is connected.
      */
     suspend fun seedIfEmpty() {
         try {
             if (dao.count() > 0) return
-
-            val tokyoItinerary = buildTokyoItinerary()
-            val baliItinerary  = buildBaliItinerary()
-
-            SampleData.upcomingTrips.forEachIndexed { i, trip ->
-                dao.upsert(
-                    TripEntity(
-                        id = trip.id,
-                        title = trip.title,
-                        destination = trip.destination,
-                        country = trip.country,
-                        countryFlag = trip.countryFlag,
-                        startDateEpoch = trip.startDate.toEpochDay(),
-                        endDateEpoch   = trip.endDate.toEpochDay(),
-                        weatherHighC   = trip.weatherHighC,
-                        weatherLowC    = trip.weatherLowC,
-                        weatherIcon    = trip.weatherIcon,
-                        status         = "UPCOMING",
-                        travelersJson  = """["Me"]""",
-                        flightNumber   = if (i == 0) "JL 061" else "GA 406",
-                        hotelName      = if (i == 0) "Park Hyatt Tokyo" else "COMO Uma Ubud",
-                        itineraryJson  = if (i == 0) tokyoItinerary else baliItinerary,
-                        isAiGenerated  = false
-                    )
+            val sample = SampleData.upcomingTrips.firstOrNull() ?: return
+            dao.upsert(
+                TripEntity(
+                    id            = sample.id,
+                    title         = "📍 Example Trip — Tokyo",
+                    destination   = sample.destination,
+                    country       = sample.country,
+                    countryFlag   = sample.countryFlag,
+                    startDateEpoch = sample.startDate.toEpochDay(),
+                    endDateEpoch   = sample.endDate.toEpochDay(),
+                    weatherHighC   = sample.weatherHighC,
+                    weatherLowC    = sample.weatherLowC,
+                    weatherIcon    = sample.weatherIcon,
+                    status         = "UPCOMING",
+                    travelersJson  = """["Me"]""",
+                    flightNumber   = "JL 061",
+                    hotelName      = "Park Hyatt Tokyo",
+                    itineraryJson  = buildTokyoItinerary(),
+                    notesText      = "This is an example trip to show you how Kipita works.\n" +
+                                     "Tap any day to expand activities. Use 'Plan with AI' to\n" +
+                                     "generate your own itinerary. Tap + to create your first trip.",
+                    isAiGenerated  = false,
+                    isSample       = true
                 )
-            }
-
-            SampleData.pastTrips.forEach { trip ->
-                dao.upsert(
-                    TripEntity(
-                        id = trip.id,
-                        title = trip.title,
-                        destination = trip.destination,
-                        country = trip.country,
-                        countryFlag = trip.countryFlag,
-                        startDateEpoch = trip.startDate.toEpochDay(),
-                        endDateEpoch   = trip.endDate.toEpochDay(),
-                        weatherHighC   = trip.weatherHighC,
-                        weatherLowC    = trip.weatherLowC,
-                        weatherIcon    = trip.weatherIcon,
-                        status         = "PAST",
-                        travelersJson  = """["Me"]""",
-                        isAiGenerated  = false
-                    )
-                )
-            }
+            )
         } catch (e: Exception) {
             logger.log("TripRepository.seedIfEmpty", e)
         }
     }
 
-    // ── Sample itinerary helpers ──────────────────────────────────────────────
+    /** Removes the onboarding sample trip once the user saves their first real trip. */
+    suspend fun deleteSampleTripsIfUserHasRealTrip() {
+        try {
+            if (dao.countRealTrips() > 0) dao.deleteSampleTrips()
+        } catch (e: Exception) {
+            logger.log("TripRepository.deleteSampleTrips", e)
+        }
+    }
+
+    // ── Sample itinerary builder ─────────────────────────────────────────────
 
     private fun buildTokyoItinerary() = """
 [
@@ -169,20 +159,4 @@ class TripRepository @Inject constructor(
 ]
 """.trimIndent()
 
-    private fun buildBaliItinerary() = """
-[
-  {"day":1,"label":"Arrival & Chill","items":[
-    {"time":"13:00","emoji":"✈️","title":"Arrive at Ngurah Rai Airport (DPS)","desc":"Collect luggage, grab a GrabCar to Ubud.","loc":"Ngurah Rai International Airport"},
-    {"time":"16:00","emoji":"🏨","title":"Villa Check-in","desc":"COMO Uma Ubud. Infinity pool with jungle views.","loc":"Ubud, Bali"},
-    {"time":"19:00","emoji":"🌅","title":"Sunset at Tegallalang Rice Terraces","desc":"Iconic terraced rice paddies. Golden hour magic.","loc":"Tegallalang, Ubud"},
-    {"time":"21:00","emoji":"🍹","title":"Dinner at Locavore","desc":"Award-winning farm-to-table Balinese cuisine.","loc":"Ubud"}
-  ]},
-  {"day":2,"label":"Temples & Surf","items":[
-    {"time":"06:00","emoji":"🌄","title":"Sunrise at Mount Batur","desc":"3-hour guided sunrise trek. Bring warm clothes.","loc":"Kintamani, Bali"},
-    {"time":"11:00","emoji":"⛩","title":"Tanah Lot Sea Temple","desc":"Dramatic sea temple at high tide. Iconic Bali shot.","loc":"Tabanan"},
-    {"time":"15:00","emoji":"🏄","title":"Surf Lesson at Kuta Beach","desc":"Beginner-friendly waves. Boards and instructor included.","loc":"Kuta Beach"},
-    {"time":"20:00","emoji":"🥥","title":"BBQ Dinner on the Beach","desc":"Fresh seafood BBQ with live gamelan music.","loc":"Seminyak Beach"}
-  ]}
-]
-""".trimIndent()
 }

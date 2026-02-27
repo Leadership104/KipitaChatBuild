@@ -40,7 +40,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -143,6 +144,11 @@ dependencies {
 
     // Google Generative AI (Gemini native SDK)
     implementation(libs.google.generativeai)
+
+    // Google Maps Compose + Play Services
+    implementation(libs.google.maps.compose)
+    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
 
 
     testImplementation(libs.junit)

@@ -334,7 +334,12 @@ fun KipitaApp() {
                                 onOpenWallet     = { route = MainRoute.WALLET },
                                 onOpenMap        = { showMap = true },
                                 onOpenAI         = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
-                                onOpenTranslate  = { showTranslate = true }
+                                onOpenTranslate  = { showTranslate = true },
+                                onOpenWebView    = { url, title ->
+                                    webViewUrl = url
+                                    webViewTitle = title
+                                    showWebView = true
+                                }
                             )
                         }
 

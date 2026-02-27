@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Kipita network security config — enforces HTTPS for all traffic.
+    Dev flavor overrides this file to permit cleartext to localhost (10.0.2.2).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">kipita.app</domain>
+        <domain includeSubdomains="true">places.googleapis.com</domain>
+        <domain includeSubdomains="true">generativelanguage.googleapis.com</domain>
+        <domain includeSubdomains="true">api.coingecko.com</domain>
+        <domain includeSubdomains="true">api.coinbase.com</domain>
+        <domain includeSubdomains="true">api.gemini.com</domain>
+        <domain includeSubdomains="true">app.river.com</domain>
+    </domain-config>
+</network-security-config>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kipita</string>
+
+    <!-- Permission rationale — shown before runtime permission requests -->
+    <string name="permission_location_title">Location Access</string>
+    <string name="permission_location_rationale">Kipita uses your location to show nearby restaurants, activities, and attractions. Your location is never stored on our servers.</string>
+    <string name="permission_microphone_title">Microphone Access</string>
+    <string name="permission_microphone_rationale">Kipita uses your microphone only when you tap the voice button to send a message to the AI assistant. Audio is processed on-device and not retained.</string>
+
+    <!-- Account deletion -->
+    <string name="delete_account_title">Delete Account</string>
+    <string name="delete_account_body">This will permanently delete your account and all local data, including stored API keys and trip history. This cannot be undone.</string>
+
+    <!-- Legal URLs (not translated) -->
+    <string name="url_privacy_policy" translatable="false">https://kipita.com/privacy</string>
+    <string name="url_terms_of_service" translatable="false">https://kipita.com/terms</string>
+    <string name="url_support_email" translatable="false">info@kipita.com</string>
+</resources>
