@@ -401,36 +401,36 @@
         <span class="aff-desc">Find Bitcoin-accepting merchants worldwide. Community-maintained map.</span>
         <span class="aff-cta">Open Map →</span>
       </button>
-      <!-- Kinesis Money affiliate -->
-      <a class="affiliate-tile"
-        href="https://kms.kinesis.money/signup/KM00083150"
-        target="_blank" rel="noopener noreferrer"
-        onclick="trackAffiliate('kinesis')">
+      <!-- Kinesis Money — iframed inside Kipita viewer -->
+      <button class="affiliate-tile"
+        onclick="openBookingIframe(this)"
+        data-url="https://kms.kinesis.money/signup/KM00083150"
+        data-label="Kinesis Money" data-emoji="🥇">
         <span class="aff-emoji">🥇</span>
         <span class="aff-name">Kinesis Money</span>
         <span class="aff-desc">Gold & silver-backed digital money. Earn yields on your metals holdings.</span>
         <span class="aff-cta">Sign Up →</span>
-      </a>
-      <!-- Swan Bitcoin affiliate -->
-      <a class="affiliate-tile"
-        href="https://www.swanbitcoin.com/kipita/"
-        target="_blank" rel="noopener noreferrer"
-        onclick="trackAffiliate('swan')">
+      </button>
+      <!-- Swan Bitcoin — iframed inside Kipita viewer -->
+      <button class="affiliate-tile"
+        onclick="openBookingIframe(this)"
+        data-url="https://www.swanbitcoin.com/kipita/"
+        data-label="Swan Bitcoin" data-emoji="🦢">
         <span class="aff-emoji">🦢</span>
         <span class="aff-name">Swan Bitcoin</span>
         <span class="aff-desc">The best way to accumulate Bitcoin. Auto-stack sats on your schedule.</span>
         <span class="aff-cta">Stack Sats →</span>
-      </a>
-      <!-- Fold affiliate -->
-      <a class="affiliate-tile"
-        href="https://use.foldapp.com/r/MAJL4MYU"
-        target="_blank" rel="noopener noreferrer"
-        onclick="trackAffiliate('fold')">
+      </button>
+      <!-- Fold — iframed inside Kipita viewer -->
+      <button class="affiliate-tile"
+        onclick="openBookingIframe(this)"
+        data-url="https://use.foldapp.com/r/MAJL4MYU"
+        data-label="Fold" data-emoji="🃏">
         <span class="aff-emoji">🃏</span>
         <span class="aff-name">Fold</span>
         <span class="aff-desc">Bitcoin rewards debit card. Earn sats on every purchase automatically.</span>
         <span class="aff-cta">Get Card →</span>
-      </a>
+      </button>
     </div>
   </div>
 </div>
@@ -543,8 +543,8 @@
 <!-- ── FOOTER ── -->
 <footer>
   <p>© 2026 Kipita. Built for digital nomads. &nbsp;|&nbsp;
-    <a href="https://kipita.com/privacy">Privacy Policy</a> &nbsp;|&nbsp;
-    <a href="https://kipita.com/terms">Terms of Service</a> &nbsp;|&nbsp;
+    <button onclick="openUrlInFrame('https://kipita.com/privacy','Privacy Policy','🔒')" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;font-family:inherit;padding:0">Privacy Policy</button> &nbsp;|&nbsp;
+    <button onclick="openUrlInFrame('https://kipita.com/terms','Terms of Service','📄')" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;font-family:inherit;padding:0">Terms of Service</button> &nbsp;|&nbsp;
     <a href="mailto:info@kipita.com">Contact</a>
   </p>
 </footer>
@@ -860,7 +860,7 @@ function renderPlaces(elements, cat, emoji) {
         <div class="place-meta">
           <span class="place-tag">${emoji} ${cat}</span>
           ${phone ? `<span class="place-tag">📞 ${phone}</span>` : ''}
-          ${website ? `<a href="${website}" target="_blank" rel="noopener" style="font-size:11px;color:var(--blue)">🌐 Website</a>` : ''}
+          ${website ? `<button class="place-website-btn" style="background:none;border:none;font-size:11px;color:var(--blue);cursor:pointer;padding:0;font-family:inherit">🌐 Website</button>` : ''}
         </div>
         <button class="add-itinerary-btn ${saved?'added':''}" data-id="${el.id}">
           ${saved ? '✅ Saved' : '+ Add to Itinerary'}
@@ -870,6 +870,11 @@ function renderPlaces(elements, cat, emoji) {
     card.querySelector('.add-itinerary-btn').addEventListener('click', function() {
       openItinModal(placeObj, this);
     });
+    if (website) {
+      card.querySelector('.place-website-btn')?.addEventListener('click', () => {
+        openUrlInFrame(website, name, emoji);
+      });
+    }
     grid.appendChild(card);
   });
   container.innerHTML = `<p style="font-size:13px;color:var(--text2);margin-bottom:16px">Showing ${named.length} places · OpenStreetMap data</p>`;
@@ -1546,6 +1551,23 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 // attribute on the button element in HTML — no JS changes required.
 
 let currentBookingUrl = '';
+
+/**
+ * Opens any HTTPS URL inside the Kipita iframe viewer.
+ * Accepts plain strings — used by place website buttons and any inline code.
+ * All external links stay inside the application; the fallback link handles
+ * sites that block iframing (X-Frame-Options / CSP frame-ancestors).
+ */
+function openUrlInFrame(url, label, emoji) {
+  if (!url || !url.startsWith('https://')) return;
+  currentBookingUrl = url;
+  document.getElementById('iframeModalTitle').textContent = `${emoji || '🌐'} ${label || url}`;
+  document.getElementById('bookingIframe').src = url;
+  document.getElementById('iframeFallback').style.display = 'none';
+  document.getElementById('iframeFallbackLink').href = url;
+  document.getElementById('bookingIframeModal').classList.add('open');
+  trackAffiliate('perk_' + (label || url).toLowerCase().replace(/\W+/g, '_').slice(0, 30));
+}
 
 function openBookingIframe(tileEl) {
   const url = tileEl.dataset.url;
