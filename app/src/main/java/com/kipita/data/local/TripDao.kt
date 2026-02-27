@@ -47,6 +47,11 @@ interface TripDao {
     @Query("UPDATE trips SET travelersJson = :json WHERE id = :tripId")
     suspend fun updateTravelers(tripId: String, json: String)
 
+    // ── AI memory queries ─────────────────────────────────────────────────────
+
+    @Query("SELECT * FROM trips WHERE status = 'PAST' ORDER BY startDateEpoch DESC LIMIT 10")
+    suspend fun getPastTrips(): List<TripEntity>
+
     // ── Maintenance ───────────────────────────────────────────────────────────
 
     @Query(

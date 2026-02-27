@@ -101,11 +101,11 @@ fun TripDetailScreen(
     tripId: String,
     paddingValues: PaddingValues = PaddingValues(),
     onBack: () -> Unit = {},
+    onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> },
     onAiSuggest: (String) -> Unit = {},
     viewModel: TripDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
-    val context = LocalContext.current
 
     var notesText by remember { mutableStateOf("") }
     var notesEditing by remember { mutableStateOf(false) }
@@ -260,7 +260,7 @@ fun TripDetailScreen(
                                         "https://www.google.com/flights?hl=en#flt=${trip.flightNumber}"
                                     else
                                         "https://www.google.com/flights"
-                                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                                    onOpenWebView(url, "Flights")
                                 }
                             )
                         }
@@ -272,12 +272,7 @@ fun TripDetailScreen(
                                 value = trip.hotelName.ifBlank { "Search" },
                                 onClick = {
                                     val q = trip.hotelName.ifBlank { trip.destination }
-                                    runCatching {
-                                        context.startActivity(
-                                            Intent(Intent.ACTION_VIEW,
-                                                Uri.parse("https://www.booking.com/searchresults.html?ss=${Uri.encode(q)}"))
-                                        )
-                                    }
+                                    onOpenWebView("https://www.booking.com/searchresults.html?ss=${Uri.encode(q)}", "Hotels")
                                 }
                             )
                         }
@@ -288,12 +283,7 @@ fun TripDetailScreen(
                                 label = "Car Rental",
                                 value = "Search",
                                 onClick = {
-                                    runCatching {
-                                        context.startActivity(
-                                            Intent(Intent.ACTION_VIEW,
-                                                Uri.parse("https://www.rentalcars.com/en/searchresults/?dropoff=${Uri.encode(trip.destination)}"))
-                                        )
-                                    }
+                                    onOpenWebView("https://www.rentalcars.com/en/searchresults/?dropoff=${Uri.encode(trip.destination)}", "Car Rental")
                                 }
                             )
                         }
@@ -304,13 +294,7 @@ fun TripDetailScreen(
                                 label = "Uber",
                                 value = "Request",
                                 onClick = {
-                                    runCatching {
-                                        val deep = Intent(Intent.ACTION_VIEW, Uri.parse("uber://"))
-                                        if (deep.resolveActivity(context.packageManager) != null)
-                                            context.startActivity(deep)
-                                        else
-                                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://uber.com")))
-                                    }
+                                    onOpenWebView("https://www.uber.com", "Uber")
                                 }
                             )
                         }
@@ -321,13 +305,7 @@ fun TripDetailScreen(
                                 label = "Lyft",
                                 value = "Request",
                                 onClick = {
-                                    runCatching {
-                                        val deep = Intent(Intent.ACTION_VIEW, Uri.parse("lyft://ridetype?id=lyft"))
-                                        if (deep.resolveActivity(context.packageManager) != null)
-                                            context.startActivity(deep)
-                                        else
-                                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://lyft.com")))
-                                    }
+                                    onOpenWebView("https://www.lyft.com", "Lyft")
                                 }
                             )
                         }
@@ -554,7 +532,7 @@ fun TripDetailScreen(
                 OutlinedTextField(
                     value = inviteInput,
                     onValueChange = { inviteInput = it },
-                    label = { Text("Email or @username") },
+                    label = { Text("Invite email") },
                     placeholder = { Text("friend@example.com", color = KipitaTextTertiary) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -587,6 +565,7 @@ fun TripDetailScreen(
                         .clip(RoundedCornerShape(14.dp))
                         .background(if (inviteInput.isNotBlank()) KipitaRed else KipitaCardBg)
                         .clickable(enabled = inviteInput.isNotBlank()) {
+                            if (!inviteInput.contains("@")) return@clickable
                             viewModel.inviteUser(tripId, inviteInput)
                             inviteInput = ""
                         }
@@ -601,8 +580,8 @@ fun TripDetailScreen(
                 }
 
                 Text(
-                    "Invited travelers will receive a link to join this trip. " +
-                    "They can view the itinerary and add notes.",
+                    "Invited travelers receive an email confirmation link to join this trip. " +
+                    "Trip/group messaging stays locked until invite acceptance.",
                     style = MaterialTheme.typography.bodySmall,
                     color = KipitaTextTertiary
                 )

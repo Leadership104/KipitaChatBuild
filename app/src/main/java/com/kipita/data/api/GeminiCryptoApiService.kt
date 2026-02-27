@@ -40,27 +40,27 @@ interface GeminiCryptoApiService {
 
 @JsonClass(generateAdapter = true)
 data class GeminiBalanceDto(
-    @Json(name = "type") val type: String,           // "exchange"
-    @Json(name = "currency") val currency: String,   // "BTC", "ETH", "USD"
-    @Json(name = "amount") val amount: String,
-    @Json(name = "available") val available: String,
-    @Json(name = "availableForWithdrawal") val availableForWithdrawal: String
+    @param:Json(name = "type") val type: String,           // "exchange"
+    @param:Json(name = "currency") val currency: String,   // "BTC", "ETH", "USD"
+    @param:Json(name = "amount") val amount: String,
+    @param:Json(name = "available") val available: String,
+    @param:Json(name = "availableForWithdrawal") val availableForWithdrawal: String
 )
 
 @JsonClass(generateAdapter = true)
 data class GeminiTickerDto(
-    @Json(name = "bid") val bid: String,
-    @Json(name = "ask") val ask: String,
-    @Json(name = "last") val last: String,
-    @Json(name = "volume") val volume: GeminiVolumeDto
+    @param:Json(name = "bid") val bid: String,
+    @param:Json(name = "ask") val ask: String,
+    @param:Json(name = "last") val last: String,
+    @param:Json(name = "volume") val volume: GeminiVolumeDto
 )
 
 @JsonClass(generateAdapter = true)
 data class GeminiVolumeDto(
-    @Json(name = "BTC") val btc: String? = null,
-    @Json(name = "USD") val usd: String? = null,
-    @Json(name = "ETH") val eth: String? = null,
-    @Json(name = "timestamp") val timestamp: Long = 0
+    @param:Json(name = "BTC") val btc: String? = null,
+    @param:Json(name = "USD") val usd: String? = null,
+    @param:Json(name = "ETH") val eth: String? = null,
+    @param:Json(name = "timestamp") val timestamp: Long = 0
 )
 
 // ---------------------------------------------------------------------------

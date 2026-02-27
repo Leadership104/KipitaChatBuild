@@ -48,20 +48,20 @@ interface RiverApiService {
 
 @JsonClass(generateAdapter = true)
 data class RiverAccountResponse(
-    @Json(name = "id") val id: String,
-    @Json(name = "email") val email: String = "",
-    @Json(name = "bitcoin_address") val bitcoinAddress: String = "",
-    @Json(name = "balances") val balances: RiverBalancesDto
+    @param:Json(name = "id") val id: String,
+    @param:Json(name = "email") val email: String = "",
+    @param:Json(name = "bitcoin_address") val bitcoinAddress: String = "",
+    @param:Json(name = "balances") val balances: RiverBalancesDto
 )
 
 @JsonClass(generateAdapter = true)
 data class RiverBalancesDto(
     /** On-chain confirmed Bitcoin balance in satoshis */
-    @Json(name = "bitcoin") val bitcoinSats: Long = 0L,
+    @param:Json(name = "bitcoin") val bitcoinSats: Long = 0L,
     /** Lightning Network spendable balance in satoshis */
-    @Json(name = "lightning") val lightningSats: Long = 0L,
+    @param:Json(name = "lightning") val lightningSats: Long = 0L,
     /** Total satoshis (on-chain + lightning) */
-    @Json(name = "total") val totalSats: Long = 0L
+    @param:Json(name = "total") val totalSats: Long = 0L
 ) {
     val totalBtc: Double get() = totalSats / 100_000_000.0
     val lightningBtc: Double get() = lightningSats / 100_000_000.0
@@ -69,30 +69,30 @@ data class RiverBalancesDto(
 
 @JsonClass(generateAdapter = true)
 data class RiverPaymentsResponse(
-    @Json(name = "payments") val payments: List<RiverPaymentDto> = emptyList()
+    @param:Json(name = "payments") val payments: List<RiverPaymentDto> = emptyList()
 )
 
 @JsonClass(generateAdapter = true)
 data class RiverPaymentDto(
-    @Json(name = "id") val id: String,
-    @Json(name = "type") val type: String,          // "lightning" | "bitcoin"
-    @Json(name = "status") val status: String,      // "completed" | "pending" | "failed"
-    @Json(name = "amount_sats") val amountSats: Long,
-    @Json(name = "fee_sats") val feeSats: Long = 0L,
-    @Json(name = "description") val description: String = "",
-    @Json(name = "created_at") val createdAt: String = ""
+    @param:Json(name = "id") val id: String,
+    @param:Json(name = "type") val type: String,          // "lightning" | "bitcoin"
+    @param:Json(name = "status") val status: String,      // "completed" | "pending" | "failed"
+    @param:Json(name = "amount_sats") val amountSats: Long,
+    @param:Json(name = "fee_sats") val feeSats: Long = 0L,
+    @param:Json(name = "description") val description: String = "",
+    @param:Json(name = "created_at") val createdAt: String = ""
 )
 
 @JsonClass(generateAdapter = true)
 data class RiverCreateInvoiceRequest(
-    @Json(name = "amount_sats") val amountSats: Long,
-    @Json(name = "description") val description: String = "Kipita travel payment"
+    @param:Json(name = "amount_sats") val amountSats: Long,
+    @param:Json(name = "description") val description: String = "Kipita travel payment"
 )
 
 @JsonClass(generateAdapter = true)
 data class RiverInvoiceResponse(
-    @Json(name = "id") val id: String,
-    @Json(name = "payment_request") val paymentRequest: String, // BOLT-11 invoice string
-    @Json(name = "amount_sats") val amountSats: Long,
-    @Json(name = "expires_at") val expiresAt: String
+    @param:Json(name = "id") val id: String,
+    @param:Json(name = "payment_request") val paymentRequest: String, // BOLT-11 invoice string
+    @param:Json(name = "amount_sats") val amountSats: Long,
+    @param:Json(name = "expires_at") val expiresAt: String
 )

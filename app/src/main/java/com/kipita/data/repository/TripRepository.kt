@@ -62,12 +62,16 @@ class TripRepository @Inject constructor(
         logger.log("TripRepository.updateItinerary", e)
     }
 
-    /** Adds a single invitee email/username and persists. */
-    suspend fun inviteUser(tripId: String, emailOrUsername: String) {
+    /** Adds a single invitee email and persists. Messaging unlocks after invite acceptance. */
+    suspend fun inviteUser(tripId: String, inviteEmail: String) {
         try {
+            val normalizedEmail = inviteEmail.trim().lowercase()
+            if (!normalizedEmail.contains("@")) return
             val trip = dao.getById(tripId) ?: return
             val arr = runCatching { JSONArray(trip.inviteListJson) }.getOrElse { JSONArray() }
-            arr.put(emailOrUsername.trim())
+            val existing = (0 until arr.length()).map { arr.getString(it).lowercase() }.toSet()
+            if (normalizedEmail in existing) return
+            arr.put(normalizedEmail)
             dao.updateInvites(tripId, arr.toString())
         } catch (e: Exception) {
             logger.log("TripRepository.inviteUser", e)

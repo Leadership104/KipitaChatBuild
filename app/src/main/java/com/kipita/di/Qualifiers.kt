@@ -36,7 +36,7 @@ annotation class WeatherApi
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class YelpApi
+annotation class GooglePlacesApi
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)

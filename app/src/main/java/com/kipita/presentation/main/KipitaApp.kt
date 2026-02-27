@@ -164,7 +164,7 @@ fun KipitaApp() {
                 NavigationBar(
                     containerColor = KipitaNavBg,
                     tonalElevation = 0.dp,
-                    modifier = Modifier.height(68.dp)
+                    modifier = Modifier.height(76.dp)
                 ) {
                     navItems.forEach { item ->
                         val selected = route == item.route
@@ -268,6 +268,11 @@ fun KipitaApp() {
                         tripId = selectedTripId!!,
                         paddingValues = padding,
                         onBack = { selectedTripId = null },
+                        onOpenWebView = { url, title ->
+                            webViewUrl = url
+                            webViewTitle = title
+                            showWebView = true
+                        },
                         onAiSuggest = { prompt ->
                             selectedTripId = null
                             aiPreFill = prompt
@@ -354,6 +359,11 @@ fun KipitaApp() {
                                 onAiSuggest  = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
                                 onOpenWallet = { route = MainRoute.WALLET },
                                 onOpenMap    = { showMap = true },
+                                onOpenWebView = { url, title ->
+                                    webViewUrl = url
+                                    webViewTitle = title
+                                    showWebView = true
+                                },
                                 onTripClick  = { tripId -> selectedTripId = tripId }
                             )
                         }

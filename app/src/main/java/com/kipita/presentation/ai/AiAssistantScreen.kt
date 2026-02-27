@@ -7,8 +7,13 @@ import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -101,6 +106,7 @@ fun AiAssistantScreen(
     preFillPrompt: String = ""
 ) {
     val response by viewModel.response.collectAsStateWithLifecycleCompat()
+    val isAiTyping by viewModel.isAiTyping.collectAsStateWithLifecycleCompat()
     var prompt by remember { mutableStateOf(preFillPrompt) }
     var visible by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
@@ -117,7 +123,7 @@ fun AiAssistantScreen(
             if (!spokenText.isNullOrBlank()) {
                 prompt = spokenText
                 loading = true
-                viewModel.analyze("global", spokenText)
+                viewModel.chat(spokenText)
             }
         }
     }
@@ -145,7 +151,7 @@ fun AiAssistantScreen(
             prompt = preFillPrompt
             delay(300)
             loading = true
-            viewModel.analyze("global", preFillPrompt)
+            viewModel.chat(preFillPrompt)
         }
     }
 
@@ -156,6 +162,10 @@ fun AiAssistantScreen(
 
     LaunchedEffect(response) {
         if (response != null) loading = false
+    }
+
+    LaunchedEffect(isAiTyping) {
+        if (!isAiTyping && loading) loading = false
     }
 
     Box(
@@ -199,8 +209,8 @@ fun AiAssistantScreen(
                             color = Color.White
                         )
                         Text(
-                            text = if (response == null && !loading) "How can I help you today?"
-                            else if (loading) "Thinking..."
+                            text = if (response == null && !loading && !isAiTyping) "How can I help you today?"
+                            else if (loading || isAiTyping) "Thinking..."
                             else "Here's what I found",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.White.copy(alpha = 0.7f),
@@ -219,7 +229,7 @@ fun AiAssistantScreen(
             }
 
             // Quick action cards (staggered entrance)
-            if (response == null && !loading) {
+            if (response == null && !loading && !isAiTyping) {
                 item {
                     AnimatedVisibility(visible = visible, enter = fadeIn(tween(150)) + slideInVertically(tween(150)) { 30 }) {
                         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
@@ -245,9 +255,13 @@ fun AiAssistantScreen(
                                                 QuickActionCard(
                                                     action = action,
                                                     onClick = {
-                                                        prompt = action.prompt
                                                         loading = true
-                                                        viewModel.analyze("global", action.prompt)
+                                                        if (action.title == "Plan Trip") {
+                                                            viewModel.planTrip("Tokyo")
+                                                        } else {
+                                                            prompt = action.prompt
+                                                            viewModel.chat(action.prompt)
+                                                        }
                                                     }
                                                 )
                                             }
@@ -289,7 +303,7 @@ fun AiAssistantScreen(
                                             .clickable {
                                                 prompt = suggestions[i]
                                                 loading = true
-                                                viewModel.analyze("global", suggestions[i])
+                                                viewModel.chat(suggestions[i])
                                             },
                                         color = Color.White,
                                         shape = RoundedCornerShape(20.dp)
@@ -309,16 +323,19 @@ fun AiAssistantScreen(
             }
 
             // Loading state
-            if (loading) {
+            if (loading || isAiTyping) {
                 item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 28.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        CircularProgressIndicator(color = KipitaRed, modifier = Modifier.size(36.dp))
-                        Spacer(Modifier.height(12.dp))
+                        PulsingDots()
+                        Spacer(Modifier.width(12.dp))
                         Text(
-                            text = "Querying OpenAI + Claude + Gemini...",
+                            text = "Kipita is thinking...",
                             style = MaterialTheme.typography.bodySmall,
                             color = KipitaTextSecondary
                         )
@@ -339,7 +356,7 @@ fun AiAssistantScreen(
                                 Text("✨", fontSize = 14.sp)
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    text = "Response via ${response?.modelUsed?.name ?: "AI"}",
+                                    text = "Response via Gemini",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = KipitaTextSecondary
                                 )
@@ -354,30 +371,10 @@ fun AiAssistantScreen(
                                     .padding(16.dp)
                             ) {
                                 Text(
-                                    text = response?.naturalLanguage.orEmpty(),
+                                    text = response.orEmpty(),
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = KipitaOnSurface
                                 )
-                            }
-
-                            Spacer(Modifier.height(12.dp))
-
-                            // Citations
-                            if (response?.citations?.isNotEmpty() == true) {
-                                Text(
-                                    text = "Sources",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = KipitaTextSecondary,
-                                    modifier = Modifier.padding(bottom = 6.dp)
-                                )
-                                response?.citations?.take(3)?.forEach { citation ->
-                                    Text(
-                                        text = "· $citation",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = KipitaTextSecondary,
-                                        modifier = Modifier.padding(vertical = 2.dp)
-                                    )
-                                }
                             }
 
                             Spacer(Modifier.height(12.dp))
@@ -388,8 +385,8 @@ fun AiAssistantScreen(
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(KipitaRedLight)
                                     .clickable {
-                                        viewModel.analyze("global", prompt)
                                         loading = true
+                                        viewModel.chat(prompt)
                                     }
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
                             ) {
@@ -464,7 +461,7 @@ fun AiAssistantScreen(
                         .background(if (prompt.isNotBlank()) KipitaRed else KipitaCardBg)
                         .clickable(enabled = prompt.isNotBlank()) {
                             loading = true
-                            viewModel.analyze("global", prompt)
+                            viewModel.chat(prompt)
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -500,6 +497,32 @@ private fun ModelBadge(name: String, color: Color) {
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
             color = color
         )
+    }
+}
+
+@Composable
+private fun PulsingDots() {
+    val transition = rememberInfiniteTransition(label = "typing")
+    val delays = listOf(0, 200, 400)
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        delays.forEach { delayMs ->
+            val scale by transition.animateFloat(
+                initialValue = 0.5f,
+                targetValue = 1.0f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(500, delayMillis = delayMs, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "dot-$delayMs"
+            )
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .scale(scale)
+                    .clip(CircleShape)
+                    .background(KipitaRed)
+            )
+        }
     }
 }
 

@@ -14,9 +14,10 @@ import androidx.room.RoomDatabase
         TripEntity::class,
         UserEntity::class,
         CommunityGroupEntity::class,
-        GroupMemberEntity::class
+        GroupMemberEntity::class,
+        InviteEntity::class
     ],
-    version = 7,
+    version = 9,
     exportSchema = false
     // Note: TravelDataModule uses fallbackToDestructiveMigration() — safe for dev builds.
     // Before Play Store release, replace with explicit Room migrations.
@@ -31,5 +32,6 @@ abstract class KipitaDatabase : RoomDatabase() {
     abstract fun tripDao(): TripDao
     abstract fun userDao(): UserDao
     abstract fun groupDao(): GroupDao
+    abstract fun inviteDao(): InviteDao
 }
 

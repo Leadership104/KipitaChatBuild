@@ -65,6 +65,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
 import com.kipita.presentation.theme.KipitaBorder
 import com.kipita.presentation.theme.KipitaCardBg
 import com.kipita.presentation.theme.KipitaOnSurface
@@ -87,6 +89,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun AuthScreen(
     paddingValues: PaddingValues = PaddingValues(),
+    viewModel: AuthViewModel = hiltViewModel(),
     onAuthSuccess: (displayName: String) -> Unit = {},
     onContinueAsGuest: () -> Unit = {},
     onBack: () -> Unit = {}
@@ -106,11 +109,13 @@ fun AuthScreen(
 
     // Create-account fields
     var caName     by remember { mutableStateOf("") }
+    var caUsername by remember { mutableStateOf("") }
     var caEmail    by remember { mutableStateOf("") }
     var caPassword by remember { mutableStateOf("") }
     var caConfirm  by remember { mutableStateOf("") }
     var caPwdVisible by remember { mutableStateOf(false) }
     var caError    by remember { mutableStateOf("") }
+    val sharedError by viewModel.authError.collectAsStateWithLifecycleCompat()
 
     LaunchedEffect(Unit) { delay(80); visible = true }
 
@@ -240,6 +245,7 @@ fun AuthScreen(
                             )
 
                             if (siError.isNotBlank()) ErrorText(siError)
+                            if (!sharedError.isNullOrBlank()) ErrorText(sharedError!!)
 
                             // Forgot password
                             Text(
@@ -259,13 +265,9 @@ fun AuthScreen(
                                 label = "Sign In",
                                 enabled = siEmail.isNotBlank() && siPassword.isNotBlank()
                             ) {
-                                // API_READY: replace with production auth call, e.g.:
-                                // authRepository.signIn(siEmail, siPassword)
-                                val name = siEmail.substringBefore("@").replaceFirstChar { it.uppercaseChar() }
-                                if (siPassword.length < 6) {
-                                    siError = "Password must be at least 6 characters"
-                                } else {
-                                    onAuthSuccess(name)
+                                viewModel.clearError()
+                                viewModel.signIn(siEmail, siPassword) { displayName ->
+                                    onAuthSuccess(displayName)
                                 }
                             }
 
@@ -291,6 +293,15 @@ fun AuthScreen(
                                 value = caName,
                                 onValueChange = { caName = it; caError = "" },
                                 label = "Display Name",
+                                leadingIcon = { Icon(Icons.Default.Person, null, tint = KipitaTextTertiary, modifier = Modifier.size(18.dp)) },
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Next,
+                                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                            )
+                            AuthTextField(
+                                value = caUsername,
+                                onValueChange = { caUsername = it; caError = "" },
+                                label = "Username (unique)",
                                 leadingIcon = { Icon(Icons.Default.Person, null, tint = KipitaTextTertiary, modifier = Modifier.size(18.dp)) },
                                 keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Next,
@@ -331,21 +342,29 @@ fun AuthScreen(
                             )
 
                             if (caError.isNotBlank()) ErrorText(caError)
+                            if (!sharedError.isNullOrBlank()) ErrorText(sharedError!!)
 
                             // Create Account button
                             PrimaryButton(
                                 label = "Create Account",
-                                enabled = caName.isNotBlank() && caEmail.isNotBlank() && caPassword.isNotBlank()
+                                enabled = caName.isNotBlank() && caUsername.isNotBlank() && caEmail.isNotBlank() && caPassword.isNotBlank()
                             ) {
                                 when {
                                     caName.isBlank()              -> caError = "Please enter your name"
+                                    caUsername.isBlank()          -> caError = "Please choose a username"
                                     !caEmail.contains("@")        -> caError = "Enter a valid email address"
-                                    caPassword.length < 6         -> caError = "Password must be at least 6 characters"
+                                    caPassword.length < 8         -> caError = "Password must be at least 8 characters"
                                     caPassword != caConfirm       -> caError = "Passwords do not match"
                                     else -> {
-                                        // API_READY: replace with production user-creation call
-                                        // authRepository.createAccount(caEmail, caPassword, caName)
-                                        onAuthSuccess(caName.trim())
+                                        viewModel.clearError()
+                                        viewModel.createAccount(
+                                            displayName = caName.trim(),
+                                            username = caUsername.trim(),
+                                            email = caEmail.trim(),
+                                            password = caPassword
+                                        ) { displayName ->
+                                            onAuthSuccess(displayName)
+                                        }
                                     }
                                 }
                             }

@@ -16,7 +16,7 @@ import com.kipita.data.api.OpenAiApiService
 import com.kipita.data.api.RiverApiService
 import com.kipita.data.api.WalletApiService
 import com.kipita.data.api.WeatherApiService
-import com.kipita.data.api.YelpApiService
+import com.kipita.data.api.GooglePlacesApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -172,21 +172,22 @@ object NetworkModule {
     fun provideGeminiApiService(@GeminiApi retrofit: Retrofit): GeminiApiService = retrofit.create(GeminiApiService::class.java)
 
     // -----------------------------------------------------------------------
-    // Yelp Fusion — local business search
+    // Google Places API (New) — v1 — replaces Yelp Fusion
+    // Key: BuildConfig.GOOGLE_PLACES_API_KEY (from local.properties via secrets plugin)
     // -----------------------------------------------------------------------
 
     @Provides
     @Singleton
-    @YelpApi
-    fun provideYelpRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.yelp.com/v3/")
+    @GooglePlacesApi
+    fun provideGooglePlacesRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
+        .baseUrl("https://places.googleapis.com/")
         .client(okHttpClient)
         .addConverterFactory(MoshiConverterFactory.create())
         .build()
 
     @Provides
-    fun provideYelpApiService(@YelpApi retrofit: Retrofit): YelpApiService =
-        retrofit.create(YelpApiService::class.java)
+    fun provideGooglePlacesApiService(@GooglePlacesApi retrofit: Retrofit): GooglePlacesApiService =
+        retrofit.create(GooglePlacesApiService::class.java)
 
     // -----------------------------------------------------------------------
     // Coinbase — OAuth2 wallet balances

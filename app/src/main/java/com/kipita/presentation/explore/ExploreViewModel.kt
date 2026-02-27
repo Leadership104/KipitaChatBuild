@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kipita.data.api.PlaceCategory
 import com.kipita.data.repository.NearbyPlace
-import com.kipita.data.repository.YelpPlacesRepository
+import com.kipita.data.repository.GooglePlacesRepository
 import com.kipita.data.service.TransitDeepLinkService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +24,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
-    private val yelpPlacesRepository: YelpPlacesRepository,
+    private val googlePlacesRepository: GooglePlacesRepository,
     val transitService: TransitDeepLinkService
 ) : ViewModel() {
 
@@ -73,7 +73,7 @@ class ExploreViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(loading = true, error = null)
             runCatching {
-                yelpPlacesRepository.fetchCategory(lat, lng, category)
+                googlePlacesRepository.fetchCategory(lat, lng, category)
             }.onSuccess { places ->
                 _state.value = _state.value.copy(loading = false, places = places)
             }.onFailure {
@@ -91,7 +91,7 @@ class ExploreViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(loading = true, error = null)
             runCatching {
-                yelpPlacesRepository.fetchCategoryByLocation(locationString, category)
+                googlePlacesRepository.fetchCategoryByLocation(locationString, category)
             }.onSuccess { places ->
                 _state.value = _state.value.copy(loading = false, places = places)
             }.onFailure {

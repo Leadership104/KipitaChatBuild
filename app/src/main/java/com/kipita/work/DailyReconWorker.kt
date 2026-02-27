@@ -14,7 +14,7 @@ import com.kipita.data.api.PlaceCategory
 import com.kipita.data.repository.CryptoWalletRepository
 import com.kipita.data.repository.MerchantRepository
 import com.kipita.data.repository.NomadRepository
-import com.kipita.data.repository.YelpPlacesRepository
+import com.kipita.data.repository.GooglePlacesRepository
 import com.kipita.data.service.StartupDataAggregator
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -56,7 +56,7 @@ class DailyReconWorker @AssistedInject constructor(
     private val cryptoWalletRepository: CryptoWalletRepository,
     private val merchantRepository: MerchantRepository,
     private val nomadRepository: NomadRepository,
-    private val yelpPlacesRepository: YelpPlacesRepository
+    private val googlePlacesRepository: GooglePlacesRepository
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -71,8 +71,8 @@ class DailyReconWorker @AssistedInject constructor(
                 // Stream 3: Re-sync Nomad city rankings + quality scores
                 val nomadJob = async { nomadRepository.refresh() }
 
-                // Stream 4: Refresh Yelp business categories for key locations
-                val yelpJob = async { refreshYelpCategories() }
+                // Stream 4: Refresh Google Places categories for key locations
+                val yelpJob = async { refreshPlacesCategories() }
 
                 walletJob.await()
                 merchantJob.await()
@@ -86,21 +86,18 @@ class DailyReconWorker @AssistedInject constructor(
     }
 
     /**
-     * Refresh the 20 Yelp business categories for the default reference location
-     * (Tokyo) plus additional hub cities. Results are cached in-memory by
-     * YelpPlacesRepository and evicted after 15 minutes at runtime; this job
-     * ensures cache is warm at ~2 AM when network conditions are optimal.
+     * Refresh all Google Places categories for the default reference location
+     * (Tokyo) plus major nomad hubs. Results are cached in-memory by
+     * GooglePlacesRepository and evicted after 15 minutes; this job ensures
+     * the cache is warm at ~2 AM when network conditions are optimal.
      */
-    private suspend fun refreshYelpCategories() {
-        // Reference locations: Tokyo default + major nomad hubs
+    private suspend fun refreshPlacesCategories() {
         val locations = listOf(
             StartupDataAggregator.DEFAULT_LAT to StartupDataAggregator.DEFAULT_LNG  // Tokyo
         )
-        // Refresh all static categories for each location
         locations.forEach { (lat, lng) ->
             PlaceCategory.entries.forEach { category ->
-                runCatching { yelpPlacesRepository.fetchCategory(lat, lng, category) }
-                // Individual category failures are silently skipped
+                runCatching { googlePlacesRepository.fetchCategory(lat, lng, category) }
             }
         }
     }

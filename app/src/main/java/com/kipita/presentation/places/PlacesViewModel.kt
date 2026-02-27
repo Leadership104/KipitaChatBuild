@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.kipita.data.api.PlaceCategory
 import com.kipita.data.error.InHouseErrorLogger
 import com.kipita.data.repository.NearbyPlace
-import com.kipita.data.repository.YelpPlacesRepository
+import com.kipita.data.repository.GooglePlacesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class PlacesViewModel @Inject constructor(
-    private val yelpRepository: YelpPlacesRepository,
+    private val googlePlacesRepository: GooglePlacesRepository,
     private val errorLogger: InHouseErrorLogger
 ) : ViewModel() {
 
@@ -49,7 +49,7 @@ class PlacesViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             runCatching {
-                yelpRepository.fetchCategory(latitude, longitude, category)
+                googlePlacesRepository.fetchCategory(latitude, longitude, category)
             }.onSuccess { places ->
                 _state.value = _state.value.copy(
                     isLoading = false,

@@ -49,54 +49,54 @@ interface CoinbaseApiService {
 
 @JsonClass(generateAdapter = true)
 data class CoinbaseAccountsResponse(
-    @Json(name = "data") val accounts: List<CoinbaseAccountDto> = emptyList(),
-    @Json(name = "pagination") val pagination: CoinbasePaginationDto? = null
+    @param:Json(name = "data") val accounts: List<CoinbaseAccountDto> = emptyList(),
+    @param:Json(name = "pagination") val pagination: CoinbasePaginationDto? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class CoinbaseAccountWrapper(
-    @Json(name = "data") val account: CoinbaseAccountDto
+    @param:Json(name = "data") val account: CoinbaseAccountDto
 )
 
 @JsonClass(generateAdapter = true)
 data class CoinbaseAccountDto(
-    @Json(name = "id") val id: String,
-    @Json(name = "name") val name: String,
-    @Json(name = "primary") val isPrimary: Boolean = false,
-    @Json(name = "type") val type: String = "",
-    @Json(name = "currency") val currency: CoinbaseCurrencyDto,
-    @Json(name = "balance") val balance: CoinbaseMoneyDto,
-    @Json(name = "native_balance") val nativeBalance: CoinbaseMoneyDto,
-    @Json(name = "updated_at") val updatedAt: String = ""
+    @param:Json(name = "id") val id: String,
+    @param:Json(name = "name") val name: String,
+    @param:Json(name = "primary") val isPrimary: Boolean = false,
+    @param:Json(name = "type") val type: String = "",
+    @param:Json(name = "currency") val currency: CoinbaseCurrencyDto,
+    @param:Json(name = "balance") val balance: CoinbaseMoneyDto,
+    @param:Json(name = "native_balance") val nativeBalance: CoinbaseMoneyDto,
+    @param:Json(name = "updated_at") val updatedAt: String = ""
 )
 
 @JsonClass(generateAdapter = true)
 data class CoinbaseCurrencyDto(
-    @Json(name = "code") val code: String,
-    @Json(name = "name") val name: String,
-    @Json(name = "color") val color: String = ""
+    @param:Json(name = "code") val code: String,
+    @param:Json(name = "name") val name: String,
+    @param:Json(name = "color") val color: String = ""
 )
 
 @JsonClass(generateAdapter = true)
 data class CoinbaseMoneyDto(
-    @Json(name = "amount") val amount: String,
-    @Json(name = "currency") val currency: String
+    @param:Json(name = "amount") val amount: String,
+    @param:Json(name = "currency") val currency: String
 )
 
 @JsonClass(generateAdapter = true)
 data class CoinbasePaginationDto(
-    @Json(name = "next_uri") val nextUri: String? = null,
-    @Json(name = "previous_uri") val previousUri: String? = null
+    @param:Json(name = "next_uri") val nextUri: String? = null,
+    @param:Json(name = "previous_uri") val previousUri: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class CoinbaseSpotPriceWrapper(
-    @Json(name = "data") val data: CoinbaseSpotPriceDto
+    @param:Json(name = "data") val data: CoinbaseSpotPriceDto
 )
 
 @JsonClass(generateAdapter = true)
 data class CoinbaseSpotPriceDto(
-    @Json(name = "base") val base: String,
-    @Json(name = "currency") val currency: String,
-    @Json(name = "amount") val amount: String
+    @param:Json(name = "base") val base: String,
+    @param:Json(name = "currency") val currency: String,
+    @param:Json(name = "amount") val amount: String
 )

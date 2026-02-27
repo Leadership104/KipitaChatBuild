@@ -156,12 +156,12 @@ fun SettingsScreen(
                         .background(Color.White)
                 ) {
                     ApiKeyField(
-                        provider = "Yelp Fusion",
-                        description = "Powers local business search and POI data in the Explore tab",
-                        docsUrl = "https://docs.developer.yelp.com",
-                        isConfigured = state.hasYelpKey,
-                        onSave = { viewModel.saveYelpApiKey(it) },
-                        onClear = { viewModel.clearYelpApiKey() }
+                        provider = "Google Places",
+                        description = "Powers local business search and POI data in the Explore tab (override built-in key)",
+                        docsUrl = "https://developers.google.com/maps/documentation/places/web-service/overview",
+                        isConfigured = state.hasGooglePlacesKey,
+                        onSave = { viewModel.saveGooglePlacesApiKey(it) },
+                        onClear = { viewModel.clearGooglePlacesApiKey() }
                     )
                     HorizontalDivider(color = BorderGray, thickness = 0.5.dp)
                     ApiKeyField(

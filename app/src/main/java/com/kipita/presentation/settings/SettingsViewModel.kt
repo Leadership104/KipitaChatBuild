@@ -34,7 +34,7 @@ class SettingsViewModel @Inject constructor(
     fun refreshKeyStatus() {
         viewModelScope.launch(Dispatchers.IO) {
             _state.value = _state.value.copy(
-                hasYelpKey       = keystoreManager.hasKey(KeystoreManager.YELP_API_KEY_ALIAS),
+                hasGooglePlacesKey = keystoreManager.hasKey(KeystoreManager.GOOGLE_PLACES_API_KEY_ALIAS),
                 hasCoinbaseToken = keystoreManager.hasKey(KeystoreManager.COINBASE_OAUTH_TOKEN_ALIAS),
                 hasGeminiKey     = keystoreManager.hasKey(KeystoreManager.GEMINI_API_KEY_ALIAS),
                 hasGeminiSecret  = keystoreManager.hasKey(KeystoreManager.GEMINI_API_SECRET_ALIAS),
@@ -48,8 +48,8 @@ class SettingsViewModel @Inject constructor(
     // Save keys (each value AES-GCM encrypted in hardware-backed KeyStore)
     // -----------------------------------------------------------------------
 
-    fun saveYelpApiKey(key: String) = saveKey(KeystoreManager.YELP_API_KEY_ALIAS, key,
-        onDone = { _state.value = _state.value.copy(hasYelpKey = key.isNotBlank(), saveStatus = "Yelp key saved") })
+    fun saveGooglePlacesApiKey(key: String) = saveKey(KeystoreManager.GOOGLE_PLACES_API_KEY_ALIAS, key,
+        onDone = { _state.value = _state.value.copy(hasGooglePlacesKey = key.isNotBlank(), saveStatus = "Google Places key saved") })
 
     fun saveCoinbaseToken(token: String) = saveKey(KeystoreManager.COINBASE_OAUTH_TOKEN_ALIAS, token,
         onDone = { _state.value = _state.value.copy(hasCoinbaseToken = token.isNotBlank(), saveStatus = "Coinbase token saved") })
@@ -70,8 +70,8 @@ class SettingsViewModel @Inject constructor(
     // Clear individual keys
     // -----------------------------------------------------------------------
 
-    fun clearYelpApiKey() = clearKey(KeystoreManager.YELP_API_KEY_ALIAS,
-        onDone = { _state.value = _state.value.copy(hasYelpKey = false, saveStatus = "Yelp key removed") })
+    fun clearGooglePlacesApiKey() = clearKey(KeystoreManager.GOOGLE_PLACES_API_KEY_ALIAS,
+        onDone = { _state.value = _state.value.copy(hasGooglePlacesKey = false, saveStatus = "Google Places key removed") })
 
     fun clearCoinbaseToken() = clearKey(KeystoreManager.COINBASE_OAUTH_TOKEN_ALIAS,
         onDone = { _state.value = _state.value.copy(hasCoinbaseToken = false, saveStatus = "Coinbase token removed") })
@@ -127,7 +127,7 @@ class SettingsViewModel @Inject constructor(
 
 data class SettingsUiState(
     // API key / token presence flags (true = stored in KeyStore)
-    val hasYelpKey: Boolean       = false,
+    val hasGooglePlacesKey: Boolean = false,
     val hasCoinbaseToken: Boolean = false,
     val hasGeminiKey: Boolean     = false,
     val hasGeminiSecret: Boolean  = false,

@@ -21,6 +21,14 @@ class SocialViewModel @Inject constructor(
 
     private val _sendingMessage = MutableStateFlow(false)
     val sendingMessage: StateFlow<Boolean> = _sendingMessage.asStateFlow()
+    private val _messageError = MutableStateFlow<String?>(null)
+    val messageError: StateFlow<String?> = _messageError.asStateFlow()
+
+    private val confirmedConversationIds = mutableSetOf(
+        "dm-alex",
+        "dm-sofia",
+        "dm-james"
+    )
 
     fun loadMessages(conversationId: String) {
         viewModelScope.launch {
@@ -35,18 +43,30 @@ class SocialViewModel @Inject constructor(
         if (content.isBlank()) return
         viewModelScope.launch {
             _sendingMessage.value = true
-            messagingRepository.sendMessage(
-                conversationId = conversationId,
-                senderId = "current-user",
-                senderName = "You",
-                content = content,
-                isOffline = true
-            )
+            _messageError.value = null
+            runCatching {
+                if (!confirmedConversationIds.contains(conversationId)) {
+                    error("Messaging is locked until the email invite is accepted.")
+                }
+                messagingRepository.sendMessage(
+                    conversationId = conversationId,
+                    senderId = "current-user",
+                    senderName = "You",
+                    content = content,
+                    isOffline = true
+                )
+            }.onFailure {
+                _messageError.value = it.message
+            }
             _sendingMessage.value = false
         }
     }
 
     fun markRead(conversationId: String) {
         viewModelScope.launch { messagingRepository.markRead(conversationId) }
+    }
+
+    fun clearMessageError() {
+        _messageError.value = null
     }
 }

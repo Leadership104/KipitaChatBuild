@@ -3,7 +3,7 @@ package com.kipita.data.service
 import com.kipita.data.api.PlaceCategory
 import com.kipita.data.repository.BitcoinPriceRepository
 import com.kipita.data.repository.CryptoWalletRepository
-import com.kipita.data.repository.YelpPlacesRepository
+import com.kipita.data.repository.GooglePlacesRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,7 +36,7 @@ import javax.inject.Singleton
 @Singleton
 class StartupDataAggregator @Inject constructor(
     private val cryptoWalletRepository: CryptoWalletRepository,
-    private val yelpPlacesRepository: YelpPlacesRepository,
+    private val googlePlacesRepository: GooglePlacesRepository,
     private val bitcoinPriceRepository: BitcoinPriceRepository
 ) {
 
@@ -91,13 +91,12 @@ class StartupDataAggregator @Inject constructor(
                         .onFailure { errors += "Prices: ${it.message?.take(60)}" }
                 }
 
-                // Stream 3: Yelp local POIs — restaurants + hotels for the user area
+                // Stream 3: Google Places POIs — restaurants + hotels for the user area
                 val poisJob = async {
                     runCatching {
-                        yelpPlacesRepository.fetchCategory(userLat, userLng, PlaceCategory.RESTAURANTS)
-                        yelpPlacesRepository.fetchCategory(userLat, userLng, PlaceCategory.HOTELS)
+                        googlePlacesRepository.fetchCategory(userLat, userLng, PlaceCategory.RESTAURANTS)
+                        googlePlacesRepository.fetchCategory(userLat, userLng, PlaceCategory.HOTELS)
                     }.onSuccess { poisOk = true }
-                    // Silently skipped when Yelp API key is not yet configured
                 }
 
                 walletJob.await()
@@ -116,9 +115,9 @@ class StartupDataAggregator @Inject constructor(
     fun onLocationAcquired(lat: Double, lng: Double) {
         aggregatorScope.launch {
             runCatching {
-                yelpPlacesRepository.fetchCategory(lat, lng, PlaceCategory.RESTAURANTS)
-                yelpPlacesRepository.fetchCategory(lat, lng, PlaceCategory.HOTELS)
-                yelpPlacesRepository.fetchCategory(lat, lng, PlaceCategory.TRANSPORT)
+                googlePlacesRepository.fetchCategory(lat, lng, PlaceCategory.RESTAURANTS)
+                googlePlacesRepository.fetchCategory(lat, lng, PlaceCategory.HOTELS)
+                googlePlacesRepository.fetchCategory(lat, lng, PlaceCategory.TRANSPORT)
             }
         }
     }

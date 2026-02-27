@@ -43,8 +43,8 @@ interface BitcoinPriceApiService {
 
 @JsonClass(generateAdapter = true)
 data class CoinGeckoPriceDto(
-    @Json(name = "usd") val usd: Double,
-    @Json(name = "usd_24h_change") val usd24hChange: Double? = null,
-    @Json(name = "usd_market_cap") val usdMarketCap: Double? = null,
-    @Json(name = "last_updated_at") val lastUpdatedAt: Long? = null
+    @param:Json(name = "usd") val usd: Double,
+    @param:Json(name = "usd_24h_change") val usd24hChange: Double? = null,
+    @param:Json(name = "usd_market_cap") val usdMarketCap: Double? = null,
+    @param:Json(name = "last_updated_at") val lastUpdatedAt: Long? = null
 )

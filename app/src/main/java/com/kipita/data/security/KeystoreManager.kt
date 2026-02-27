@@ -32,7 +32,7 @@ class KeystoreManager @Inject constructor(
 ) {
     companion object {
         // Keystore alias constants — each key has a dedicated AES key in Android KeyStore
-        const val YELP_API_KEY_ALIAS = "kipita_yelp_api_key"
+        const val GOOGLE_PLACES_API_KEY_ALIAS = "kipita_google_places_api_key"
         const val COINBASE_OAUTH_TOKEN_ALIAS = "kipita_coinbase_oauth_token"
         const val COINBASE_REFRESH_TOKEN_ALIAS = "kipita_coinbase_refresh_token"
         const val GEMINI_API_KEY_ALIAS = "kipita_gemini_api_key"

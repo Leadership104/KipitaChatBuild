@@ -47,5 +47,9 @@ data class TripEntity(
     val isAiGenerated: Boolean = false,
 
     // Lifecycle status: "UPCOMING" | "ACTIVE" | "PAST"
-    val status: String = "UPCOMING"
+    val status: String = "UPCOMING",
+
+    // AI memory fields — written by KipitaAIManager after trip completion
+    val userSentiment: String = "",    // e.g. "liked boutique hotels, disliked tourist traps"
+    val pastPreferences: String = ""   // JSON: {"style":"adventure","avoid":["loud","touristy"]}
 )

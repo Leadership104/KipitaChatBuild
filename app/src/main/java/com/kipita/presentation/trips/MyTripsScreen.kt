@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalTaxi
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -55,6 +56,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -97,13 +99,13 @@ fun MyTripsScreen(
     onAiSuggest: (String) -> Unit = {},
     onOpenWallet: () -> Unit = {},
     onOpenMap: () -> Unit = {},
+    onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> },
     onTripClick: (tripId: String) -> Unit = {},
     viewModel: TripsViewModel = hiltViewModel()
 ) {
     var visible by remember { mutableStateOf(false) }
     var showPlanSheet by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
 
     LaunchedEffect(Unit) {
@@ -282,11 +284,7 @@ fun MyTripsScreen(
                                 icon = Icons.Default.Language,
                                 label = "Translate",
                                 modifier = Modifier.weight(1f),
-                                onClick = {
-                                    runCatching {
-                                        uriHandler.openUri("https://translate.google.com")
-                                    }
-                                }
+                                onClick = { onOpenWebView("https://translate.google.com", "Translate") }
                             )
                         }
                     }
@@ -308,8 +306,8 @@ fun MyTripsScreen(
                                 Triple(Icons.Default.FlightTakeoff, "Flights", "https://www.google.com/flights"),
                                 Triple(Icons.Default.Hotel, "Hotels", "https://www.booking.com"),
                                 Triple(Icons.Default.DirectionsCar, "Car Rental", "https://www.rentalcars.com"),
-                                Triple(Icons.Default.LocalTaxi, "Uber", "uber://"),
-                                Triple(Icons.Default.LocalTaxi, "Lyft", "lyft://"),
+                                Triple(Icons.Default.LocalTaxi, "Uber", "https://www.uber.com"),
+                                Triple(Icons.Default.LocalTaxi, "Lyft", "https://www.lyft.com"),
                                 Triple(Icons.Default.Anchor, "Cruise", "https://www.cruisecritic.com")
                             )
                             items(transports.size) { i ->
@@ -317,22 +315,7 @@ fun MyTripsScreen(
                                 TransportChip(
                                     icon = icon,
                                     label = label,
-                                    onClick = {
-                                        runCatching {
-                                            // Try app deep-link first, fall back to web
-                                            if (deepLink.startsWith("uber://") || deepLink.startsWith("lyft://")) {
-                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deepLink))
-                                                if (intent.resolveActivity(context.packageManager) != null) {
-                                                    context.startActivity(intent)
-                                                } else {
-                                                    val webUrl = if (label == "Uber") "https://uber.com" else "https://lyft.com"
-                                                    uriHandler.openUri(webUrl)
-                                                }
-                                            } else {
-                                                uriHandler.openUri(deepLink)
-                                            }
-                                        }
-                                    }
+                                    onClick = { onOpenWebView(deepLink, label) }
                                 )
                             }
                         }
@@ -371,7 +354,26 @@ fun MyTripsScreen(
                 onAiPlan = { prompt ->
                     showPlanSheet = false
                     onAiSuggest(prompt)
-                }
+                },
+                onManualCreate = { destination, country, startInDays, durationDays, notes ->
+                    val start = java.time.LocalDate.now().plusDays(startInDays.toLong())
+                    val end = start.plusDays((durationDays - 1).coerceAtLeast(0).toLong())
+                    viewModel.createManualTrip(
+                        destination = destination,
+                        country = country,
+                        countryFlag = "🌍",
+                        startDate = start,
+                        endDate = end,
+                        flightNumber = "",
+                        hotelName = "",
+                        hotelConfirmation = "",
+                        notes = notes
+                    ) { tripId ->
+                        showPlanSheet = false
+                        onTripClick(tripId)
+                    }
+                },
+                onOpenWebView = onOpenWebView
             )
         }
     }
@@ -381,10 +383,24 @@ fun MyTripsScreen(
 // Plan New Trip Bottom Sheet
 // ---------------------------------------------------------------------------
 @Composable
-private fun PlanTripSheet(onClose: () -> Unit, onAiPlan: (String) -> Unit) {
+private fun PlanTripSheet(
+    onClose: () -> Unit,
+    onAiPlan: (String) -> Unit,
+    onManualCreate: (destination: String, country: String, startInDays: Int, durationDays: Int, notes: String) -> Unit,
+    onOpenWebView: (url: String, title: String) -> Unit
+) {
+    var modeIndex by remember { mutableIntStateOf(0) } // 0 = AI, 1 = Manual
     var destination by remember { mutableStateOf("") }
+    var country by remember { mutableStateOf("") }
     var duration by remember { mutableStateOf("7") }
+    var startInDays by remember { mutableStateOf("14") }
     var notes by remember { mutableStateOf("") }
+    var showVerification by remember { mutableStateOf(false) }
+
+    val parsedDuration = duration.toIntOrNull() ?: 0
+    val parsedStartDays = startInDays.toIntOrNull() ?: 0
+    val farCityHint = listOf("tokyo", "london", "new york", "sydney", "paris")
+        .count { notes.lowercase().contains(it) } > 1
 
     Column(
         modifier = Modifier
@@ -410,11 +426,51 @@ private fun PlanTripSheet(onClose: () -> Unit, onAiPlan: (String) -> Unit) {
             }
         }
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(KipitaCardBg)
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            listOf("Plan with AI", "Manual Itinerary").forEachIndexed { i, label ->
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (modeIndex == i) KipitaRed else Color.Transparent)
+                        .clickable { modeIndex = i; showVerification = false }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = if (modeIndex == i) Color.White else KipitaTextSecondary
+                    )
+                }
+            }
+        }
+
         OutlinedTextField(
             value = destination,
             onValueChange = { destination = it },
             label = { Text("Destination") },
             placeholder = { Text("Tokyo, Bali, Lisbon...", color = KipitaTextTertiary) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = KipitaRed,
+                unfocusedBorderColor = KipitaBorder
+            )
+        )
+
+        OutlinedTextField(
+            value = country,
+            onValueChange = { country = it },
+            label = { Text("Country") },
+            placeholder = { Text("Japan, Indonesia, Portugal...", color = KipitaTextTertiary) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -435,11 +491,25 @@ private fun PlanTripSheet(onClose: () -> Unit, onAiPlan: (String) -> Unit) {
             )
         )
 
+        if (modeIndex == 1) {
+            OutlinedTextField(
+                value = startInDays,
+                onValueChange = { startInDays = it },
+                label = { Text("Start in (days from now)") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = KipitaRed,
+                    unfocusedBorderColor = KipitaBorder
+                )
+            )
+        }
+
         OutlinedTextField(
             value = notes,
             onValueChange = { notes = it },
             label = { Text("Notes / Preferences") },
-            placeholder = { Text("Budget, travel style, must-sees...", color = KipitaTextTertiary) },
+            placeholder = { Text("Budget, travel style, must-sees, visa notes...", color = KipitaTextTertiary) },
             modifier = Modifier.fillMaxWidth(),
             minLines = 3,
             shape = RoundedCornerShape(12.dp),
@@ -449,35 +519,89 @@ private fun PlanTripSheet(onClose: () -> Unit, onAiPlan: (String) -> Unit) {
             )
         )
 
-        // Plan with AI button
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFFFFF8E1))
+                .clickable {
+                    onOpenWebView(
+                        "https://support.google.com/mail/answer/8151",
+                        "Turn Off Trip Emails"
+                    )
+                }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("📦", fontSize = 14.sp)
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "Packing List + Visa Tips • Turn off mail",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = KipitaOnSurface
+            )
+        }
+
+        if (showVerification && modeIndex == 1) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(KipitaCardBg)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text("Verification", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = KipitaOnSurface)
+                Text("Destination: $destination, $country", style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
+                Text("Starts in: $parsedStartDays day(s), Duration: $parsedDuration day(s)", style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
+                if (farCityHint) {
+                    Text("Advisory: Notes mention multiple far-apart cities. Check travel time realism.", style = MaterialTheme.typography.labelSmall, color = KipitaRed)
+                }
+                if (parsedDuration <= 0 || parsedDuration > 60) {
+                    Text("Advisory: Duration should be between 1 and 60 days.", style = MaterialTheme.typography.labelSmall, color = KipitaRed)
+                }
+            }
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .background(if (destination.isNotBlank()) KipitaRed else KipitaCardBg)
-                .clickable(enabled = destination.isNotBlank()) {
-                    val prompt = buildString {
-                        append("Help me plan a ${duration}-day trip to $destination")
-                        if (notes.isNotBlank()) append(". Notes: $notes")
-                        append(". Include day-by-day itinerary, hotels, restaurants, co-working spaces, transport options (flights, car rental, Uber/Lyft), and any Bitcoin-friendly venues.")
+                .background(if (destination.isNotBlank() && country.isNotBlank()) KipitaRed else KipitaCardBg)
+                .clickable(enabled = destination.isNotBlank() && country.isNotBlank()) {
+                    if (modeIndex == 0) {
+                        val prompt = buildString {
+                            append("Help me plan a ${duration}-day trip to $destination, $country")
+                            if (notes.isNotBlank()) append(". Notes: $notes")
+                            append(". Include day-by-day itinerary, hotels, restaurants, co-working spaces, transport options (flights, car rental, Uber/Lyft), and any Bitcoin-friendly venues.")
+                        }
+                        onAiPlan(prompt)
+                    } else if (!showVerification) {
+                        showVerification = true
+                    } else {
+                        onManualCreate(destination.trim(), country.trim(), parsedStartDays.coerceAtLeast(0), parsedDuration.coerceAtLeast(1), notes.trim())
                     }
-                    onAiPlan(prompt)
                 }
                 .padding(vertical = 14.dp),
             contentAlignment = Alignment.Center
         ) {
+            val label = when {
+                modeIndex == 0 -> "Plan with AI"
+                !showVerification -> "Verify Manual Plan"
+                else -> "Submit & Create Trip"
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    Icons.Default.Mic,
+                    if (modeIndex == 0) Icons.Default.Mic else Icons.Default.Check,
                     null,
-                    tint = if (destination.isNotBlank()) Color.White else KipitaTextTertiary,
+                    tint = if (destination.isNotBlank() && country.isNotBlank()) Color.White else KipitaTextTertiary,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Plan with AI",
+                    label,
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (destination.isNotBlank()) Color.White else KipitaTextTertiary
+                    color = if (destination.isNotBlank() && country.isNotBlank()) Color.White else KipitaTextTertiary
                 )
             }
         }

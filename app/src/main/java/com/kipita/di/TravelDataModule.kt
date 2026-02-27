@@ -1,7 +1,9 @@
 package com.kipita.di
 
 import android.content.Context
+import androidx.room.migration.Migration
 import androidx.room.Room
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.kipita.data.api.BtcMerchantApiService
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
@@ -17,7 +19,9 @@ import com.kipita.data.local.MerchantDao
 import com.kipita.data.local.NomadPlaceDao
 import com.kipita.data.local.TravelNoticeDao
 import com.kipita.data.local.DirectMessageDao
+import com.kipita.data.local.InviteDao
 import com.kipita.data.local.TripMessageDao
+import com.kipita.data.local.UserDao
 import com.kipita.data.repository.AdvisoryRepository
 import com.kipita.data.repository.CurrencyRepository
 import com.kipita.data.repository.HealthRepository
@@ -41,6 +45,62 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object TravelDataModule {
+    private val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE trips ADD COLUMN userSentiment TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE trips ADD COLUMN pastPreferences TEXT NOT NULL DEFAULT ''")
+        }
+    }
+
+    private val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE users ADD COLUMN username TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE users ADD COLUMN usernameNormalized TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE users ADD COLUMN emailNormalized TEXT")
+            db.execSQL("ALTER TABLE users ADD COLUMN emailVerified INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE users ADD COLUMN passwordHash TEXT NOT NULL DEFAULT ''")
+            db.execSQL(
+                """
+                UPDATE users
+                SET username = CASE
+                    WHEN LENGTH(TRIM(displayName)) > 0 THEN LOWER(REPLACE(displayName, ' ', '')) || '_' || SUBSTR(id, 1, 4)
+                    ELSE 'user_' || SUBSTR(id, 1, 8)
+                END
+                """
+            )
+            db.execSQL("UPDATE users SET usernameNormalized = LOWER(username)")
+            db.execSQL("UPDATE users SET emailNormalized = CASE WHEN LENGTH(TRIM(email)) > 0 THEN LOWER(email) ELSE NULL END")
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_users_usernameNormalized ON users(usernameNormalized)")
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_users_emailNormalized ON users(emailNormalized)")
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS invites (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    senderUserId TEXT NOT NULL,
+                    recipientEmail TEXT NOT NULL,
+                    recipientEmailNormalized TEXT NOT NULL,
+                    recipientUserId TEXT,
+                    contextType TEXT NOT NULL,
+                    contextId TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    createdAtEpochMillis INTEGER NOT NULL,
+                    respondedAtEpochMillis INTEGER
+                )
+                """
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_invites_senderUserId ON invites(senderUserId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_invites_recipientEmailNormalized ON invites(recipientEmailNormalized)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_invites_status ON invites(status)")
+            db.execSQL(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS index_invites_senderUserId_recipientEmailNormalized_contextType_contextId
+                ON invites(senderUserId, recipientEmailNormalized, contextType, contextId)
+                """
+            )
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDb(@ApplicationContext context: Context): KipitaDatabase {
@@ -68,7 +128,7 @@ object TravelDataModule {
 
         return Room.databaseBuilder(context, KipitaDatabase::class.java, "kipita.db")
             .openHelperFactory(factory)
-            .fallbackToDestructiveMigration(true)
+            .addMigrations(MIGRATION_7_8, MIGRATION_8_9)
             .build()
     }
 
@@ -88,7 +148,13 @@ object TravelDataModule {
     fun provideDirectMessageDao(db: KipitaDatabase): DirectMessageDao = db.directMessageDao()
 
     @Provides
+    fun provideInviteDao(db: KipitaDatabase): InviteDao = db.inviteDao()
+
+    @Provides
     fun provideErrorLogDao(db: KipitaDatabase): ErrorLogDao = db.errorLogDao()
+
+    @Provides
+    fun provideUserDao(db: KipitaDatabase): UserDao = db.userDao()
 
     @Provides
     fun provideSourceVerificationLayer(): SourceVerificationLayer = SourceVerificationLayer(

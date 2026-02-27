@@ -6,6 +6,7 @@ import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 
 class OfflineMessagingRepository(private val dao: DirectMessageDao) {
+    private val linkRegex = Regex("""https?://[^\s]+""", RegexOption.IGNORE_CASE)
 
     fun observeMessages(conversationId: String): Flow<List<DirectMessageEntity>> =
         dao.observeMessages(conversationId)
@@ -20,6 +21,7 @@ class OfflineMessagingRepository(private val dao: DirectMessageDao) {
         content: String,
         isOffline: Boolean = true
     ): DirectMessageEntity {
+        validateSecureLinks(content)
         val msg = DirectMessageEntity(
             id = UUID.randomUUID().toString(),
             conversationId = conversationId,
@@ -31,6 +33,15 @@ class OfflineMessagingRepository(private val dao: DirectMessageDao) {
         )
         dao.upsert(msg)
         return msg
+    }
+
+    private fun validateSecureLinks(content: String) {
+        val links = linkRegex.findAll(content).map { it.value }.toList()
+        if (links.isEmpty()) return
+        val hasInsecureLink = links.any { !it.startsWith("https://", ignoreCase = true) }
+        if (hasInsecureLink) {
+            throw IllegalArgumentException("Only secure https links can be sent in messages.")
+        }
     }
 
     suspend fun markRead(conversationId: String) = dao.markAllRead(conversationId)

@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.firebase.crashlytics) apply false
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 
@@ -86,6 +87,10 @@ android {
     }
 }
 
+secrets {
+    defaultPropertiesFileName = "secrets.defaults.properties"
+}
+
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
@@ -135,6 +140,9 @@ dependencies {
 
     // Image loading — Coil for destination photos (Unsplash / Picsum)
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // Google Generative AI (Gemini native SDK)
+    implementation(libs.google.generativeai)
 
 
     testImplementation(libs.junit)

@@ -456,6 +456,7 @@ private fun DmRow(id: String, name: String, preview: String, onClick: () -> Unit
 fun MessageThreadScreen(conversationId: String, conversationName: String, onBack: () -> Unit, viewModel: SocialViewModel) {
     val messages by viewModel.messages.collectAsStateWithLifecycleCompat()
     val sending by viewModel.sendingMessage.collectAsStateWithLifecycleCompat()
+    val messageError by viewModel.messageError.collectAsStateWithLifecycleCompat()
     var draft by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
@@ -488,27 +489,40 @@ fun MessageThreadScreen(conversationId: String, conversationName: String, onBack
         }
 
         // Input bar
-        Row(modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(24.dp)).background(KipitaCardBg).padding(horizontal = 14.dp, vertical = 10.dp)) {
-                BasicTextField(
-                    value = draft, onValueChange = { draft = it },
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = KipitaOnSurface),
-                    cursorBrush = SolidColor(KipitaRed),
-                    decorationBox = { inner ->
-                        if (draft.isEmpty()) Text("Message...", style = MaterialTheme.typography.bodyMedium, color = KipitaTextTertiary)
-                        else inner()
-                    },
-                    modifier = Modifier.fillMaxWidth()
+        Column(modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 10.dp)) {
+            if (!messageError.isNullOrBlank()) {
+                Text(
+                    text = messageError ?: "",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = KipitaRed,
+                    modifier = Modifier.padding(bottom = 6.dp)
                 )
             }
-            Spacer(Modifier.width(8.dp))
-            Box(modifier = Modifier.size(42.dp).clip(CircleShape).background(if (draft.isNotBlank()) KipitaRed else KipitaCardBg)
-                .clickable(enabled = draft.isNotBlank() && !sending) {
-                    viewModel.sendMessage(conversationId, draft)
-                    draft = ""
-                }, contentAlignment = Alignment.Center) {
-                if (sending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                else Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = if (draft.isNotBlank()) Color.White else KipitaTextTertiary, modifier = Modifier.size(20.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(24.dp)).background(KipitaCardBg).padding(horizontal = 14.dp, vertical = 10.dp)) {
+                    BasicTextField(
+                        value = draft, onValueChange = {
+                            draft = it
+                            viewModel.clearMessageError()
+                        },
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = KipitaOnSurface),
+                        cursorBrush = SolidColor(KipitaRed),
+                        decorationBox = { inner ->
+                            if (draft.isEmpty()) Text("Message...", style = MaterialTheme.typography.bodyMedium, color = KipitaTextTertiary)
+                            else inner()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Box(modifier = Modifier.size(42.dp).clip(CircleShape).background(if (draft.isNotBlank()) KipitaRed else KipitaCardBg)
+                    .clickable(enabled = draft.isNotBlank() && !sending) {
+                        viewModel.sendMessage(conversationId, draft)
+                        draft = ""
+                    }, contentAlignment = Alignment.Center) {
+                    if (sending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    else Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = if (draft.isNotBlank()) Color.White else KipitaTextTertiary, modifier = Modifier.size(20.dp))
+                }
             }
         }
     }

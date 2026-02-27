@@ -1,9 +1,15 @@
 package com.kipita.data.repository
 
+import com.kipita.BuildConfig
+import com.kipita.data.api.GooglePlaceDto
+import com.kipita.data.api.GooglePlacesApiService
+import com.kipita.data.api.LocationRestriction
+import com.kipita.data.api.NearbySearchRequest
+import com.kipita.data.api.PLACES_LIST_FIELD_MASK
 import com.kipita.data.api.PlaceCategory
-import com.kipita.data.api.YelpApiService
-import com.kipita.data.api.YelpBusinessDto
-import com.kipita.data.security.KeystoreManager
+import com.kipita.data.api.PlaceCircle
+import com.kipita.data.api.PlaceLatLng
+import com.kipita.data.api.TextSearchRequest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -11,12 +17,13 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 // ---------------------------------------------------------------------------
-// YelpPlacesRepository
+// GooglePlacesRepository
 //
-// Fetches real-time local business data from Yelp Fusion API.
-// • open_now=true ensures only currently-accessible places are shown.
-// • Category aliases from PlaceCategory enum match the SOW 9-grid spec.
-// • Results are used for the Map "Nearby Places" bottom sheet.
+// Fetches real-time local business data from Google Places API (New) v1.
+// • Replaces the former Yelp Fusion integration.
+// • API key sourced from BuildConfig.GOOGLE_PLACES_API_KEY (local.properties).
+// • Results are cached in-memory for 15 minutes for real-time feel.
+// • Used by the Map "Nearby Places" bottom sheet + Explore tab category grid.
 // ---------------------------------------------------------------------------
 
 data class NearbyPlace(
@@ -35,31 +42,63 @@ data class NearbyPlace(
 )
 
 @Singleton
-class YelpPlacesRepository @Inject constructor(
-    private val yelpApi: YelpApiService,
-    private val keystoreManager: KeystoreManager
+class GooglePlacesRepository @Inject constructor(
+    private val placesApi: GooglePlacesApiService
 ) {
-    // In-memory cache: category → list of nearby places, plus timestamp
+    // In-memory cache: cacheKey → (timestamp, results)
     private val cache = mutableMapOf<String, Pair<Long, List<NearbyPlace>>>()
-    private val cacheMaxAgeMs = 15 * 60 * 1000L // 15 minutes for real-time feel
+    private val cacheMaxAgeMs = 15 * 60 * 1000L // 15 minutes
+
+    private val apiKey get() = BuildConfig.GOOGLE_PLACES_API_KEY
 
     /**
-     * Load all 9 grid categories in parallel, returning a map of
+     * Load all category grid entries in parallel, returning a map of
      * PlaceCategory → list of nearby places.
      */
     suspend fun loadAllCategories(
         latitude: Double,
         longitude: Double
     ): Map<PlaceCategory, List<NearbyPlace>> = coroutineScope {
-        val apiKey = keystoreManager.getApiKey(KeystoreManager.YELP_API_KEY_ALIAS)
-            ?: return@coroutineScope emptyMap()
-        val bearer = "Bearer $apiKey"
-
         PlaceCategory.entries.map { category ->
-            async {
-                category to fetchCategory(bearer, latitude, longitude, category)
-            }
+            async { category to fetchCategory(latitude, longitude, category) }
         }.awaitAll().toMap()
+    }
+
+    /**
+     * Fetch a single category by GPS coordinates.
+     * Called when GPS is available or when category chip is tapped.
+     */
+    suspend fun fetchCategory(
+        latitude: Double,
+        longitude: Double,
+        category: PlaceCategory
+    ): List<NearbyPlace> {
+        val cacheKey = "${category.name}@${latitude.toLong()},${longitude.toLong()}"
+        val cached = cache[cacheKey]
+        if (cached != null && System.currentTimeMillis() - cached.first < cacheMaxAgeMs) {
+            return cached.second
+        }
+        return try {
+            val response = placesApi.searchNearby(
+                apiKey = apiKey,
+                fieldMask = PLACES_LIST_FIELD_MASK,
+                request = NearbySearchRequest(
+                    includedTypes = category.googleTypes,
+                    maxResultCount = 20,
+                    locationRestriction = LocationRestriction(
+                        circle = PlaceCircle(
+                            center = PlaceLatLng(latitude, longitude),
+                            radius = 1000.0
+                        )
+                    )
+                )
+            )
+            val places = response.places.map { it.toNearbyPlace(category) }
+            cache[cacheKey] = Pair(System.currentTimeMillis(), places)
+            places
+        } catch (e: Exception) {
+            cache[cacheKey]?.second ?: emptyList()
+        }
     }
 
     /**
@@ -70,61 +109,22 @@ class YelpPlacesRepository @Inject constructor(
         locationString: String,
         category: PlaceCategory
     ): List<NearbyPlace> {
-        val apiKey = keystoreManager.getApiKey(KeystoreManager.YELP_API_KEY_ALIAS) ?: return emptyList()
-        val bearer = "Bearer $apiKey"
         val cacheKey = "${category.name}@loc:${locationString.lowercase().trim()}"
-        val cached = cache[cacheKey]
-        if (cached != null && System.currentTimeMillis() - cached.first < cacheMaxAgeMs) return cached.second
-        return try {
-            val response = yelpApi.searchBusinessesByLocation(
-                bearerToken = bearer,
-                location = locationString,
-                categoryAlias = category.yelpAlias,
-                openNow = true,
-                attributes = category.attributes
-            )
-            val places = response.businesses.map { it.toNearbyPlace(category) }
-            cache[cacheKey] = Pair(System.currentTimeMillis(), places)
-            places
-        } catch (e: Exception) {
-            cache[cacheKey]?.second ?: emptyList()
-        }
-    }
-
-    /**
-     * Fetch a single category, using in-memory cache if fresh.
-     */
-    suspend fun fetchCategory(
-        latitude: Double,
-        longitude: Double,
-        category: PlaceCategory
-    ): List<NearbyPlace> {
-        val apiKey = keystoreManager.getApiKey(KeystoreManager.YELP_API_KEY_ALIAS) ?: return emptyList()
-        return fetchCategory("Bearer $apiKey", latitude, longitude, category)
-    }
-
-    private suspend fun fetchCategory(
-        bearer: String,
-        latitude: Double,
-        longitude: Double,
-        category: PlaceCategory
-    ): List<NearbyPlace> {
-        val cacheKey = "${category.name}@${latitude.toLong()},${longitude.toLong()}"
         val cached = cache[cacheKey]
         if (cached != null && System.currentTimeMillis() - cached.first < cacheMaxAgeMs) {
             return cached.second
         }
-
         return try {
-            val response = yelpApi.searchBusinesses(
-                bearerToken = bearer,
-                latitude = latitude,
-                longitude = longitude,
-                categoryAlias = category.yelpAlias,
-                openNow = true,
-                attributes = category.attributes
+            val response = placesApi.searchByText(
+                apiKey = apiKey,
+                fieldMask = PLACES_LIST_FIELD_MASK,
+                request = TextSearchRequest(
+                    textQuery = "${category.label} in $locationString",
+                    maxResultCount = 20,
+                    openNow = false
+                )
             )
-            val places = response.businesses.map { it.toNearbyPlace(category) }
+            val places = response.places.map { it.toNearbyPlace(category) }
             cache[cacheKey] = Pair(System.currentTimeMillis(), places)
             places
         } catch (e: Exception) {
@@ -132,18 +132,19 @@ class YelpPlacesRepository @Inject constructor(
         }
     }
 
-    private fun YelpBusinessDto.toNearbyPlace(category: PlaceCategory) = NearbyPlace(
+    private fun GooglePlaceDto.toNearbyPlace(category: PlaceCategory) = NearbyPlace(
         id = id,
-        name = name,
+        name = displayName?.text ?: "",
         category = category,
         emoji = category.emoji,
-        address = location.displayAddress.joinToString(", "),
-        distanceKm = distanceMeters / 1000.0,
+        address = formattedAddress,
+        distanceKm = 0.0,
         rating = rating,
-        reviewCount = reviewCount,
-        isOpen = !isClosed,
-        latitude = coordinates?.latitude,
-        longitude = coordinates?.longitude,
-        phone = displayPhone
+        reviewCount = 0,
+        isOpen = currentOpeningHours?.openNow ?: false,
+        latitude = location?.latitude,
+        longitude = location?.longitude,
+        phone = nationalPhoneNumber
     )
 }
+
