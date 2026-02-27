@@ -1,6 +1,15 @@
-// Kipita Service Worker — offline-first caching
-const CACHE_NAME = 'kipita-v1';
+// Kipita Service Worker v3 — offline-first caching
+const CACHE_NAME = 'kipita-v3';
 const PRECACHE = ['/', '/index.html', '/manifest.json'];
+
+// Network-first API domains (always try live, fall back to cache)
+const NETWORK_FIRST = [
+  'api.coingecko.com',
+  'api.btcmap.org',
+  'overpass-api.de',
+  'nominatim.openstreetmap.org',
+  'places.googleapis.com'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(PRECACHE)));
@@ -15,15 +24,26 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network-first for API calls, cache-first for static assets
-  if (e.request.url.includes('api.coingecko.com') ||
-      e.request.url.includes('api.btcmap.org') ||
-      e.request.url.includes('places.googleapis.com')) {
+  const url = e.request.url;
+
+  // Network-first for all API calls
+  if (NETWORK_FIRST.some(domain => url.includes(domain))) {
     e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
+      fetch(e.request)
+        .then(resp => {
+          // Cache successful GET responses for offline fallback
+          if (resp.ok && e.request.method === 'GET') {
+            const clone = resp.clone();
+            caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+          }
+          return resp;
+        })
+        .catch(() => caches.match(e.request))
     );
     return;
   }
+
+  // Cache-first for static assets
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
