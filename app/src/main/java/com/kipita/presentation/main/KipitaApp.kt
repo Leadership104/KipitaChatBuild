@@ -82,6 +82,8 @@ import com.kipita.presentation.theme.KipitaRed
 import com.kipita.presentation.theme.KipitaRedLight
 import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
+import com.kipita.data.api.PlaceCategory
+import com.kipita.presentation.places.PlacesCategoryResultScreen
 import com.kipita.presentation.translate.TranslateScreen
 import com.kipita.presentation.trips.MyTripsScreen
 import com.kipita.presentation.trips.TripDetailScreen
@@ -131,12 +133,15 @@ fun KipitaApp() {
     var userName by rememberSaveable { mutableStateOf("") }
     var showProfileMenu by rememberSaveable { mutableStateOf(false) }
     var selectedTripId by rememberSaveable { mutableStateOf<String?>(null) }
+    var showPlacesResult by rememberSaveable { mutableStateOf(false) }
+    var placesResultCategory by rememberSaveable { mutableStateOf(PlaceCategory.HOTELS) }
 
     val canGoBack = showMap || showProfile || showAuth || showTranslate || showWebView ||
-        showNearbyTravelers || showTravelGroups || selectedTripId != null
+        showNearbyTravelers || showTravelGroups || selectedTripId != null || showPlacesResult
     val onBack: () -> Unit = {
         when {
             showWebView         -> showWebView = false
+            showPlacesResult    -> showPlacesResult = false
             showNearbyTravelers -> showNearbyTravelers = false
             showTravelGroups    -> showTravelGroups = false
             showTranslate       -> showTranslate = false
@@ -160,7 +165,7 @@ fun KipitaApp() {
         },
         bottomBar = {
             if (!showMap && !showProfile && !showAuth && !showTranslate && !showWebView &&
-                !showNearbyTravelers && !showTravelGroups && selectedTripId == null) {
+                !showNearbyTravelers && !showTravelGroups && selectedTripId == null && !showPlacesResult) {
                 NavigationBar(
                     containerColor = KipitaNavBg,
                     tonalElevation = 0.dp,
@@ -281,6 +286,18 @@ fun KipitaApp() {
                     )
                 }
 
+                showPlacesResult -> KipitaErrorBoundary("PlacesCategoryResultScreen") { _ ->
+                    PlacesCategoryResultScreen(
+                        category = placesResultCategory,
+                        onBack = { showPlacesResult = false },
+                        onOpenWebView = { url, title ->
+                            webViewUrl = url
+                            webViewTitle = title
+                            showWebView = true
+                        }
+                    )
+                }
+
                 showAuth -> KipitaErrorBoundary("AuthScreen") { _ ->
                     AuthScreen(
                         paddingValues = padding,
@@ -345,10 +362,11 @@ fun KipitaApp() {
 
                         MainRoute.EXPLORE -> KipitaErrorBoundary("ExploreScreen") { _ ->
                             ExploreScreen(
-                                paddingValues = padding,
-                                onAiSuggest  = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
-                                onOpenMap    = { showMap = true },
-                                onTripClick  = { tripId -> selectedTripId = tripId }
+                                paddingValues      = padding,
+                                onAiSuggest        = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
+                                onOpenMap          = { showMap = true },
+                                onTripClick        = { tripId -> selectedTripId = tripId },
+                                onCategorySelected = { cat -> placesResultCategory = cat; showPlacesResult = true }
                             )
                         }
 

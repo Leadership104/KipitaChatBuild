@@ -2,6 +2,9 @@ package com.kipita.presentation.map
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.location.Geocoder
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -29,10 +32,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.CircularProgressIndicator
@@ -51,8 +58,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import java.util.Locale
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -96,11 +106,30 @@ fun MapScreen(
     var bottomSheetExpanded by remember { mutableStateOf(true) }
     var visible by remember { mutableStateOf(false) }
     var selectedPlaceFilter by remember { mutableStateOf("₿ BTC") }
+    var searchQuery by remember { mutableStateOf("") }
 
-    val hasLocationPermission = remember {
-        ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val gpsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            hasLocationPermission = true
+            @Suppress("MissingPermission")
+            val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE)
+                    as android.location.LocationManager
+            val loc = lm.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
+                ?: lm.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
+            val lat = loc?.latitude ?: 40.7128
+            val lng = loc?.longitude ?: -74.0060
+            viewModel.load("global", lat, lng)
+        }
     }
 
     val initialLat = if (state.userLat != 0.0) state.userLat else 40.7128
@@ -122,6 +151,9 @@ fun MapScreen(
         val lng = loc?.longitude ?: -74.0060
         viewModel.load("global", lat, lng)
         visible = true
+        if (!hasLocationPermission) {
+            gpsLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
     }
 
     // Animate camera to user location when GPS arrives
@@ -160,7 +192,7 @@ fun MapScreen(
             ) {
                 // BTC merchant markers (orange)
                 if (state.activeOverlays.contains(OverlayType.BTC_MERCHANTS)) {
-                    state.merchants.forEach { merchant ->
+                    state.filteredMerchants.forEach { merchant ->
                         Marker(
                             state = MarkerState(
                                 position = LatLng(merchant.latitude, merchant.longitude)
@@ -226,67 +258,120 @@ fun MapScreen(
             }
         }
 
-        // Glass morphism top controls
+        // Glass morphism top controls + search bar
         AnimatedVisibility(
             visible = visible,
             enter = fadeIn() + slideInVertically { -20 },
             modifier = Modifier.align(Alignment.TopStart)
         ) {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                GlassButton(
-                    icon = Icons.Default.Layers,
-                    label = if (bottomSheetExpanded) "Collapse" else "Layers",
-                    onClick = { bottomSheetExpanded = !bottomSheetExpanded }
-                )
-                GlassButton(
-                    icon = Icons.Default.CloudDownload,
-                    label = if (state.offlineReady) "Cached" else "Offline",
-                    onClick = { viewModel.cacheRegionOffline("global") },
-                    tint = if (state.offlineReady) KipitaGreenAccent else KipitaOnSurface
-                )
-                GlassButton(
-                    icon = Icons.Default.Navigation,
-                    label = "Navigate",
-                    onClick = {
-                        onAiSuggest(
-                            "Give me turn-by-turn transit and walking directions from my current location to the best nearby Bitcoin-friendly place."
-                        )
-                    }
-                )
-
-                Spacer(Modifier.weight(1f))
-
-                // Overlay toggles
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    items(OverlayType.entries) { overlay ->
-                        val active = state.activeOverlays.contains(overlay)
-                        Surface(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { viewModel.toggleOverlay(overlay) },
-                            color = if (active) KipitaRed else Color.White.copy(alpha = 0.85f),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = when (overlay) {
-                                    OverlayType.BTC_MERCHANTS -> "₿"
-                                    OverlayType.SAFETY -> "🛡"
-                                    OverlayType.HEALTH -> "❤️"
-                                    OverlayType.INFRASTRUCTURE -> "🏗"
-                                    OverlayType.NOMAD -> "💻"
-                                },
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                                fontSize = 13.sp,
-                                color = if (active) Color.White else KipitaOnSurface
+                // Glass buttons row + overlay toggles
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    GlassButton(
+                        icon = Icons.Default.Layers,
+                        label = if (bottomSheetExpanded) "Collapse" else "Layers",
+                        onClick = { bottomSheetExpanded = !bottomSheetExpanded }
+                    )
+                    GlassButton(
+                        icon = Icons.Default.CloudDownload,
+                        label = if (state.offlineReady) "Cached" else "Offline",
+                        onClick = { viewModel.cacheRegionOffline("global") },
+                        tint = if (state.offlineReady) KipitaGreenAccent else KipitaOnSurface
+                    )
+                    GlassButton(
+                        icon = Icons.Default.Navigation,
+                        label = "Navigate",
+                        onClick = {
+                            onAiSuggest(
+                                "Give me turn-by-turn transit and walking directions from my current location to the best nearby Bitcoin-friendly place."
                             )
                         }
+                    )
+                    Spacer(Modifier.weight(1f))
+                    // Overlay toggles
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(OverlayType.entries) { overlay ->
+                            val active = state.activeOverlays.contains(overlay)
+                            Surface(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { viewModel.toggleOverlay(overlay) },
+                                color = if (active) KipitaRed else Color.White.copy(alpha = 0.85f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = when (overlay) {
+                                        OverlayType.BTC_MERCHANTS -> "₿"
+                                        OverlayType.SAFETY -> "🛡"
+                                        OverlayType.HEALTH -> "❤️"
+                                        OverlayType.INFRASTRUCTURE -> "🏗"
+                                        OverlayType.NOMAD -> "💻"
+                                    },
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                                    fontSize = 13.sp,
+                                    color = if (active) Color.White else KipitaOnSurface
+                                )
+                            }
+                        }
                     }
+                }
+
+                // Address search bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(4.dp, RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color.White.copy(alpha = 0.96f))
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = KipitaTextTertiary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    BasicTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.weight(1f),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = KipitaOnSurface),
+                        cursorBrush = SolidColor(KipitaRed),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = {
+                            if (searchQuery.isNotBlank() && Geocoder.isPresent()) {
+                                runCatching {
+                                    @Suppress("DEPRECATION")
+                                    val addresses = Geocoder(context, Locale.getDefault())
+                                        .getFromLocationName(searchQuery, 1)
+                                    if (!addresses.isNullOrEmpty()) {
+                                        viewModel.load(searchQuery, addresses[0].latitude, addresses[0].longitude)
+                                    }
+                                }
+                            }
+                        }),
+                        decorationBox = { inner ->
+                            if (searchQuery.isEmpty()) {
+                                Text(
+                                    "Search city, address, country...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = KipitaTextTertiary
+                                )
+                            } else inner()
+                        }
+                    )
                 }
             }
         }
@@ -420,6 +505,27 @@ fun MapScreen(
                                 }
                             }
                         }
+                        // BTC source sub-toggle — shown when ₿ BTC filter is active
+                        if (selectedPlaceFilter == "₿ BTC") {
+                            Spacer(Modifier.height(4.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                PlaceCategoryPill(
+                                    label = "₿ BTCMap",
+                                    selected = state.btcSource == BtcSource.BTCMAP,
+                                    onClick = { viewModel.setBtcSource(BtcSource.BTCMAP) }
+                                )
+                                PlaceCategoryPill(
+                                    label = "⚡ Cash App",
+                                    selected = state.btcSource == BtcSource.CASHAPP,
+                                    onClick = { viewModel.setBtcSource(BtcSource.CASHAPP) }
+                                )
+                                PlaceCategoryPill(
+                                    label = "🌐 Both",
+                                    selected = state.btcSource == BtcSource.BOTH,
+                                    onClick = { viewModel.setBtcSource(BtcSource.BOTH) }
+                                )
+                            }
+                        }
                     }
 
                     if (bottomSheetExpanded) {
@@ -429,7 +535,7 @@ fun MapScreen(
                         ) {
                             when (selectedPlaceFilter) {
                                 "₿ BTC" -> {
-                                    if (state.merchants.isEmpty()) {
+                                    if (state.filteredMerchants.isEmpty()) {
                                         item {
                                             EmptyNearbyCard(
                                                 "₿",
@@ -437,7 +543,7 @@ fun MapScreen(
                                             )
                                         }
                                     } else {
-                                        items(state.merchants) { merchant ->
+                                        items(state.filteredMerchants) { merchant ->
                                             NearbyPlaceCard(
                                                 emoji    = "₿",
                                                 name     = merchant.name,

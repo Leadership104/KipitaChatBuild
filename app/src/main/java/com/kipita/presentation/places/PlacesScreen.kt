@@ -1,17 +1,12 @@
 package com.kipita.presentation.places
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,8 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -38,6 +32,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,6 +49,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -103,7 +99,9 @@ private val categoryGroups = listOf(
 fun PlacesScreen(
     paddingValues: PaddingValues,
     viewModel: PlacesViewModel = hiltViewModel(),
-    onAiSuggest: () -> Unit = {}
+    onAiSuggest: () -> Unit = {},
+    onCategorySelected: (PlaceCategory) -> Unit = {},
+    onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
     var visible by remember { mutableStateOf(false) }
@@ -248,13 +246,25 @@ fun PlacesScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.padding(bottom = 16.dp)
                             ) {
-                                items(group.categories.size) { i ->
-                                    val cat = group.categories[i]
+                                items(group.categories) { cat ->
                                     CategoryChip(
                                         category = cat,
                                         selected = state.selectedCategory == cat,
-                                        onClick = { viewModel.selectCategory(cat) }
+                                        onClick = { onCategorySelected(cat) }
                                     )
+                                }
+                                // BTCMap special chip — only in Finance & Services
+                                if (group.label == "Finance & Services") {
+                                    item {
+                                        BtcMapChip(
+                                            onClick = {
+                                                onOpenWebView(
+                                                    "https://btcmap.org/map",
+                                                    "BTCMap — Bitcoin Merchants"
+                                                )
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -263,118 +273,37 @@ fun PlacesScreen(
             }
 
             // ----------------------------------------------------------------
-            // Results header
+            // Tap-to-explore prompt
             // ----------------------------------------------------------------
             item {
                 AnimatedVisibility(visible = visible, enter = fadeIn(tween(200)) + slideInVertically(tween(200)) { 20 }) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                state.selectedCategory.emoji,
-                                fontSize = 16.sp,
-                                modifier = Modifier.padding(end = 6.dp)
-                            )
-                            Text(
-                                text = state.selectedCategory.label,
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = KipitaOnSurface
-                            )
-                        }
-                        if (!state.isLoading) {
-                            Text(
-                                text = "${state.filteredPlaces.size} results",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = KipitaTextSecondary
-                            )
-                        }
-                    }
-                }
-            }
-
-            // ----------------------------------------------------------------
-            // Loading state
-            // ----------------------------------------------------------------
-            if (state.isLoading) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = KipitaRed, modifier = Modifier.size(32.dp))
-                            Spacer(Modifier.height(10.dp))
-                            Text(
-                                "Searching nearby places...",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = KipitaTextSecondary
-                            )
-                        }
-                    }
-                }
-            }
-
-            // ----------------------------------------------------------------
-            // Empty / API key not set state
-            // ----------------------------------------------------------------
-            if (!state.isLoading && state.places.isEmpty() && state.error == null) {
-                item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 24.dp)
+                            .padding(horizontal = 20.dp, vertical = 12.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(KipitaCardBg)
-                            .padding(24.dp),
+                            .padding(20.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(state.selectedCategory.emoji, fontSize = 36.sp)
-                            Spacer(Modifier.height(10.dp))
+                            Text("👆", fontSize = 28.sp)
+                            Spacer(Modifier.height(8.dp))
                             Text(
-                                "No places found nearby",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = KipitaOnSurface
+                                "Tap a category above to explore nearby places",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = KipitaOnSurface,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                             Text(
-                                "Try a different category or allow location access to see nearby places.",
+                                "Results open in a full-screen view with real-time data from Google Places",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = KipitaTextSecondary,
-                                modifier = Modifier.padding(top = 6.dp)
+                                modifier = Modifier.padding(top = 4.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                         }
                     }
-                }
-            }
-
-            // ----------------------------------------------------------------
-            // Error state
-            // ----------------------------------------------------------------
-            if (state.error != null) {
-                item {
-                    Text(
-                        state.error!!,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = KipitaRed,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                    )
-                }
-            }
-
-            // ----------------------------------------------------------------
-            // Place cards
-            // ----------------------------------------------------------------
-            itemsIndexed(state.filteredPlaces, key = { _, p -> p.id }) { index, place ->
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(tween(100 + index * 40)) + slideInHorizontally(tween(100 + index * 40)) { 30 }
-                ) {
-                    PlaceCard(place = place, modifier = Modifier.padding(horizontal = 20.dp, vertical = 5.dp))
                 }
             }
 
@@ -510,5 +439,29 @@ private fun PlaceCard(place: NearbyPlace, modifier: Modifier = Modifier) {
                 )
             }
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// BTCMap special chip — orange Bitcoin branding, opens btcmap.org/map in WebView
+// ---------------------------------------------------------------------------
+@Composable
+private fun BtcMapChip(onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFFFF6B00))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("₿", fontSize = 20.sp, color = Color.White)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "BTCMap",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = Color.White,
+            maxLines = 1
+        )
     }
 }

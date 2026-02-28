@@ -96,9 +96,15 @@ class MapViewModel @Inject constructor(
             }
         )
     }
+
+    fun setBtcSource(source: BtcSource) {
+        _state.value = _state.value.copy(btcSource = source)
+    }
 }
 
 enum class OverlayType { BTC_MERCHANTS, SAFETY, HEALTH, INFRASTRUCTURE, NOMAD }
+
+enum class BtcSource { BTCMAP, CASHAPP, BOTH }
 
 data class MapUiState(
     val loading: Boolean = false,
@@ -111,5 +117,13 @@ data class MapUiState(
     val activeOverlays: Set<OverlayType> = setOf(OverlayType.BTC_MERCHANTS, OverlayType.SAFETY, OverlayType.HEALTH, OverlayType.NOMAD),
     val offlineReady: Boolean = false,
     val userLat: Double = 0.0,
-    val userLng: Double = 0.0
-)
+    val userLng: Double = 0.0,
+    val btcSource: BtcSource = BtcSource.BOTH
+) {
+    val filteredMerchants: List<MerchantLocation>
+        get() = when (btcSource) {
+            BtcSource.BTCMAP  -> merchants.filter { it.source == "btcmap" }
+            BtcSource.CASHAPP -> merchants.filter { it.source == "cashapp" }
+            BtcSource.BOTH    -> merchants
+        }
+}

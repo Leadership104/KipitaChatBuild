@@ -108,6 +108,34 @@ import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
 import kotlinx.coroutines.delay
 import java.util.Locale
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
+
+// ---------------------------------------------------------------------------
+// Destination coordinates (lat/lon) for proximity sorting
+// ---------------------------------------------------------------------------
+private val destinationCoords = mapOf(
+    "1" to Pair(18.7883, 98.9853),   // Chiang Mai
+    "2" to Pair(38.7169, -9.1399),   // Lisbon
+    "3" to Pair(6.2442, -75.5812),   // Medellín
+    "4" to Pair(59.4370, 24.7536),   // Tallinn
+    "5" to Pair(-8.4095, 115.1889),  // Bali
+    "6" to Pair(13.7563, 100.5018),  // Bangkok
+    "7" to Pair(41.3851, 2.1734),    // Barcelona
+    "8" to Pair(19.4326, -99.1332)   // Mexico City
+)
+
+private fun haversineKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    val r = 6371.0
+    val dLat = Math.toRadians(lat2 - lat1)
+    val dLon = Math.toRadians(lon2 - lon1)
+    val a = sin(dLat / 2).pow(2) +
+        cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(dLon / 2).pow(2)
+    return r * 2 * atan2(sqrt(a), sqrt(1 - a))
+}
 
 // ---------------------------------------------------------------------------
 // Location scope pills
@@ -154,6 +182,7 @@ fun ExploreScreen(
     onAiSuggest: (String) -> Unit = {},
     onOpenMap: () -> Unit = {},
     onTripClick: (tripId: String) -> Unit = {},
+    onCategorySelected: (PlaceCategory) -> Unit = {},
     viewModel: ExploreViewModel = hiltViewModel(),
     tripsViewModel: TripsViewModel = hiltViewModel()
 ) {
@@ -462,6 +491,8 @@ fun ExploreScreen(
                     searchText = searchText,
                     scope = selectedScope,
                     sortMode = sortMode,
+                    userLat = detectedLat,
+                    userLon = detectedLon,
                     onAiSuggest = onAiSuggest,
                     onOpenMap = onOpenMap,
                     onDestinationClick = { dest -> selectedDestination = dest }
@@ -472,7 +503,7 @@ fun ExploreScreen(
                     selectedCategory = selectedCategory,
                     onCategorySelect = { cat ->
                         selectedCategory = cat
-                        // Trigger Places fetch when category changes
+                        onCategorySelected(cat)
                         if (searchText.isNotBlank()) {
                             viewModel.fetchByLocation(searchText, cat)
                         } else {
@@ -532,6 +563,8 @@ private fun DestinationsTab(
     searchText: String,
     scope: LocationScope,
     sortMode: Int = 0,
+    userLat: Double? = null,
+    userLon: Double? = null,
     onAiSuggest: (String) -> Unit,
     onOpenMap: () -> Unit = {},
     onDestinationClick: (ExploreDestination) -> Unit = {}
@@ -541,11 +574,29 @@ private fun DestinationsTab(
         it.city.contains(searchText, ignoreCase = true) ||
             it.country.contains(searchText, ignoreCase = true)
     }
+
+    // Proximity sort: when GPS is known and no explicit sort mode selected,
+    // rank destinations by great-circle distance from user's location.
+    val nearestId: String? = if (userLat != null && userLon != null) {
+        base.minByOrNull { dest ->
+            val coords = destinationCoords[dest.id]
+            if (coords != null) haversineKm(userLat, userLon, coords.first, coords.second)
+            else Double.MAX_VALUE
+        }?.id
+    } else null
+
     val filtered = when (sortMode) {
         1 -> base.sortedBy { it.costPerMonthUsd }
         2 -> base.sortedByDescending { it.safetyScore }
         3 -> base.sortedByDescending { it.wifiSpeedMbps }
-        else -> base
+        else -> if (userLat != null && userLon != null) {
+            // Default sort: proximity when GPS is active
+            base.sortedBy { dest ->
+                val coords = destinationCoords[dest.id]
+                if (coords != null) haversineKm(userLat, userLon, coords.first, coords.second)
+                else Double.MAX_VALUE
+            }
+        } else base
     }
 
     LazyColumn(
@@ -608,14 +659,27 @@ private fun DestinationsTab(
             }
         }
 
-        // Count
+        // Count + location label
         item {
-            Text(
-                "${filtered.size} destinations",
-                style = MaterialTheme.typography.labelSmall,
-                color = KipitaTextTertiary,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
+            Row(
+                modifier = Modifier.padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    "${filtered.size} destinations",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = KipitaTextTertiary
+                )
+                if (userLat != null) {
+                    Text("·", style = MaterialTheme.typography.labelSmall, color = KipitaTextTertiary)
+                    Text(
+                        "sorted by distance from you",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = KipitaGreenAccent
+                    )
+                }
+            }
         }
 
         itemsIndexed(filtered) { index, dest ->
@@ -626,6 +690,7 @@ private fun DestinationsTab(
                 DestinationCard(
                     destination = dest,
                     index = index,
+                    isNearby = dest.id == nearestId,
                     onClick = { onDestinationClick(dest) }
                 )
             }
@@ -1052,6 +1117,7 @@ private fun DataSourcePill(label: String, icon: String) {
 private fun DestinationCard(
     destination: ExploreDestination,
     index: Int,
+    isNearby: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     var pressed by remember { mutableStateOf(false) }
@@ -1106,12 +1172,28 @@ private fun DestinationCard(
                         Brush.verticalGradient(listOf(Color.Black.copy(.10f), Color.Black.copy(.65f)))
                     )
                 )
-                Surface(
-                    modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
-                    shape = CircleShape, color = Color.White.copy(alpha = 0.92f)
-                ) {
-                    Text("#${destination.rank}", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = KipitaOnSurface)
+                // Top-left: rank badge OR "Near You ✦" badge
+                if (isNearby) {
+                    Surface(
+                        modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = KipitaGreenAccent
+                    ) {
+                        Text(
+                            "Near You ✦",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
+                        )
+                    }
+                } else {
+                    Surface(
+                        modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
+                        shape = CircleShape, color = Color.White.copy(alpha = 0.92f)
+                    ) {
+                        Text("#${destination.rank}", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = KipitaOnSurface)
+                    }
                 }
                 Surface(
                     modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
