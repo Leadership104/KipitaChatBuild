@@ -78,11 +78,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocalTaxi
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.layout.ContentScale
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -91,6 +97,7 @@ import com.kipita.data.repository.NearbyPlace
 import com.kipita.domain.model.ExploreDestination
 import com.kipita.domain.model.SampleData
 import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
+import com.kipita.presentation.trips.TripsViewModel
 import com.kipita.presentation.theme.KipitaBorder
 import com.kipita.presentation.theme.KipitaCardBg
 import com.kipita.presentation.theme.KipitaGreenAccent
@@ -140,12 +147,15 @@ private val exploreCategories = listOf(
 )
 
 @SuppressLint("MissingPermission")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExploreScreen(
     paddingValues: PaddingValues,
     onAiSuggest: (String) -> Unit = {},
     onOpenMap: () -> Unit = {},
-    viewModel: ExploreViewModel = hiltViewModel()
+    onTripClick: (tripId: String) -> Unit = {},
+    viewModel: ExploreViewModel = hiltViewModel(),
+    tripsViewModel: TripsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val exploreState by viewModel.state.collectAsStateWithLifecycleCompat()
@@ -162,6 +172,7 @@ fun ExploreScreen(
     // Sort mode: 0=Default, 1=Cost↑, 2=Safety↓, 3=WiFi↓
     var sortMode by remember { mutableIntStateOf(0) }
     val sortLabels = listOf("Filter", "Cost ↑", "Safety", "WiFi")
+    var selectedDestination by remember { mutableStateOf<ExploreDestination?>(null) }
 
     LaunchedEffect(Unit) { delay(80); visible = true }
 
@@ -452,7 +463,8 @@ fun ExploreScreen(
                     scope = selectedScope,
                     sortMode = sortMode,
                     onAiSuggest = onAiSuggest,
-                    onOpenMap = onOpenMap
+                    onOpenMap = onOpenMap,
+                    onDestinationClick = { dest -> selectedDestination = dest }
                 )
                 1 -> PlacesTab(
                     visible = visible,
@@ -480,6 +492,35 @@ fun ExploreScreen(
             }
         }
     }
+
+    // ── Destination Detail Bottom Sheet ───────────────────────────────────────
+    selectedDestination?.let { dest ->
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { selectedDestination = null },
+            sheetState = sheetState,
+            containerColor = Color.White,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            DestinationDetailSheet(
+                destination = dest,
+                context = context,
+                onDismiss = { selectedDestination = null },
+                onAddToTrips = {
+                    tripsViewModel.acceptAiTrip(
+                        destination = dest.city,
+                        country = dest.country,
+                        countryFlag = "🌍",
+                        durationDays = 7,
+                        aiSummary = buildDestinationSummary(dest)
+                    ) { tripId ->
+                        selectedDestination = null
+                        onTripClick(tripId)
+                    }
+                }
+            )
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -492,7 +533,8 @@ private fun DestinationsTab(
     scope: LocationScope,
     sortMode: Int = 0,
     onAiSuggest: (String) -> Unit,
-    onOpenMap: () -> Unit = {}
+    onOpenMap: () -> Unit = {},
+    onDestinationClick: (ExploreDestination) -> Unit = {}
 ) {
     val base = if (searchText.isBlank()) SampleData.destinations
     else SampleData.destinations.filter {
@@ -581,7 +623,11 @@ private fun DestinationsTab(
                 visible = visible,
                 enter = fadeIn(tween(200 + index * 60)) + slideInVertically(tween(200 + index * 60)) { 30 }
             ) {
-                DestinationCard(destination = dest, index = index)
+                DestinationCard(
+                    destination = dest,
+                    index = index,
+                    onClick = { onDestinationClick(dest) }
+                )
             }
         }
 
@@ -1003,7 +1049,11 @@ private fun DataSourcePill(label: String, icon: String) {
 }
 
 @Composable
-private fun DestinationCard(destination: ExploreDestination, index: Int) {
+private fun DestinationCard(
+    destination: ExploreDestination,
+    index: Int,
+    onClick: () -> Unit = {}
+) {
     var pressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.97f else 1f,
@@ -1027,7 +1077,7 @@ private fun DestinationCard(destination: ExploreDestination, index: Int) {
             .shadow(4.dp, RoundedCornerShape(20.dp))
             .clip(RoundedCornerShape(20.dp))
             .background(Color.White)
-            .clickable { pressed = !pressed }
+            .clickable { pressed = !pressed; onClick() }
     ) {
         Column {
             Box(
@@ -1116,4 +1166,190 @@ private fun DestinationCard(destination: ExploreDestination, index: Int) {
             }
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Destination Detail Bottom Sheet
+// ---------------------------------------------------------------------------
+@Composable
+private fun DestinationDetailSheet(
+    destination: ExploreDestination,
+    context: android.content.Context,
+    onDismiss: () -> Unit,
+    onAddToTrips: () -> Unit
+) {
+    val photoSeed = destination.city.lowercase().replace(" ", "-")
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Hero image
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+        ) {
+            AsyncImage(
+                model = "https://picsum.photos/seed/$photoSeed/800/400",
+                contentDescription = "${destination.city} photo",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            Box(
+                modifier = Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(listOf(Color.Black.copy(.05f), Color.Black.copy(.7f)))
+                )
+            )
+            Column(
+                modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)
+            ) {
+                Text(
+                    destination.city,
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                    color = Color.White
+                )
+                Text(
+                    "${destination.country}  ·  #${destination.rank} Nomad Destination",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(.85f)
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Stats row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                StatPill("💰", "$${destination.costPerMonthUsd}/mo")
+                StatPill("📡", "${destination.wifiSpeedMbps} Mbps")
+                StatPill("🛡", "%.1f/10".format(destination.safetyScore))
+                StatPill(destination.weatherIcon, destination.weatherSummary.split("·").firstOrNull()?.trim() ?: "")
+            }
+
+            // Travel description
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(KipitaCardBg)
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "About ${destination.city}",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = KipitaOnSurface
+                )
+                Text(
+                    buildDestinationSummary(destination),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = KipitaTextSecondary
+                )
+                // Tags
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    destination.tags.forEach { tag ->
+                        Surface(shape = RoundedCornerShape(6.dp), color = KipitaRedLight) {
+                            Text(tag, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = KipitaRed)
+                        }
+                    }
+                }
+            }
+
+            // Share + Add to Trips buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Share location
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(KipitaCardBg)
+                        .clickable {
+                            val shareText = "Check out ${destination.city}, ${destination.country} — a top digital nomad destination! " +
+                                "Cost: $${destination.costPerMonthUsd}/month · WiFi: ${destination.wifiSpeedMbps} Mbps · Safety: ${"%.1f".format(destination.safetyScore)}/10"
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, shareText)
+                                putExtra(Intent.EXTRA_SUBJECT, "Travel Destination: ${destination.city}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Share via").apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            })
+                        }
+                        .padding(vertical = 13.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Share, null, tint = KipitaTextSecondary, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Share", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = KipitaTextSecondary)
+                    }
+                }
+                // Add destination to trips
+                Box(
+                    modifier = Modifier
+                        .weight(2f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(KipitaRed)
+                        .clickable(onClick = onAddToTrips)
+                        .padding(vertical = 13.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            "Add to My Trips",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun StatPill(emoji: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(emoji, fontSize = 18.sp)
+        Text(value, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold), color = KipitaOnSurface)
+    }
+}
+
+private fun buildDestinationSummary(dest: ExploreDestination): String {
+    val tagStr = dest.tags.joinToString(" & ")
+    val costLabel = when {
+        dest.costPerMonthUsd < 1000 -> "budget-friendly"
+        dest.costPerMonthUsd < 1500 -> "moderately priced"
+        else -> "premium"
+    }
+    val safetyLabel = when {
+        dest.safetyScore >= 8.5 -> "very safe"
+        dest.safetyScore >= 7.0 -> "generally safe"
+        else -> "exercise normal caution"
+    }
+    val wifiLabel = when {
+        dest.wifiSpeedMbps >= 50 -> "excellent connectivity (${dest.wifiSpeedMbps} Mbps)"
+        dest.wifiSpeedMbps >= 30 -> "solid internet (${dest.wifiSpeedMbps} Mbps)"
+        else -> "adequate internet (${dest.wifiSpeedMbps} Mbps)"
+    }
+    return "${dest.city}, ${dest.country} is a $costLabel destination known for its $tagStr scene. " +
+        "The city is $safetyLabel with $wifiLabel — ideal for remote work. " +
+        "Weather: ${dest.weatherSummary}. " +
+        "Cost of living starts around \$${dest.costPerMonthUsd}/month, making it a top pick for digital nomads seeking value and lifestyle."
 }

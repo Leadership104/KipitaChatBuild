@@ -346,14 +346,16 @@ fun KipitaApp() {
                         MainRoute.EXPLORE -> KipitaErrorBoundary("ExploreScreen") { _ ->
                             ExploreScreen(
                                 paddingValues = padding,
-                                onAiSuggest = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
-                                onOpenMap   = { showMap = true }
+                                onAiSuggest  = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
+                                onOpenMap    = { showMap = true },
+                                onTripClick  = { tripId -> selectedTripId = tripId }
                             )
                         }
 
                         MainRoute.AI -> KipitaErrorBoundary("AiAssistantScreen") { _ ->
                             AiAssistantScreen(
                                 paddingValues = padding,
+                                onTripClick   = { tripId -> selectedTripId = tripId },
                                 preFillPrompt = aiPreFill.also { aiPreFill = "" }
                             )
                         }

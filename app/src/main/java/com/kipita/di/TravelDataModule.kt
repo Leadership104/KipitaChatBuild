@@ -47,6 +47,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object TravelDataModule {
+    private val MIGRATION_10_11 = object : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE trips ADD COLUMN cancelledAt INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE trips ADD COLUMN cancellationReason TEXT NOT NULL DEFAULT ''")
+        }
+    }
+
     private val MIGRATION_9_10 = object : Migration(9, 10) {
         override fun migrate(db: SupportSQLiteDatabase) {
             // Add sample-trip flag to trips table
@@ -154,7 +161,7 @@ object TravelDataModule {
 
         return Room.databaseBuilder(context, KipitaDatabase::class.java, "kipita.db")
             .openHelperFactory(factory)
-            .addMigrations(MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+            .addMigrations(MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
             .build()
     }
 

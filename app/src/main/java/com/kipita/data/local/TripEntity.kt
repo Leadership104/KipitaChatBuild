@@ -47,8 +47,12 @@ data class TripEntity(
     val isAiGenerated: Boolean = false,
     val isSample: Boolean = false,
 
-    // Lifecycle status: "UPCOMING" | "ACTIVE" | "PAST"
+    // Lifecycle status: "UPCOMING" | "ACTIVE" | "PAST" | "CANCELLED"
     val status: String = "UPCOMING",
+
+    // Cancellation — populated when status = "CANCELLED"
+    val cancelledAt: Long = 0L,
+    val cancellationReason: String = "",
 
     // AI memory fields — written by KipitaAIManager after trip completion
     val userSentiment: String = "",    // e.g. "liked boutique hotels, disliked tourist traps"

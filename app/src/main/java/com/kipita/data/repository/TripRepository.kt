@@ -28,6 +28,8 @@ class TripRepository @Inject constructor(
 
     fun pastTrips(): Flow<List<TripEntity>> = dao.observePastTrips()
 
+    fun cancelledTrips(): Flow<List<TripEntity>> = dao.observeCancelledTrips()
+
     // ── Point read ────────────────────────────────────────────────────────────
 
     suspend fun getTripById(id: String): TripEntity? = try {
@@ -79,6 +81,13 @@ class TripRepository @Inject constructor(
     }
 
     // ── Maintenance ───────────────────────────────────────────────────────────
+
+    /** Marks a trip as CANCELLED with an optional user-provided reason. */
+    suspend fun cancelTrip(tripId: String, reason: String) = try {
+        dao.cancelTrip(tripId, System.currentTimeMillis(), reason)
+    } catch (e: Exception) {
+        logger.log("TripRepository.cancelTrip", e)
+    }
 
     /** Promotes any trip whose end date has passed to PAST status. */
     suspend fun tickExpiredTrips() = try {

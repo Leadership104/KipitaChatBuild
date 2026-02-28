@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsCar
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocalTaxi
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,6 +51,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -111,6 +114,9 @@ fun TripDetailScreen(
     var notesEditing by remember { mutableStateOf(false) }
     var showInviteSheet by remember { mutableStateOf(false) }
     var inviteInput by remember { mutableStateOf("") }
+    var showCancelDialog by remember { mutableStateOf(false) }
+    var cancelReason by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     LaunchedEffect(tripId) { viewModel.loadTrip(tripId) }
 
@@ -178,16 +184,18 @@ fun TripDetailScreen(
                     modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
                     shape = RoundedCornerShape(8.dp),
                     color = when (trip.status) {
-                        "ACTIVE" -> Color(0xFF1B5E20)
-                        "PAST"   -> Color(0xFF37474F)
-                        else     -> KipitaRed
+                        "ACTIVE"    -> Color(0xFF1B5E20)
+                        "PAST"      -> Color(0xFF37474F)
+                        "CANCELLED" -> Color(0xFF78909C)
+                        else        -> KipitaRed
                     }
                 ) {
                     Text(
                         text = when (trip.status) {
-                            "ACTIVE" -> "🟢 Active"
-                            "PAST"   -> "✓ Completed"
-                            else     -> if (trip.daysUntil > 0) "In ${trip.daysUntil} days" else "Soon"
+                            "ACTIVE"    -> "🟢 Active"
+                            "PAST"      -> "✓ Completed"
+                            "CANCELLED" -> "✕ Cancelled"
+                            else        -> if (trip.daysUntil > 0) "In ${trip.daysUntil} days" else "Soon"
                         },
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
@@ -491,7 +499,99 @@ fun TripDetailScreen(
             }
         }
 
+        // ── Cancel Trip button (only for active/upcoming trips) ───────────────
+        if (trip.status != "PAST" && trip.status != "CANCELLED") {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0xFFFFF0F0))
+                        .clickable { showCancelDialog = true }
+                        .padding(vertical = 14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Cancel, null, tint = KipitaRed, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Cancel Trip",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = KipitaRed
+                        )
+                    }
+                }
+            }
+        }
+
         item { Spacer(Modifier.height(80.dp)) }
+    }
+
+    // ── Cancel Confirmation Dialog ─────────────────────────────────────────────
+    if (showCancelDialog) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            title = { Text("Cancel Trip?", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Are you sure you would like to cancel this trip? " +
+                        "All invited group members will be notified by email.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    OutlinedTextField(
+                        value = cancelReason,
+                        onValueChange = { cancelReason = it },
+                        label = { Text("Reason (optional)") },
+                        placeholder = { Text("Change of plans, work conflict…", color = KipitaTextTertiary) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = KipitaRed,
+                            unfocusedBorderColor = KipitaBorder
+                        )
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCancelDialog = false
+                        viewModel.cancelTrip(tripId, cancelReason) { inviteEmails ->
+                            if (inviteEmails.isNotEmpty()) {
+                                val to = inviteEmails.joinToString(",")
+                                val subject = "Trip Cancelled: ${trip.title}"
+                                val body = buildString {
+                                    append("Hi,\n\n")
+                                    append("This is a notification that the trip \"${trip.title}\" to ${trip.destination} has been cancelled.")
+                                    if (cancelReason.isNotBlank()) append("\n\nReason: $cancelReason")
+                                    append("\n\nYou can plan a new trip together using the Kipita app.")
+                                    append("\n\n– Kipita Travel")
+                                }
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = android.net.Uri.parse("mailto:")
+                                    putExtra(Intent.EXTRA_EMAIL, inviteEmails.toTypedArray())
+                                    putExtra(Intent.EXTRA_SUBJECT, subject)
+                                    putExtra(Intent.EXTRA_TEXT, body)
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            }
+                            onBack()
+                        }
+                    }
+                ) {
+                    Text("Yes, Cancel Trip", color = KipitaRed, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = false }) {
+                    Text("Keep Trip")
+                }
+            }
+        )
     }
 
     // ── Invite Bottom Sheet ────────────────────────────────────────────────────

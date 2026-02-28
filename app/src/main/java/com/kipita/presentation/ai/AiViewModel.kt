@@ -24,6 +24,13 @@ class AiViewModel @Inject constructor(
 
     val isAiTyping: StateFlow<Boolean> = kipitaAI.isAiTyping
 
+    // Set when planTrip() is called — lets the UI show "Add to Trips"
+    private val _lastPlanDestination = MutableStateFlow<String?>(null)
+    val lastPlanDestination: StateFlow<String?> = _lastPlanDestination.asStateFlow()
+
+    private val _lastPlanDays = MutableStateFlow(7)
+    val lastPlanDays: StateFlow<Int> = _lastPlanDays.asStateFlow()
+
     fun analyze(region: String, prompt: String) {
         viewModelScope.launch {
             runCatching { aiOrchestrator.handleIntent(prompt, region) }
@@ -41,11 +48,18 @@ class AiViewModel @Inject constructor(
     }
 
     fun planTrip(destination: String, days: Int = 7) {
+        _lastPlanDestination.value = destination
+        _lastPlanDays.value = days
         viewModelScope.launch {
             runCatching { kipitaAI.planTrip(destination, days) }
                 .onSuccess { _response.value = it }
                 .onFailure { errorLogger.log("AiViewModel.planTrip", it) }
         }
+    }
+
+    /** Clears the last plan destination (e.g. after adding trip to calendar). */
+    fun clearLastPlan() {
+        _lastPlanDestination.value = null
     }
 
     fun parseNlpSearch(query: String) {

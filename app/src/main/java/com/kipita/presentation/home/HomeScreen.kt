@@ -75,6 +75,10 @@ import com.kipita.presentation.theme.KipitaRed
 import com.kipita.presentation.theme.KipitaRedLight
 import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.kipita.domain.model.parsedInvites
+import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
+import com.kipita.presentation.trips.TripsViewModel
 import kotlinx.coroutines.delay
 import java.util.Calendar
 import java.util.Locale
@@ -126,13 +130,25 @@ fun HomeScreen(
     onOpenMap: () -> Unit = {},
     onOpenAI: (String) -> Unit = {},
     onOpenTranslate: () -> Unit = {},
-    onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> }
+    onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> },
+    tripsViewModel: TripsViewModel = hiltViewModel()
 ) {
     var visible by remember { mutableStateOf(false) }
     var showPackingList by remember { mutableStateOf(false) }
     var showWeather by remember { mutableStateOf(false) }
+    var showSosSheet by remember { mutableStateOf(false) }
     var isListening by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
+    val tripsState by tripsViewModel.state.collectAsStateWithLifecycleCompat()
+    // Collect all invited emails from upcoming/active trips
+    val sosEmails by remember(tripsState.upcomingTrips) {
+        val emails = tripsState.upcomingTrips
+            .flatMap { it.parsedInvites() }
+            .filter { it.contains("@") }
+            .distinct()
+        androidx.compose.runtime.derivedStateOf { emails }
+    }
 
     LaunchedEffect(Unit) { delay(80); visible = true }
 
@@ -381,6 +397,56 @@ fun HomeScreen(
             }
 
             // ── Nomad Tips ───────────────────────────────────────────────────
+            // ── Safety & Help section ────────────────────────────────────────
+            item {
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(tween(280)) + slideInVertically(tween(280)) { 45 }
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
+                        Text(
+                            "Safety & Help",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = KipitaOnSurface,
+                            modifier = Modifier.padding(bottom = 10.dp)
+                        )
+                        // SOS emergency button
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(Color(0xFFB71C1C), Color(0xFFD32F2F))
+                                    )
+                                )
+                                .clickable { showSosSheet = true }
+                                .padding(vertical = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Text("🆘", fontSize = 22.sp)
+                                Column {
+                                    Text(
+                                        "SOS Emergency Alert",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        "Alert trip members · Navigate to hospital",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White.copy(.80f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             item {
                 AnimatedVisibility(
                     visible = visible,
@@ -467,6 +533,23 @@ fun HomeScreen(
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
             WeatherSheet(onClose = { showWeather = false })
+        }
+    }
+
+    // ── SOS Emergency Sheet ──────────────────────────────────────────────────
+    if (showSosSheet) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { showSosSheet = false },
+            sheetState = sheetState,
+            containerColor = Color.White,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            SosSheet(
+                emails = sosEmails,
+                context = context,
+                onClose = { showSosSheet = false }
+            )
         }
     }
 }
@@ -914,6 +997,291 @@ private fun WeatherSheet(onClose: () -> Unit) {
                         color = KipitaTextSecondary
                     )
                 }
+            }
+        }
+
+        Spacer(Modifier.height(32.dp))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// SOS Emergency Bottom Sheet
+// ---------------------------------------------------------------------------
+@Composable
+private fun SosSheet(
+    emails: List<String>,
+    context: android.content.Context,
+    onClose: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+    ) {
+        // Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    "SOS Emergency 🆘",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFFB71C1C)
+                )
+                Text(
+                    "Alert your trip members and get help fast",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = KipitaTextSecondary,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(KipitaCardBg)
+                    .clickable(onClick = onClose),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Close, null, tint = KipitaTextSecondary, modifier = Modifier.size(18.dp))
+            }
+        }
+
+        // Emergency banner
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Brush.horizontalGradient(listOf(Color(0xFFB71C1C), Color(0xFFD32F2F))))
+                .padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("🚨", fontSize = 28.sp)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(
+                        "Emergency Mode",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                    Text(
+                        "Use the buttons below to alert your group or get to safety",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(.85f),
+                        lineHeight = 16.sp
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        // Alert trip members section
+        Text(
+            "Trip Members",
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = KipitaTextSecondary,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        if (emails.isNotEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(KipitaCardBg)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                emails.forEach { email ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF4CAF50))
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            email,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = KipitaOnSurface
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+
+            // Alert all button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFFB71C1C))
+                    .clickable {
+                        runCatching {
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = Uri.parse("mailto:")
+                                putExtra(Intent.EXTRA_EMAIL, emails.toTypedArray())
+                                putExtra(Intent.EXTRA_SUBJECT, "🆘 SOS Emergency Alert — Kipita")
+                                putExtra(
+                                    Intent.EXTRA_TEXT,
+                                    "This is an emergency alert sent from the Kipita travel app.\n\n" +
+                                        "A trip member has triggered an SOS and may need assistance.\n" +
+                                        "Please check in with them immediately.\n\n" +
+                                        "Stay safe."
+                                )
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Send SOS Alert"))
+                        }
+                    }
+                    .padding(vertical = 14.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("📧", fontSize = 18.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Alert All Members (${emails.size})",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                }
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(KipitaCardBg)
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "No trip members to alert.\nAdd people to a trip to enable group alerts.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = KipitaTextSecondary,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 18.sp
+                )
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        // Navigation actions
+        Text(
+            "Get Help Now",
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = KipitaTextSecondary,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Navigate to hospital
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFFFFF3E0))
+                    .clickable {
+                        runCatching {
+                            val geoIntent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("geo:0,0?q=nearest+hospital")
+                            )
+                            context.startActivity(geoIntent)
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("🏥", fontSize = 22.sp)
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Navigate to Hospital",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = KipitaOnSurface
+                    )
+                    Text(
+                        "Opens maps with nearest hospital",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = KipitaTextSecondary
+                    )
+                }
+                Text("→", color = Color(0xFFE65100), fontWeight = FontWeight.Bold)
+            }
+
+            // Navigate to fire station
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFFFCE4EC))
+                    .clickable {
+                        runCatching {
+                            val geoIntent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("geo:0,0?q=nearest+fire+station")
+                            )
+                            context.startActivity(geoIntent)
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("🚒", fontSize = 22.sp)
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Navigate to Fire Station",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = KipitaOnSurface
+                    )
+                    Text(
+                        "Opens maps with nearest fire station",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = KipitaTextSecondary
+                    )
+                }
+                Text("→", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+            }
+
+            // Call emergency services
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFFE8F5E9))
+                    .clickable {
+                        runCatching {
+                            val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:911"))
+                            context.startActivity(dialIntent)
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("📞", fontSize = 22.sp)
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Call Emergency Services",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = KipitaOnSurface
+                    )
+                    Text(
+                        "Dial 911 (US) — adjust for local emergency number",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = KipitaTextSecondary
+                    )
+                }
+                Text("→", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
             }
         }
 

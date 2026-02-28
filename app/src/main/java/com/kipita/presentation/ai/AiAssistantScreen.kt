@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
+import com.kipita.presentation.trips.TripsViewModel
 import com.kipita.presentation.theme.KipitaBorder
 import com.kipita.presentation.theme.KipitaCardBg
 import com.kipita.presentation.theme.KipitaOnSurface
@@ -102,11 +103,15 @@ private val quickActions = listOf(
 @Composable
 fun AiAssistantScreen(
     paddingValues: PaddingValues,
+    onTripClick: (tripId: String) -> Unit = {},
     viewModel: AiViewModel = hiltViewModel(),
+    tripsViewModel: TripsViewModel = hiltViewModel(),
     preFillPrompt: String = ""
 ) {
     val response by viewModel.response.collectAsStateWithLifecycleCompat()
     val isAiTyping by viewModel.isAiTyping.collectAsStateWithLifecycleCompat()
+    val lastPlanDestination by viewModel.lastPlanDestination.collectAsStateWithLifecycleCompat()
+    val lastPlanDays by viewModel.lastPlanDays.collectAsStateWithLifecycleCompat()
     var prompt by remember { mutableStateOf(preFillPrompt) }
     var visible by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
@@ -379,22 +384,53 @@ fun AiAssistantScreen(
 
                             Spacer(Modifier.height(12.dp))
 
-                            // Ask again button
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(KipitaRedLight)
-                                    .clickable {
-                                        loading = true
-                                        viewModel.chat(prompt)
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                // Ask again button
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(KipitaRedLight)
+                                        .clickable {
+                                            loading = true
+                                            viewModel.chat(prompt)
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "Ask again",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = KipitaRed
+                                    )
+                                }
+
+                                // "Add to Trips" — only shown after planTrip()
+                                if (lastPlanDestination != null) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(KipitaRed)
+                                            .clickable {
+                                                val dest = lastPlanDestination ?: return@clickable
+                                                tripsViewModel.acceptAiTrip(
+                                                    destination = dest,
+                                                    country = "",
+                                                    countryFlag = "🌍",
+                                                    durationDays = lastPlanDays,
+                                                    aiSummary = response.orEmpty().take(500)
+                                                ) { tripId ->
+                                                    viewModel.clearLastPlan()
+                                                    onTripClick(tripId)
+                                                }
+                                            }
+                                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = "➕ Add to Trips",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            color = Color.White
+                                        )
                                     }
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Text(
-                                    text = "Ask again",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = KipitaRed
-                                )
+                                }
                             }
                         }
                     }

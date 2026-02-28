@@ -257,6 +257,33 @@ fun MyTripsScreen(
 
             item { Spacer(Modifier.height(28.dp)) }
 
+            // Cancelled Trips section
+            if (state.cancelledTrips.isNotEmpty()) {
+                item {
+                    AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically { 55 }) {
+                        SectionHeader("Cancelled Trips", "${state.cancelledTrips.size} trips")
+                    }
+                }
+
+                itemsIndexed(state.cancelledTrips) { index, trip ->
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn() + slideInVertically { 45 + index * 20 }
+                    ) {
+                        CancelledTripRow(
+                            trip = trip,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 5.dp),
+                            onView = { onTripClick(trip.id) },
+                            onRecreate = {
+                                viewModel.recreateTrip(trip) { newId -> onTripClick(newId) }
+                            }
+                        )
+                    }
+                }
+
+                item { Spacer(Modifier.height(28.dp)) }
+            }
+
             // Quick Tools — with functional links
             item {
                 AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically { 60 }) {
@@ -956,6 +983,68 @@ private fun PastTripRow(trip: Trip, modifier: Modifier = Modifier) {
                 text = trip.country,
                 style = MaterialTheme.typography.labelSmall,
                 color = KipitaTextTertiary
+            )
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Cancelled Trip row — with View + Recreate actions
+// ---------------------------------------------------------------------------
+@Composable
+private fun CancelledTripRow(
+    trip: TripEntity,
+    modifier: Modifier = Modifier,
+    onView: () -> Unit = {},
+    onRecreate: () -> Unit = {}
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFFF5F5F5))
+            .clickable(onClick = onView)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier.size(52.dp).clip(RoundedCornerShape(14.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFF78909C), Color(0xFF546E7A)))),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(trip.countryFlag, fontSize = 24.sp)
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                trip.title,
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = KipitaOnSurface
+            )
+            Text(
+                "${trip.destination} · Cancelled",
+                style = MaterialTheme.typography.bodySmall,
+                color = KipitaTextSecondary,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+            if (trip.cancellationReason.isNotBlank()) {
+                Text(
+                    trip.cancellationReason,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = KipitaTextTertiary
+                )
+            }
+        }
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = KipitaRedLight,
+            modifier = Modifier.clickable(onClick = onRecreate)
+        ) {
+            Text(
+                "Recreate",
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = KipitaRed
             )
         }
     }

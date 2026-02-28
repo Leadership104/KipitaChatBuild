@@ -97,5 +97,26 @@ class TripDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Cancels the current trip and notifies the caller with the list of invited
+     * member emails so the UI can fire a mailto Intent.
+     */
+    fun cancelTrip(
+        tripId: String,
+        reason: String = "",
+        onCancelled: (inviteEmails: List<String>) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            try {
+                val emails = _state.value.invites
+                repo.cancelTrip(tripId, reason)
+                onCancelled(emails)
+            } catch (e: Exception) {
+                logger.log("TripDetailViewModel.cancelTrip", e)
+                _state.update { it.copy(error = "Could not cancel trip.") }
+            }
+        }
+    }
+
     fun clearError() { _state.update { it.copy(error = null) } }
 }

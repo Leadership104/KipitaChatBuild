@@ -11,11 +11,14 @@ interface TripDao {
 
     // ── Live streams ──────────────────────────────────────────────────────────
 
-    @Query("SELECT * FROM trips WHERE status != 'PAST' ORDER BY startDateEpoch ASC")
+    @Query("SELECT * FROM trips WHERE status NOT IN ('PAST','CANCELLED') ORDER BY startDateEpoch ASC")
     fun observeUpcomingTrips(): Flow<List<TripEntity>>
 
     @Query("SELECT * FROM trips WHERE status = 'PAST' ORDER BY startDateEpoch DESC")
     fun observePastTrips(): Flow<List<TripEntity>>
+
+    @Query("SELECT * FROM trips WHERE status = 'CANCELLED' ORDER BY cancelledAt DESC")
+    fun observeCancelledTrips(): Flow<List<TripEntity>>
 
     // ── Point lookups ─────────────────────────────────────────────────────────
 
@@ -67,4 +70,8 @@ interface TripDao {
     /** Removes all sample / onboarding trips. Called after user saves their first real trip. */
     @Query("DELETE FROM trips WHERE isSample = 1")
     suspend fun deleteSampleTrips()
+
+    /** Marks a trip as CANCELLED with a timestamp and optional reason. */
+    @Query("UPDATE trips SET status = 'CANCELLED', cancelledAt = :cancelledAt, cancellationReason = :reason WHERE id = :tripId")
+    suspend fun cancelTrip(tripId: String, cancelledAt: Long, reason: String)
 }
