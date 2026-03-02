@@ -1,47 +1,53 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.google.services) apply false
-    alias(libs.plugins.firebase.crashlytics) apply false
-    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+    alias(libs.plugins.kotlin.compose.compiler)
 }
 
+val googleServicesCandidates = listOf(
+    "src/dev/google-services.json",
+    "src/staging/google-services.json",
+    "src/prod/google-services.json",
+    "google-services.json"
+)
 
-val hasGoogleServicesConfig = file("google-services.json").exists() || file("src/dev/google-services.json").exists() || file("src/staging/google-services.json").exists() || file("src/prod/google-services.json").exists()
-
-if (hasGoogleServicesConfig) {
+if (googleServicesCandidates.any { file(it).exists() }) {
     apply(plugin = "com.google.gms.google-services")
-    apply(plugin = "com.google.firebase.crashlytics")
-} else {
-    logger.lifecycle("google-services.json not found for app module; skipping Google Services and Crashlytics plugins for local build.")
 }
 
 android {
     namespace = "com.kipita"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.mytum"
+        applicationId = "com.kipita"
         minSdk = 26
-        targetSdk = 36
-        versionCode = 36
-        versionName = "2.0.0"
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
-        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"kipita-99351\"")
+        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"kipita-a1694\"")
+    }
 
-        ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
+    signingConfigs {
+        create("localDebug") {
+            storeFile = rootProject.file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("localDebug")
+        }
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -77,27 +83,19 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
     }
-
-    lint {
-        checkReleaseBuilds = true
-        abortOnError = true
-    }
 }
 
-secrets {
-    defaultPropertiesFileName = "secrets.defaults.properties"
+kapt {
+    correctErrorTypes = true
 }
-
-kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
-    }
-}
-
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -108,8 +106,6 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation(libs.material)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
@@ -119,18 +115,15 @@ dependencies {
     implementation(libs.retrofit.converter.moshi)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
-    implementation(libs.moshi.kotlin)
-    ksp(libs.moshi.kotlin.codegen)
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
-    implementation(libs.sqlcipher.android)
 
     implementation(libs.work.runtime.ktx)
     implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    ksp(libs.androidx.hilt.compiler)
+    kapt(libs.hilt.compiler)
+    kapt(libs.androidx.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.datastore.preferences)
@@ -139,26 +132,8 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
 
-    implementation(libs.profileinstaller)
-
-    // Image loading — Coil for destination photos (Unsplash / Picsum)
-    implementation("io.coil-kt:coil-compose:2.6.0")
-
-    // Google Generative AI (Gemini native SDK)
-    implementation(libs.google.generativeai)
-
-    // Google Maps Compose + Play Services
-    implementation(libs.google.maps.compose)
-    implementation(libs.play.services.maps)
-    implementation(libs.play.services.location)
-
-    // Google Sign-In via Firebase Auth + Credential Manager
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services)
-    implementation(libs.googleid)
-    implementation(libs.kotlinx.coroutines.play.services)
-
+    implementation(libs.hilt.navigation.compose)
+    implementation(libs.androidx.datastore.preferences)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

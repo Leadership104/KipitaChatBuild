@@ -1,4 +1,4 @@
-package com.kipita
+﻿package com.kipita
 
 import com.google.common.truth.Truth.assertThat
 import com.kipita.presentation.map.MapUiState
@@ -13,9 +13,5 @@ class MapOverlayLogicTest {
         assertThat(state.activeOverlays).contains(OverlayType.SAFETY)
         assertThat(state.activeOverlays).contains(OverlayType.HEALTH)
         assertThat(state.activeOverlays).contains(OverlayType.NOMAD)
-    fun `overlay defaults include safety and health`() {
-        val state = MapUiState()
-        assertThat(state.activeOverlays).contains(OverlayType.SAFETY)
-        assertThat(state.activeOverlays).contains(OverlayType.HEALTH)
     }
 }

@@ -1,4 +1,4 @@
-package com.kipita.domain.usecase
+﻿package com.kipita.domain.usecase
 
 import com.kipita.data.repository.AdvisoryRepository
 import com.kipita.data.repository.HealthRepository
@@ -42,7 +42,7 @@ class TravelDataEngine(
                 SeverityLevel.CRITICAL -> 6
             }
         }
-        val rawScore = (100 - (weighted * 5)).coerceIn(0, 100)
+        val rawScore: Int = (100 - (weighted * 7)).coerceIn(0, 100)
         val confidence = (notices.count { it.verified }.toDouble() / notices.size).coerceIn(0.0, 1.0)
         return SafetyScore.Value(rawScore, confidence)
     }

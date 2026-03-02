@@ -1,32 +1,22 @@
-package com.kipita.di
+﻿package com.kipita.di
 
 import com.kipita.BuildConfig
-import com.kipita.data.api.BitcoinPriceApiService
 import com.kipita.data.api.BtcMerchantApiService
-import com.kipita.data.api.CashAppApiService
 import com.kipita.data.api.ClaudeApiService
-import com.kipita.data.api.CoinbaseApiService
 import com.kipita.data.api.CurrencyApiService
 import com.kipita.data.api.ErrorReportApiService
 import com.kipita.data.api.GeminiApiService
-import com.kipita.data.api.GeminiCryptoApiService
 import com.kipita.data.api.GovernmentApiService
 import com.kipita.data.api.NomadApiService
 import com.kipita.data.api.OpenAiApiService
-import com.kipita.data.api.RiverApiService
 import com.kipita.data.api.WalletApiService
-import com.kipita.data.api.WeatherApiService
-import com.kipita.data.api.DwaatApiService
-import com.kipita.data.api.GooglePlacesApiService
-import com.kipita.di.DwaatApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import okhttp3.Interceptor
+import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
-import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -35,37 +25,23 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    // ETag cache: url → (etag, last successful response)
-    private val eTagCache = mutableMapOf<String, Pair<String, Response>>()
-
-    private val eTagInterceptor = Interceptor { chain ->
-        val request = chain.request()
-        val url = request.url.toString()
-        // Attach If-None-Match if we have a cached ETag for this URL
-        val requestWithETag = eTagCache[url]?.first?.let { etag ->
-            request.newBuilder().header("If-None-Match", etag).build()
-        } ?: request
-        val response = chain.proceed(requestWithETag)
-        // Store new ETag from successful responses
-        val newETag = response.header("ETag")
-        if (newETag != null && response.isSuccessful) {
-            eTagCache[url] = Pair(newETag, response)
-        }
-        // On 304 Not Modified, return cached response
-        if (response.code == 304) {
-            eTagCache[url]?.second ?: response
-        } else {
-            response
-        }
-    }
+    @Provides
+    @Singleton
+    fun provideCertificatePinner(): CertificatePinner = CertificatePinner.Builder()
+        .add("api.kipita.app", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+        .add("api.openai.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+        .add("api.anthropic.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+        .add("generativelanguage.googleapis.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+        .add("api.btcmap.org", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+        .add("api.nomadlist.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+        .add("api.exchangerate.host", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+        .build()
 
     @Provides
     @Singleton
-    fun provideOkHttp(): OkHttpClient = OkHttpClient.Builder()
+    fun provideOkHttp(certificatePinner: CertificatePinner): OkHttpClient = OkHttpClient.Builder()
+        .certificatePinner(certificatePinner)
         .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
-        .addInterceptor(eTagInterceptor)
-        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
         .build()
 
     @Provides
@@ -95,22 +71,11 @@ object NetworkModule {
         .addConverterFactory(MoshiConverterFactory.create())
         .build()
 
-    // Frankfurter.app: free, no API key, covers 30+ currencies with ECB data
     @Provides
     @Singleton
     @CurrencyApi
     fun provideCurrencyRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.frankfurter.app/")
-        .client(okHttpClient)
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
-
-    // Open-Meteo: free, no API key, real-time global weather
-    @Provides
-    @Singleton
-    @WeatherApi
-    fun provideWeatherRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.open-meteo.com/")
+        .baseUrl("https://api.exchangerate.host/")
         .client(okHttpClient)
         .addConverterFactory(MoshiConverterFactory.create())
         .build()
@@ -162,9 +127,6 @@ object NetworkModule {
     fun provideCurrencyApiService(@CurrencyApi retrofit: Retrofit): CurrencyApiService = retrofit.create(CurrencyApiService::class.java)
 
     @Provides
-    fun provideWeatherApiService(@WeatherApi retrofit: Retrofit): WeatherApiService = retrofit.create(WeatherApiService::class.java)
-
-    @Provides
     fun provideOpenAiApiService(@OpenAiApi retrofit: Retrofit): OpenAiApiService = retrofit.create(OpenAiApiService::class.java)
 
     @Provides
@@ -172,124 +134,4 @@ object NetworkModule {
 
     @Provides
     fun provideGeminiApiService(@GeminiApi retrofit: Retrofit): GeminiApiService = retrofit.create(GeminiApiService::class.java)
-
-    // -----------------------------------------------------------------------
-    // Google Places API (New) — v1 — replaces Yelp Fusion
-    // Key: BuildConfig.GOOGLE_PLACES_API_KEY (from local.properties via secrets plugin)
-    // -----------------------------------------------------------------------
-
-    @Provides
-    @Singleton
-    @GooglePlacesApi
-    fun provideGooglePlacesRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://places.googleapis.com/")
-        .client(okHttpClient)
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
-
-    @Provides
-    fun provideGooglePlacesApiService(@GooglePlacesApi retrofit: Retrofit): GooglePlacesApiService =
-        retrofit.create(GooglePlacesApiService::class.java)
-
-    // -----------------------------------------------------------------------
-    // Coinbase — OAuth2 wallet balances
-    // -----------------------------------------------------------------------
-
-    @Provides
-    @Singleton
-    @CoinbaseApi
-    fun provideCoinbaseRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.coinbase.com/")
-        .client(okHttpClient)
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
-
-    @Provides
-    fun provideCoinbaseApiService(@CoinbaseApi retrofit: Retrofit): CoinbaseApiService =
-        retrofit.create(CoinbaseApiService::class.java)
-
-    // -----------------------------------------------------------------------
-    // Gemini Crypto — HMAC-signed REST + market data
-    // -----------------------------------------------------------------------
-
-    @Provides
-    @Singleton
-    @GeminiCryptoApi
-    fun provideGeminiCryptoRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.gemini.com/")
-        .client(okHttpClient)
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
-
-    @Provides
-    fun provideGeminiCryptoApiService(@GeminiCryptoApi retrofit: Retrofit): GeminiCryptoApiService =
-        retrofit.create(GeminiCryptoApiService::class.java)
-
-    // -----------------------------------------------------------------------
-    // River Financial — Lightning + on-chain Bitcoin
-    // -----------------------------------------------------------------------
-
-    @Provides
-    @Singleton
-    @RiverApi
-    fun provideRiverRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://app.river.com/")
-        .client(okHttpClient)
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
-
-    @Provides
-    fun provideRiverApiService(@RiverApi retrofit: Retrofit): RiverApiService =
-        retrofit.create(RiverApiService::class.java)
-
-    // -----------------------------------------------------------------------
-    // CoinGecko — free real-time BTC/ETH/SOL price API (no key required)
-    // -----------------------------------------------------------------------
-
-    @Provides
-    @Singleton
-    @CoinGeckoApi
-    fun provideCoinGeckoRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.coingecko.com/api/v3/")
-        .client(okHttpClient)
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
-
-    @Provides
-    fun provideBitcoinPriceApiService(@CoinGeckoApi retrofit: Retrofit): BitcoinPriceApiService =
-        retrofit.create(BitcoinPriceApiService::class.java)
-
-    // -----------------------------------------------------------------------
-    // CashApp Pay — template (plug-and-play when credentials obtained)
-    // -----------------------------------------------------------------------
-
-    @Provides
-    @Singleton
-    @CashAppApi
-    fun provideCashAppRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.cash.app/")
-        .client(okHttpClient)
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
-
-    @Provides
-    fun provideCashAppApiService(@CashAppApi retrofit: Retrofit): CashAppApiService =
-        retrofit.create(CashAppApiService::class.java)
-
-    // -----------------------------------------------------------------------
-    // Dwaat API — original Kipita backend (affiliates, auth, advisories)
-    // -----------------------------------------------------------------------
-
-    @Provides
-    @Singleton
-    @DwaatApi
-    fun provideDwaatRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.dwaat.com/")
-        .client(okHttpClient)
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
-
-    @Provides
-    fun provideDwaatApiService(@DwaatApi retrofit: Retrofit): DwaatApiService =
-        retrofit.create(DwaatApiService::class.java)
 }

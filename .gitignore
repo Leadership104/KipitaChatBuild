@@ -1,36 +1,13 @@
-.gradle/
+﻿.gradle/
+/gradle-local/
 /local.properties
 /.idea/
 **/build/
+/kotlin/
+
+# Local signing cache
+debug.keystore
 
 # Firebase
-**/google-services.json
+app/src/**/google-services.json
 *firebase-adminsdk*.json
-
-# OAuth credentials (server-side only — must not ship in APK or git)
-credentials/
-client_secret*.json
-
-# Kotlin incremental compilation
-.kotlin/
-
-# IDE files
-*.iml
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# JVM heap dumps
-*.hprof
-
-# Claude Code
-.claude/
-
-# Optional local Android Studio daemon JDK pin (do not commit)
-gradle/gradle-daemon-jvm.properties
-
-# Codex local emulator prep artifacts
-.codex_android/
-emulator_*.log
-tmp_emu_*.log
