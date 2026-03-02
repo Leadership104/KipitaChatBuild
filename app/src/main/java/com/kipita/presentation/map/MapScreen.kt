@@ -32,6 +32,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -254,6 +255,27 @@ fun MapScreen(
                         .size(32.dp),
                     color = KipitaRed,
                     strokeWidth = 2.dp
+                )
+            }
+        }
+
+        if (onNavigateBack != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.92f))
+                    .border(1.dp, KipitaBorder, CircleShape)
+                    .clickable { onNavigateBack() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color(0xFF1A1A2E),
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

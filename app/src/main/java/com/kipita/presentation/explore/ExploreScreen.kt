@@ -301,7 +301,7 @@ fun ExploreScreen(
             Column(
                 modifier = Modifier
                     .background(Color.White)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
                 // Title row
                 Row(
@@ -351,7 +351,7 @@ fun ExploreScreen(
                     }
                 }
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(14.dp))
 
                 // Location search bar + GPS button
                 Row(

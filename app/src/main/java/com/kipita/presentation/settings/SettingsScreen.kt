@@ -71,7 +71,8 @@ private val NavyMid    = Color(0xFF111827)
 @Composable
 fun SettingsScreen(
     paddingValues: PaddingValues,
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
     val context = LocalContext.current
@@ -208,7 +209,7 @@ fun SettingsScreen(
                     )
                 )
                 affiliates.forEachIndexed { index, affiliate ->
-                    AffiliateRow(entry = affiliate, context = context)
+                    AffiliateRow(entry = affiliate, onOpenWebView = onOpenWebView)
                     if (index < affiliates.lastIndex) {
                         HorizontalDivider(color = BorderGray, thickness = 0.5.dp)
                     }
@@ -389,13 +390,13 @@ fun SettingsScreen(
                 LegalRow(
                     label = "Privacy Policy",
                     url = "https://kipita.com/privacy",
-                    context = context
+                    onOpenWebView = onOpenWebView
                 )
                 HorizontalDivider(color = BorderGray, thickness = 0.5.dp)
                 LegalRow(
                     label = "Terms of Service",
                     url = "https://kipita.com/terms",
-                    context = context
+                    onOpenWebView = onOpenWebView
                 )
             }
             Spacer(Modifier.height(16.dp))
@@ -501,14 +502,16 @@ private data class AffiliateEntry(
 )
 
 @Composable
-private fun LegalRow(label: String, url: String, context: android.content.Context) {
+private fun LegalRow(
+    label: String,
+    url: String,
+    onOpenWebView: (url: String, title: String) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                runCatching {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                }
+                onOpenWebView(url, label)
             }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -530,15 +533,16 @@ private fun LegalRow(label: String, url: String, context: android.content.Contex
 }
 
 @Composable
-private fun AffiliateRow(entry: AffiliateEntry, context: android.content.Context) {
+private fun AffiliateRow(
+    entry: AffiliateEntry,
+    onOpenWebView: (url: String, title: String) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
                 if (!entry.url.startsWith("AFFILIATE_")) {
-                    runCatching {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(entry.url)))
-                    }
+                    onOpenWebView(entry.url, entry.name)
                 }
             }
             .padding(horizontal = 16.dp, vertical = 14.dp),

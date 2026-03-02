@@ -198,7 +198,7 @@ fun KipitaApp() {
                 NavigationBar(
                     containerColor = KipitaNavBg,
                     tonalElevation = 0.dp,
-                    modifier = Modifier.height(76.dp)
+                    modifier = Modifier.height(90.dp)
                 ) {
                     navItems.forEach { item ->
                         val selected = route == item.route
@@ -208,19 +208,23 @@ fun KipitaApp() {
                             label = "nav-scale"
                         )
                         NavigationBarItem(
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
                             selected = selected,
                             onClick = { route = item.route },
                             icon = {
-                                if (item.isCenter && !selected) {
+                                if (item.isCenter) {
                                     Box(
                                         modifier = Modifier
-                                            .size(42.dp)
+                                            .size(44.dp)
                                             .scale(scale)
-                                            .background(KipitaRed, CircleShape),
+                                            .background(
+                                                color = if (selected) KipitaRed else KipitaRed.copy(alpha = 0.92f),
+                                                shape = CircleShape
+                                            ),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            item.unselectedIcon,
+                                            imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
                                             contentDescription = item.label,
                                             tint = Color.White,
                                             modifier = Modifier.size(22.dp)
@@ -240,7 +244,8 @@ fun KipitaApp() {
                                 Text(
                                     text = item.label,
                                     fontSize = 10.sp,
-                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                    modifier = Modifier.padding(top = 2.dp)
                                 )
                             },
                             colors = NavigationBarItemDefaults.colors(
@@ -342,6 +347,11 @@ fun KipitaApp() {
                     AuthScreen(
                         paddingValues = padding,
                         onBack = { showAuth = false },
+                        onOpenWebView = { url, title ->
+                            webViewUrl = url
+                            webViewTitle = title
+                            showWebView = true
+                        },
                         onAuthSuccess = { displayName ->
                             userName = displayName
                             isGuest = false
@@ -439,7 +449,14 @@ fun KipitaApp() {
                         }
 
                         MainRoute.WALLET -> KipitaErrorBoundary("WalletScreen") { _ ->
-                            WalletScreen(padding)
+                            WalletScreen(
+                                paddingValues = padding,
+                                onOpenWebView = { url, title ->
+                                    webViewUrl = url
+                                    webViewTitle = title
+                                    showWebView = true
+                                }
+                            )
                         }
 
                         MainRoute.SOCIAL -> KipitaErrorBoundary("SocialScreen") { _ ->
@@ -460,7 +477,14 @@ fun KipitaApp() {
                         }
 
                         MainRoute.SETTINGS -> KipitaErrorBoundary("SettingsScreen") { _ ->
-                            SettingsScreen(paddingValues = padding)
+                            SettingsScreen(
+                                paddingValues = padding,
+                                onOpenWebView = { url, title ->
+                                    webViewUrl = url
+                                    webViewTitle = title
+                                    showWebView = true
+                                }
+                            )
                         }
                     }
                 }

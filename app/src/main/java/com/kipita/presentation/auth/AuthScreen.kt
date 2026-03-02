@@ -102,6 +102,7 @@ fun AuthScreen(
     viewModel: AuthViewModel = hiltViewModel(),
     onAuthSuccess: (displayName: String) -> Unit = {},
     onContinueAsGuest: () -> Unit = {},
+    onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> },
     onBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -400,11 +401,7 @@ fun AuthScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = KipitaRed,
                                     modifier = Modifier.clickable {
-                                        runCatching {
-                                            context.startActivity(
-                                                Intent(Intent.ACTION_VIEW, Uri.parse("https://kipita.com/privacy"))
-                                            )
-                                        }
+                                        onOpenWebView("https://kipita.com/privacy", "Privacy Policy")
                                     }
                                 )
                                 androidx.compose.material3.Text(
@@ -417,11 +414,7 @@ fun AuthScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = KipitaRed,
                                     modifier = Modifier.clickable {
-                                        runCatching {
-                                            context.startActivity(
-                                                Intent(Intent.ACTION_VIEW, Uri.parse("https://kipita.com/terms"))
-                                            )
-                                        }
+                                        onOpenWebView("https://kipita.com/terms", "Terms of Service")
                                     }
                                 )
                             }
