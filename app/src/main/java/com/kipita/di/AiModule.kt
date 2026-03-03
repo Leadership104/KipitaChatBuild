@@ -27,8 +27,8 @@ import javax.inject.Singleton
 object AiModule {
     @Provides
     fun provideTokenProvider(): LlmTokenProvider = object : LlmTokenProvider {
-        override fun openAiKey(): String = "OPENAI_API_KEY"
-        override fun claudeKey(): String = "CLAUDE_API_KEY"
+        override fun openAiKey(): String = BuildConfig.OPENAI_API_KEY
+        override fun claudeKey(): String = BuildConfig.CLAUDE_API_KEY
         override fun geminiKey(): String = BuildConfig.GEMINI_API_KEY
     }
 

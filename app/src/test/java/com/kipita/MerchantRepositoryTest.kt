@@ -1,7 +1,8 @@
 package com.kipita
 
 import com.google.common.truth.Truth.assertThat
-import com.kipita.data.api.BtcMapMerchantDto
+import com.kipita.data.api.BtcMapElementDto
+import com.kipita.data.api.BtcMapOsmJson
 import com.kipita.data.api.BtcMerchantApiService
 import com.kipita.data.api.CashAppMerchantDto
 import com.kipita.data.local.MerchantDao
@@ -19,8 +20,23 @@ class MerchantRepositoryTest {
         val dao = mockk<MerchantDao>()
         val repo = MerchantRepository(api, dao)
 
-        coEvery { api.getBtcMapMerchants() } returns listOf(BtcMapMerchantDto("1", "Cafe", 1.0, 2.0, true, true, 100))
-        coEvery { api.getCashAppMerchants(any()) } returns listOf(CashAppMerchantDto("2", "Store", 2.0, 3.0, true, 200))
+        coEvery { api.getBtcMapMerchants() } returns listOf(
+            BtcMapElementDto(
+                id = "1",
+                osmJson = BtcMapOsmJson(
+                    lat = 1.0,
+                    lon = 2.0,
+                    tags = mapOf(
+                        "name" to "Cafe",
+                        "payment:lightning" to "yes",
+                        "payment:bitcoin" to "yes"
+                    )
+                )
+            )
+        )
+        coEvery { api.getCashAppMerchants(any()) } returns listOf(
+            CashAppMerchantDto("2", "Store", 2.0, 3.0, true, 200)
+        )
         coEvery { dao.upsertAll(any()) } returns Unit
 
         val merchants = repo.refresh("token")

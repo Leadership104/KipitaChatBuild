@@ -13,7 +13,7 @@ class CurrencyRepositoryTest {
     @Test
     fun `convert computes expected result`() = runTest {
         val api = mockk<CurrencyApiService>()
-        coEvery { api.getRates("USD") } returns CurrencyRateDto("USD", mapOf("EUR" to 0.9), 1000)
+        coEvery { api.getRates("USD", "EUR") } returns CurrencyRateDto(base = "USD", rates = mapOf("EUR" to 0.9))
         val repo = CurrencyRepository(api)
 
         val conversion = repo.convert(200.0, "usd", "eur")
@@ -24,7 +24,7 @@ class CurrencyRepositoryTest {
     @Test
     fun `missing rate falls back to 1 corner case`() = runTest {
         val api = mockk<CurrencyApiService>()
-        coEvery { api.getRates("JPY") } returns CurrencyRateDto("JPY", emptyMap(), 1000)
+        coEvery { api.getRates("JPY", "ZZZ") } returns CurrencyRateDto(base = "JPY", rates = emptyMap())
         val repo = CurrencyRepository(api)
 
         val conversion = repo.convert(123.0, "jpy", "zzz")
