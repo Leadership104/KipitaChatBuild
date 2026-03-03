@@ -16,6 +16,7 @@ import com.kipita.data.api.NomadApiService
 import com.kipita.data.api.OpenAiApiService
 import com.kipita.data.api.RiverApiService
 import com.kipita.data.api.WalletApiService
+import com.kipita.data.api.WeatherApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -94,6 +95,15 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    @WeatherApi
+    fun provideWeatherRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
+        .baseUrl("https://api.open-meteo.com/")
+        .client(okHttpClient)
+        .addConverterFactory(MoshiConverterFactory.create())
+        .build()
+
+    @Provides
+    @Singleton
     @OpenAiApi
     fun provideOpenAiRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
         .baseUrl("https://api.openai.com/")
@@ -137,6 +147,10 @@ object NetworkModule {
 
     @Provides
     fun provideCurrencyApiService(@CurrencyApi retrofit: Retrofit): CurrencyApiService = retrofit.create(CurrencyApiService::class.java)
+
+    @Provides
+    fun provideWeatherApiService(@WeatherApi retrofit: Retrofit): WeatherApiService =
+        retrofit.create(WeatherApiService::class.java)
 
     @Provides
     fun provideOpenAiApiService(@OpenAiApi retrofit: Retrofit): OpenAiApiService = retrofit.create(OpenAiApiService::class.java)

@@ -105,3 +105,24 @@ Also ensure Firebase package registration and SHA-1/SHA-256 are configured for r
 - Google Places key is configured in `local.properties`; Maps placeholder falls back to Places key if `MAPS_API_KEY` is absent.
 - Firebase JSON is present for `dev`, `staging`, and `prod` source sets.
 - Wallet live price pipeline is configured for near-live refresh and short cache TTL.
+
+## Latest patch (packing list + Gemini + messaging + live feeds)
+- Packing List UI verified and retained in original style:
+  - checklist section
+  - USPS "Put Mail on Hold" row
+  - section tab switch (Checklist / Visa Tips)
+- AI orchestration switched to Gemini-first for both:
+  - normal assistant prompts
+  - trip instant-message AI planner replies
+  This avoids failures when OpenAI/Claude keys are not configured.
+- Live crypto robustness improved:
+  - retry on transient CoinGecko fetch failure
+  - preserve last good value instead of replacing with zeros
+  - explicit refresh on wallet screen entry
+- Weather now uses live Open-Meteo API in Home weather sheet with refresh action.
+
+## Emulator instance cleanup + rerun
+- Force-stopped and removed `com.kipita.dev`, then fresh installed `:app:installDevDebug`.
+- `com.kipita.baselineprofile` uninstall returned `DELETE_FAILED_INTERNAL_ERROR` on emulator package manager, but active app instance is clean.
+- Relaunched with launcher intent (`monkey`) and verified active package:
+  - `com.kipita.dev`

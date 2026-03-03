@@ -7,6 +7,7 @@ import com.kipita.data.api.CurrencyApiService
 import com.kipita.data.api.ErrorReportApiService
 import com.kipita.data.api.GovernmentApiService
 import com.kipita.data.api.NomadApiService
+import com.kipita.data.api.WeatherApiService
 import com.kipita.data.error.InHouseErrorLogger
 import com.kipita.data.local.DirectMessageDao
 import com.kipita.data.local.KipitaDatabase
@@ -26,6 +27,7 @@ import com.kipita.data.repository.NomadRepository
 import com.kipita.data.repository.OfflineMapRepository
 import com.kipita.data.repository.SafetyRepository
 import com.kipita.data.repository.TripChatRepository
+import com.kipita.data.repository.WeatherRepository
 import com.kipita.data.validation.DataValidationLayer
 import com.kipita.data.validation.SourceVerificationLayer
 import com.kipita.domain.usecase.TravelDataEngine
@@ -99,6 +101,9 @@ object TravelDataModule {
 
     @Provides
     fun provideCurrencyRepository(service: CurrencyApiService): CurrencyRepository = CurrencyRepository(service)
+
+    @Provides
+    fun provideWeatherRepository(service: WeatherApiService): WeatherRepository = WeatherRepository(service)
 
     @Provides
     fun provideTripChatRepository(dao: TripMessageDao): TripChatRepository = TripChatRepository(dao)

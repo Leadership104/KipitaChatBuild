@@ -4,6 +4,7 @@ import com.kipita.data.api.BitcoinPriceApiService
 import com.kipita.data.api.CoinGeckoPriceDto
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.delay
 
 // ---------------------------------------------------------------------------
 // BitcoinPriceRepository
@@ -40,8 +41,17 @@ class BitcoinPriceRepository @Inject constructor(
             return cache
         }
 
+        val response = runCatching { api.getPrices() }
+            .recoverCatching {
+                delay(500)
+                api.getPrices()
+            }
+            .getOrElse {
+                if (cache != null) return cache
+                throw it
+            }
+
         return try {
-            val response = api.getPrices()
             val btc = response["bitcoin"] ?: CoinGeckoPriceDto(0.0)
             val eth = response["ethereum"] ?: CoinGeckoPriceDto(0.0)
             val sol = response["solana"] ?: CoinGeckoPriceDto(0.0)
@@ -54,8 +64,7 @@ class BitcoinPriceRepository @Inject constructor(
                 solChange24h = sol.usd24hChange ?: 0.0
             ).also { cached = it }
         } catch (e: Exception) {
-            // Return cached data on failure, or offline placeholder
-            cache ?: CryptoPrices(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+            if (cache != null) cache else throw e
         }
     }
 }

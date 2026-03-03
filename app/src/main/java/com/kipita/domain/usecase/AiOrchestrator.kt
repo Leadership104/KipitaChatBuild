@@ -42,8 +42,7 @@ class AiOrchestrator(
             appendLine("Return concise safe-travel guidance with confidence and itinerary hints.")
         }
 
-        val candidates = llmRouter.askAll(prompt)
-        val best = candidates.maxByOrNull { it.confidence } ?: llmRouter.ask(LlmPrompt(LlmProvider.OPENAI, prompt))
+        val best = llmRouter.ask(LlmPrompt(LlmProvider.GEMINI, prompt))
 
         val action = if (intentWantsMerchants && merchants.isNotEmpty()) {
             val anchor = merchants.first()
@@ -68,7 +67,7 @@ class AiOrchestrator(
             appendLine("User request: $userPrompt")
             appendLine("Return itinerary bullets with timing and contingency tips.")
         }
-        val response = llmRouter.ask(LlmPrompt(LlmProvider.OPENAI, prompt, structured = true))
+        val response = llmRouter.ask(LlmPrompt(LlmProvider.GEMINI, prompt, structured = true))
         tripChatRepository.sendMessage(tripId, "ai", "Kipita AI Planner", response.content, isAi = true)
         return response.content
     }

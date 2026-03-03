@@ -47,6 +47,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -133,7 +134,8 @@ fun HomeScreen(
     onOpenTranslate: () -> Unit = {},
     onOpenPerks: () -> Unit = {},
     onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> },
-    tripsViewModel: TripsViewModel = hiltViewModel()
+    tripsViewModel: TripsViewModel = hiltViewModel(),
+    weatherViewModel: WeatherViewModel = hiltViewModel()
 ) {
     var visible by remember { mutableStateOf(false) }
     var showPackingList by remember { mutableStateOf(false) }
@@ -143,6 +145,7 @@ fun HomeScreen(
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
     val tripsState by tripsViewModel.state.collectAsStateWithLifecycleCompat()
+    val weatherState by weatherViewModel.state.collectAsStateWithLifecycleCompat()
     // Collect all invited emails from upcoming/active trips
     val sosEmails by remember(tripsState.upcomingTrips) {
         val emails = tripsState.upcomingTrips
@@ -153,6 +156,9 @@ fun HomeScreen(
     }
 
     LaunchedEffect(Unit) { delay(80); visible = true }
+    LaunchedEffect(showWeather) {
+        if (showWeather) weatherViewModel.refresh()
+    }
 
     // Speech recognition result
     val speechLauncher = rememberLauncherForActivityResult(
@@ -535,7 +541,11 @@ fun HomeScreen(
             containerColor = Color.White,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
-            WeatherSheet(onClose = { showWeather = false })
+            WeatherSheet(
+                state = weatherState,
+                onRefresh = { weatherViewModel.refresh() },
+                onClose = { showWeather = false }
+            )
         }
     }
 
@@ -884,14 +894,11 @@ private fun PackingListSheet(
 // Weather Bottom Sheet (placeholder — wire OpenWeatherMap API key in Settings)
 // ---------------------------------------------------------------------------
 @Composable
-private fun WeatherSheet(onClose: () -> Unit) {
-    val forecast = listOf(
-        Triple("🌤️", "Today",      "24°C · Partly Cloudy"),
-        Triple("🌧️", "Tomorrow",   "19°C · Light Rain"),
-        Triple("☀️", "Wednesday",  "27°C · Sunny"),
-        Triple("⛅", "Thursday",   "22°C · Cloudy"),
-        Triple("🌤️", "Friday",     "25°C · Partly Cloudy")
-    )
+private fun WeatherSheet(
+    state: WeatherUiState,
+    onRefresh: () -> Unit,
+    onClose: () -> Unit
+) {
 
     Column(
         modifier = Modifier
@@ -912,7 +919,7 @@ private fun WeatherSheet(onClose: () -> Unit) {
                     color = KipitaOnSurface
                 )
                 Text(
-                    "Add OpenWeatherMap API key in Settings for live data",
+                    "Live weather data",
                     style = MaterialTheme.typography.labelSmall,
                     color = KipitaTextSecondary,
                     modifier = Modifier.padding(top = 2.dp)
@@ -948,23 +955,27 @@ private fun WeatherSheet(onClose: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(top = 6.dp, bottom = 10.dp)
                 ) {
-                    Text("🌤️", fontSize = 48.sp)
+                    Text(state.current?.emoji ?: "🌤️", fontSize = 48.sp)
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(
-                            "24°C",
+                            state.current?.let { "${it.temperatureC.toInt()}°C" } ?: "--°C",
                             style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
                             color = Color.White
                         )
                         Text(
-                            "Partly Cloudy",
+                            state.current?.description ?: "Loading...",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.White.copy(.80f)
                         )
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    listOf("💧 68%", "💨 12 km/h", "👁 10 km vis").forEach { stat ->
+                    listOf(
+                        "💧 ${state.current?.humidity ?: 0}%",
+                        "💨 ${state.current?.windKmh?.toInt() ?: 0} km/h",
+                        if (state.loading) "⏳ Refreshing" else "✅ Live"
+                    ).forEach { stat ->
                         Text(stat, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(.75f))
                     }
                 }
@@ -973,36 +984,29 @@ private fun WeatherSheet(onClose: () -> Unit) {
 
         Spacer(Modifier.height(14.dp))
 
-        Text(
-            "5-Day Forecast",
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = KipitaTextSecondary,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            forecast.forEach { (icon, day, desc) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(KipitaCardBg)
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(icon, fontSize = 20.sp)
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        day,
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
-                        color = KipitaOnSurface,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = KipitaTextSecondary
-                    )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                if (state.error.isNullOrBlank()) "Current Conditions" else state.error ?: "Weather unavailable",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = KipitaTextSecondary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(KipitaRedLight)
+                    .clickable { onRefresh() }
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (state.loading) {
+                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = KipitaRed)
+                } else {
+                    Text("Refresh", style = MaterialTheme.typography.labelSmall, color = KipitaRed)
                 }
             }
         }

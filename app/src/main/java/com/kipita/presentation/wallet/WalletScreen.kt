@@ -194,6 +194,7 @@ fun WalletScreen(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) { delay(80); visible = true }
+    LaunchedEffect(Unit) { viewModel.refreshPrices() }
     LaunchedEffect(state.coinbaseBalance + state.cashAppBalance) {
         animatedBalance.animateTo((state.coinbaseBalance + state.cashAppBalance).toFloat(), animationSpec = tween(700))
         if (manualBtcBalance.isBlank()) {
@@ -907,5 +908,4 @@ private fun QuickCurrencyChip(currency: String, flag: String, selected: Boolean,
         }
     }
 }
-
 
