@@ -22,9 +22,13 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun enqueueSyncWork() {
-        val work = PeriodicWorkRequestBuilder<MerchantTravelSyncWorker>(6, TimeUnit.HOURS).build()
-        WorkManager.getInstance(this)
-            .enqueueUniquePeriodicWork("merchant-travel-sync", ExistingPeriodicWorkPolicy.UPDATE, work)
+        try {
+            val work = PeriodicWorkRequestBuilder<MerchantTravelSyncWorker>(6, TimeUnit.HOURS).build()
+            WorkManager.getInstance(this)
+                .enqueueUniquePeriodicWork("merchant-travel-sync", ExistingPeriodicWorkPolicy.UPDATE, work)
+        } catch (t: Throwable) {
+            android.util.Log.w("MainActivity", "WorkManager unavailable: ${t.message}")
+        }
     }
 }
 

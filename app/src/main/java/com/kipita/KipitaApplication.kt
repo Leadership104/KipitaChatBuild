@@ -19,8 +19,8 @@ class KipitaApplication : Application(), Configuration.Provider {
         // Guard Firebase init — fails on AOSP emulators without Google Play Services
         try {
             FirebaseApp.initializeApp(this)
-        } catch (e: Exception) {
-            Log.w("KipitaApp", "Firebase unavailable (no GMS): ${e.message}")
+        } catch (t: Throwable) {
+            Log.w("KipitaApp", "Firebase unavailable (no GMS): ${t.message}")
         }
     }
 
