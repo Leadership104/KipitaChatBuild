@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.compose.compiler)
+    alias(libs.plugins.firebase.crashlytics.plugin)
 }
 
 val googleServicesCandidates = listOf(

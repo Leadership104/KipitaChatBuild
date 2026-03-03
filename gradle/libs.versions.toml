@@ -21,6 +21,7 @@ mockk = "1.13.13"
 truth = "1.4.4"
 ksp = "2.0.0-1.0.21"
 googleServices = "4.4.2"
+firebaseCrashlytics = "3.0.2"
 coil = "2.7.0"
 mapsCompose = "4.3.3"
 playServicesMaps = "19.0.0"
@@ -74,5 +75,6 @@ kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+firebase-crashlytics-plugin = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlytics" }
 
 kotlin-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
