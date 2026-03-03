@@ -2,6 +2,7 @@ package com.kipita.presentation.places
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.location.LocationManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -12,6 +13,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,14 +27,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,6 +48,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +56,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,6 +65,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import com.kipita.BuildConfig
 import com.kipita.data.api.PlaceCategory
 import com.kipita.data.repository.NearbyPlace
 import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
@@ -85,6 +96,7 @@ fun PlacesCategoryResultScreen(
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
     val context = LocalContext.current
     var visible by remember { mutableStateOf(false) }
+    var expandedPlaceId by rememberSaveable(category) { mutableStateOf<String?>(null) }
 
     // Trigger GPS and fetch on launch
     val gpsLauncher = rememberLauncherForActivityResult(
@@ -276,6 +288,34 @@ fun PlacesCategoryResultScreen(
                         PlaceResultCard(
                             place = place,
                             isEmergency = category in emergencyCategories,
+                            isExpanded = expandedPlaceId == place.id,
+                            onCall = {
+                                if (place.phone.isNotBlank()) {
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_DIAL, Uri.parse("tel:${place.phone}"))
+                                        )
+                                    }
+                                }
+                            },
+                            onDirections = {
+                                val query = Uri.encode("${place.name} ${place.address}")
+                                onOpenWebView(
+                                    "https://www.google.com/maps/search/$query",
+                                    "Find ${place.name}"
+                                )
+                            },
+                            onMoreInfo = {
+                                if (category in emergencyCategories) {
+                                    val query = Uri.encode("${place.name} ${place.address}")
+                                    onOpenWebView(
+                                        "https://www.google.com/maps/search/$query",
+                                        "Find ${place.name}"
+                                    )
+                                } else {
+                                    expandedPlaceId = if (expandedPlaceId == place.id) null else place.id
+                                }
+                            },
                             onTap = {
                                 if (category in emergencyCategories) {
                                     val query = Uri.encode("${place.name} ${place.address}")
@@ -284,9 +324,10 @@ fun PlacesCategoryResultScreen(
                                         "Find ${place.name}"
                                     )
                                 } else {
-                                    onOpenDetail(place)
+                                    expandedPlaceId = if (expandedPlaceId == place.id) null else place.id
                                 }
-                            }
+                            },
+                            onOpenDetail = { onOpenDetail(place) }
                         )
                     }
                     Spacer(Modifier.height(10.dp))
@@ -305,108 +346,139 @@ fun PlacesCategoryResultScreen(
 private fun PlaceResultCard(
     place: NearbyPlace,
     isEmergency: Boolean = false,
-    onTap: () -> Unit = {}
+    isExpanded: Boolean = false,
+    onTap: () -> Unit = {},
+    onCall: () -> Unit = {},
+    onDirections: () -> Unit = {},
+    onMoreInfo: () -> Unit = {},
+    onOpenDetail: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp))
-            .clip(RoundedCornerShape(20.dp))
+            .shadow(elevation = 4.dp, shape = RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(18.dp))
             .background(Color.White)
             .clickable(onClick = onTap)
-            .padding(16.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Emoji badge
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
                 modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(
-                        if (isEmergency) Color(0xFFFFEBEE) else KipitaCardBg
-                    ),
+                    .size(62.dp)
+                    .clip(CircleShape)
+                    .border(1.dp, KipitaRed.copy(alpha = 0.45f), CircleShape)
+                    .background(if (isEmergency) Color(0xFFFFEBEE) else KipitaCardBg),
                 contentAlignment = Alignment.Center
             ) {
-                Text(place.emoji, fontSize = 24.sp)
+                val photoUrl = placePhotoUrl(place)
+                if (photoUrl != null) {
+                    AsyncImage(
+                        model = photoUrl,
+                        contentDescription = place.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text(place.emoji, fontSize = 26.sp)
+                }
             }
 
             Spacer(Modifier.width(12.dp))
 
-            // Main info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     place.name,
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = KipitaOnSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (place.address.isNotBlank()) {
+                Text(place.category.label, style = MaterialTheme.typography.bodySmall, color = KipitaTextSecondary)
+                Row(
+                    modifier = Modifier.padding(top = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(14.dp))
                     Text(
-                        place.address,
+                        "${"%.1f".format(place.rating)} (${place.reviewCount})    $    ${"%.2f".format(place.distanceKm)}mi Away",
                         style = MaterialTheme.typography.bodySmall,
-                        color = KipitaTextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp)
+                        color = KipitaTextSecondary
                     )
                 }
-                Row(
-                    modifier = Modifier.padding(top = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Rating
-                    if (place.rating > 0) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Star,
-                                contentDescription = null,
-                                tint = Color(0xFFFFC107),
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Spacer(Modifier.width(2.dp))
-                            Text(
-                                "${"%.1f".format(place.rating)}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = KipitaTextSecondary
-                            )
-                        }
-                    }
-                    // Open badge
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(
-                                if (place.isOpen) KipitaGreenAccent.copy(alpha = 0.15f)
-                                else KipitaRed.copy(alpha = 0.10f)
-                            )
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = if (place.isOpen) "Open" else "Closed",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = if (place.isOpen) KipitaGreenAccent else KipitaRed
-                        )
-                    }
-                }
+                Text(
+                    place.address,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = KipitaTextSecondary,
+                    maxLines = if (isExpanded) 3 else 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
-            // Right column: distance + tap indicator
-            Column(horizontalAlignment = Alignment.End) {
+            Text(
+                if (place.isOpen) "OPEN" else "CLOSED",
+                color = if (place.isOpen) KipitaGreenAccent else KipitaRed,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.wrapContentWidth()
+            )
+        }
+
+        HorizontalDivider(color = Color(0xFFE6E6E6))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF7F7F7))
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ActionLabel("CALL", Icons.Default.Phone, onCall)
+            ActionLabel("DIRECTIONS", Icons.Default.LocationOn, onDirections)
+            ActionLabel(if (isEmergency) "MAP" else "MORE INFO", Icons.Default.Info, onMoreInfo)
+        }
+
+        AnimatedVisibility(visible = isExpanded && !isEmergency) {
+            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                Text("Phone: ${if (place.phone.isBlank()) "Unavailable" else place.phone}", color = KipitaTextSecondary, style = MaterialTheme.typography.bodySmall)
+                Text("Category: ${place.category.label}", color = KipitaTextSecondary, style = MaterialTheme.typography.bodySmall)
+                if (place.website.isNotBlank()) {
+                    Text("Website available in details", color = KipitaTextSecondary, style = MaterialTheme.typography.bodySmall)
+                }
                 Text(
-                    "${"%.1f".format(place.distanceKm)} km",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = KipitaOnSurface
-                )
-                Text(
-                    "View →",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    "Open full details",
                     color = KipitaRed,
-                    modifier = Modifier.padding(top = 4.dp)
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .clickable(onClick = onOpenDetail)
                 )
             }
         }
+    }
+}
+
+private fun placePhotoUrl(place: NearbyPlace): String? {
+    if (place.photoRef.isBlank()) return null
+    return "https://places.googleapis.com/v1/${place.photoRef}/media" +
+        "?key=${BuildConfig.GOOGLE_PLACES_API_KEY}&maxWidthPx=128"
+}
+
+@Composable
+private fun ActionLabel(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(icon, contentDescription = label, tint = KipitaRed, modifier = Modifier.size(17.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = KipitaOnSurface)
     }
 }
 

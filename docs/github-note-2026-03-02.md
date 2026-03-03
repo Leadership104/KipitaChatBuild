@@ -44,3 +44,11 @@
 3. Fix failing unit tests in `app/src/test` and run full test matrix.
 4. Add release checks: lint, baseline profile, ProGuard/R8 verify, Play pre-launch report.
 5. Add iOS project/build pipeline if App Store (iOS) delivery is required.
+
+
+## Notes (follow-up on places/map review)
+- Aligned Places and Maps card rows closer to the provided reference visual (photo-left summary row + OPEN status + gray action strip with CALL/DIRECTIONS/MORE INFO).
+- Refined pre-detail place cards to better match the requested list visual by preferring real place photos (Google Places photo media URL) inside circular thumbnails when available, with emoji fallback.
+- Wired the `CALL` action to Android dial intent for both Places and Map cards when a phone number exists.
+- Kept emergency behavior opening in-app Google Maps search, and non-emergency behavior as inline expandable details.
+- Added explicit BTC source filter status text in Maps so the active source mode is visible to users.
