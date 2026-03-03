@@ -106,7 +106,10 @@ import com.kipita.presentation.theme.KipitaRed
 import com.kipita.presentation.theme.KipitaRedLight
 import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -202,6 +205,7 @@ fun ExploreScreen(
     var sortMode by remember { mutableIntStateOf(0) }
     val sortLabels = listOf("Filter", "Cost ↑", "Safety", "WiFi")
     var selectedDestination by remember { mutableStateOf<ExploreDestination?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) { delay(80); visible = true }
 
@@ -218,38 +222,42 @@ fun ExploreScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            isLocating = true
-            try {
-                val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-                val loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                    ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-                if (loc != null) {
-                    detectedLat = loc.latitude
-                    detectedLon = loc.longitude
-                    // Notify ViewModel so transit deep-links use correct origin
-                    viewModel.updateUserLocation(loc.latitude, loc.longitude)
-                    // Reverse geocode to city name
-                    if (Geocoder.isPresent()) {
-                        val geo = Geocoder(context, Locale.getDefault())
-                        @Suppress("DEPRECATION")
-                        val addresses = geo.getFromLocation(loc.latitude, loc.longitude, 1)
-                        if (!addresses.isNullOrEmpty()) {
-                            val addr = addresses[0]
-                            locationLabel = listOfNotNull(
-                                addr.locality ?: addr.subAdminArea,
-                                addr.adminArea
-                            ).joinToString(", ")
-                            searchText = locationLabel
+            coroutineScope.launch {
+                isLocating = true
+                try {
+                    val loc = withContext(Dispatchers.IO) {
+                        val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                        lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                            ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                    }
+                    if (loc != null) {
+                        detectedLat = loc.latitude
+                        detectedLon = loc.longitude
+                        viewModel.updateUserLocation(loc.latitude, loc.longitude)
+                        if (Geocoder.isPresent()) {
+                            val addresses = withContext(Dispatchers.IO) {
+                                @Suppress("DEPRECATION")
+                                Geocoder(context, Locale.getDefault())
+                                    .getFromLocation(loc.latitude, loc.longitude, 1)
+                            }
+                            if (!addresses.isNullOrEmpty()) {
+                                val addr = addresses[0]
+                                locationLabel = listOfNotNull(
+                                    addr.locality ?: addr.subAdminArea,
+                                    addr.adminArea
+                                ).joinToString(", ")
+                                searchText = locationLabel
+                            } else {
+                                searchText = "${"%.4f".format(loc.latitude)}, ${"%.4f".format(loc.longitude)}"
+                            }
                         } else {
                             searchText = "${"%.4f".format(loc.latitude)}, ${"%.4f".format(loc.longitude)}"
                         }
-                    } else {
-                        searchText = "${"%.4f".format(loc.latitude)}, ${"%.4f".format(loc.longitude)}"
+                        selectedScope = LocationScope.LOCAL
                     }
-                    selectedScope = LocationScope.LOCAL
-                }
-            } catch (_: Exception) {}
-            isLocating = false
+                } catch (_: Exception) {}
+                isLocating = false
+            }
         }
     }
 
@@ -261,17 +269,21 @@ fun ExploreScreen(
         if (hasPerm) {
             isLocating = true
             try {
-                val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-                val loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                    ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                val loc = withContext(Dispatchers.IO) {
+                    val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                    lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                        ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                }
                 if (loc != null) {
                     detectedLat = loc.latitude
                     detectedLon = loc.longitude
                     viewModel.updateUserLocation(loc.latitude, loc.longitude)
                     if (Geocoder.isPresent()) {
-                        val geo = Geocoder(context, Locale.getDefault())
-                        @Suppress("DEPRECATION")
-                        val addresses = geo.getFromLocation(loc.latitude, loc.longitude, 1)
+                        val addresses = withContext(Dispatchers.IO) {
+                            @Suppress("DEPRECATION")
+                            Geocoder(context, Locale.getDefault())
+                                .getFromLocation(loc.latitude, loc.longitude, 1)
+                        }
                         if (!addresses.isNullOrEmpty()) {
                             val addr = addresses[0]
                             locationLabel = listOfNotNull(

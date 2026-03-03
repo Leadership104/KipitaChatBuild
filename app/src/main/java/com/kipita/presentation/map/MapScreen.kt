@@ -53,7 +53,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -108,6 +112,7 @@ fun MapScreen(
     var visible by remember { mutableStateOf(false) }
     var selectedPlaceFilter by remember { mutableStateOf("₿ BTC") }
     var searchQuery by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -374,12 +379,16 @@ fun MapScreen(
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                         keyboardActions = KeyboardActions(onSearch = {
                             if (searchQuery.isNotBlank() && Geocoder.isPresent()) {
-                                runCatching {
-                                    @Suppress("DEPRECATION")
-                                    val addresses = Geocoder(context, Locale.getDefault())
-                                        .getFromLocationName(searchQuery, 1)
-                                    if (!addresses.isNullOrEmpty()) {
-                                        viewModel.load(searchQuery, addresses[0].latitude, addresses[0].longitude)
+                                scope.launch {
+                                    runCatching {
+                                        val addresses = withContext(Dispatchers.IO) {
+                                            @Suppress("DEPRECATION")
+                                            Geocoder(context, Locale.getDefault())
+                                                .getFromLocationName(searchQuery, 1)
+                                        }
+                                        if (!addresses.isNullOrEmpty()) {
+                                            viewModel.load(searchQuery, addresses[0].latitude, addresses[0].longitude)
+                                        }
                                     }
                                 }
                             }

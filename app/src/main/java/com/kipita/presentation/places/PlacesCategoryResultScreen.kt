@@ -41,7 +41,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +61,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.kipita.data.api.PlaceCategory
 import com.kipita.data.repository.NearbyPlace
 import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.kipita.presentation.theme.KipitaCardBg
 import com.kipita.presentation.theme.KipitaGreenAccent
 import com.kipita.presentation.theme.KipitaOnSurface
@@ -84,13 +88,14 @@ fun PlacesCategoryResultScreen(
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
     val context = LocalContext.current
     var visible by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     // Trigger GPS and fetch on launch
     val gpsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            resolveLocationAndFetch(context, viewModel, category)
+            scope.launch { resolveLocationAndFetch(context, viewModel, category) }
         }
     }
 
@@ -470,15 +475,17 @@ private fun PlaceResultCard(
 // Helper — resolve device GPS and trigger category fetch in ViewModel
 // ---------------------------------------------------------------------------
 @android.annotation.SuppressLint("MissingPermission")
-private fun resolveLocationAndFetch(
+private suspend fun resolveLocationAndFetch(
     context: Context,
     viewModel: PlacesViewModel,
     category: PlaceCategory
 ) {
     try {
-        val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+        val loc = withContext(Dispatchers.IO) {
+            val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+        }
         if (loc != null) {
             viewModel.updateLocation(loc.latitude, loc.longitude)
         } else {
