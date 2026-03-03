@@ -190,6 +190,7 @@ fun ExploreScreen(
     tripsViewModel: TripsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val exploreState by viewModel.state.collectAsStateWithLifecycleCompat()
     val savedPlaceIds by viewModel.savedPlaceIds.collectAsStateWithLifecycleCompat()
     var visible by remember { mutableStateOf(false) }
@@ -205,7 +206,6 @@ fun ExploreScreen(
     var sortMode by remember { mutableIntStateOf(0) }
     val sortLabels = listOf("Filter", "Cost ↑", "Safety", "WiFi")
     var selectedDestination by remember { mutableStateOf<ExploreDestination?>(null) }
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) { delay(80); visible = true }
 
