@@ -215,7 +215,7 @@ fun KipitaApp() {
                                 if (item.isCenter) {
                                     Box(
                                         modifier = Modifier
-                                            .size(44.dp)
+                                            .size(50.dp)
                                             .scale(scale)
                                             .background(
                                                 color = if (selected) KipitaRed else KipitaRed.copy(alpha = 0.92f),
@@ -227,7 +227,7 @@ fun KipitaApp() {
                                             imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
                                             contentDescription = item.label,
                                             tint = Color.White,
-                                            modifier = Modifier.size(22.dp)
+                                            modifier = Modifier.size(20.dp)
                                         )
                                     }
                                 } else {
@@ -427,7 +427,9 @@ fun KipitaApp() {
 
                         MainRoute.AI -> KipitaErrorBoundary("AiAssistantScreen") { _ ->
                             AiAssistantScreen(
-                                paddingValues = padding
+                                paddingValues = padding,
+                                onTripClick   = { tripId -> selectedTripId = tripId },
+                                preFillPrompt = aiPreFill.also { aiPreFill = "" }
                             )
                         }
 

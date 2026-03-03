@@ -171,7 +171,13 @@ fun MyTripsScreen(
                                     Text(
                                         text = label,
                                         modifier = Modifier
-                                            .clickable { onAiSuggest(aiPrompt) }
+                                            .clickable {
+                                                if (label == "✈️ Plan a new trip") {
+                                                    showPlanSheet = true
+                                                } else {
+                                                    onAiSuggest(aiPrompt)
+                                                }
+                                            }
                                             .padding(horizontal = 12.dp, vertical = 7.dp),
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = FontWeight.SemiBold

@@ -1,8 +1,10 @@
 package com.kipita.presentation.map
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -45,9 +47,11 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -108,6 +112,7 @@ fun MapScreen(
     var visible by remember { mutableStateOf(false) }
     var selectedPlaceFilter by remember { mutableStateOf("₿ BTC") }
     var searchQuery by remember { mutableStateOf("") }
+    var showLocationPrompt by remember { mutableStateOf(false) }
 
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -153,7 +158,7 @@ fun MapScreen(
         viewModel.load("global", lat, lng)
         visible = true
         if (!hasLocationPermission) {
-            gpsLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            showLocationPrompt = true
         }
     }
 
@@ -263,7 +268,7 @@ fun MapScreen(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .padding(horizontal = 12.dp, vertical = 20.dp)
                     .size(36.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.92f))
@@ -289,7 +294,7 @@ fun MapScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Glass buttons row + overlay toggles
@@ -667,6 +672,28 @@ fun MapScreen(
                     }
                 }
             }
+        }
+
+        if (showLocationPrompt) {
+            AlertDialog(
+                onDismissRequest = { showLocationPrompt = false },
+                title = { Text("Enable location") },
+                text = { Text("Turn on location permission/services to find nearby places and merchants faster.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showLocationPrompt = false
+                        gpsLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }) { Text("Enable") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showLocationPrompt = false
+                        runCatching {
+                            context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                        }
+                    }) { Text("Location Settings") }
+                }
+            )
         }
     }
 }

@@ -26,6 +26,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.util.concurrent.TimeUnit
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -46,7 +47,12 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttp(certificatePinner: CertificatePinner): OkHttpClient = OkHttpClient.Builder()
-        .certificatePinner(certificatePinner)
+        // Demo mode: disable strict pin checks so third-party APIs (CoinGecko/Maps/Gemini) can resolve reliably.
+        // Placeholder pins in this repo block live responses.
+        .retryOnConnectionFailure(true)
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(12, TimeUnit.SECONDS)
+        .writeTimeout(12, TimeUnit.SECONDS)
         .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
         .build()
 

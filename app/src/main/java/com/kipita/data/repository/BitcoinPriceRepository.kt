@@ -30,7 +30,7 @@ class BitcoinPriceRepository @Inject constructor(
     private val api: BitcoinPriceApiService
 ) {
     private var cached: CryptoPrices? = null
-    private val cacheMaxAgeMs = 30_000L // 30 seconds
+    private val cacheMaxAgeMs = 10_000L // 10 seconds
 
     suspend fun getPrices(forceRefresh: Boolean = false): CryptoPrices {
         val cache = cached

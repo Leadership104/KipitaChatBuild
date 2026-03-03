@@ -46,7 +46,7 @@ class WalletViewModel @Inject constructor(
         }
     }
 
-    /** Poll BTC/ETH/SOL prices every 30 seconds from CoinGecko */
+    /** Poll BTC/ETH/SOL prices every 15 seconds from CoinGecko for faster live feedback */
     private fun startPricePoll() {
         viewModelScope.launch {
             while (isActive) {
@@ -55,7 +55,7 @@ class WalletViewModel @Inject constructor(
                         _state.value = _state.value.copy(cryptoPrices = prices)
                     }
                     .onFailure { errorLogger.log("WalletViewModel.pricePoll", it) }
-                delay(30_000L)
+                delay(15_000L)
             }
         }
     }
