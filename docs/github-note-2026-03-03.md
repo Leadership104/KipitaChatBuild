@@ -50,3 +50,39 @@
   - Kept geolocation + manual search-bar flow together.
   - Added extra top spacing so back button is easier to tap.
 - Bottom nav AI center icon now has additional whitespace/padding for cleaner touch spacing.
+
+## Final Fast UI + Live Data pass
+- AI bottom nav center button resized smaller so it fits cleanly within available white space.
+- Crypto live prices set to near-live refresh behavior:
+  - poll interval: 5s
+  - cache window: 2s
+- Map back arrow moved further down for easier tap access.
+
+## API/JSON live readiness status
+- Gemini API integrated and active through `KipitaAIManager` and `LlmRouter`.
+- Google Maps + Places integrated; map key fallback uses `GOOGLE_PLACES_API_KEY` if `MAPS_API_KEY` is not explicitly set.
+- CoinGecko live pricing integrated for BTC/ETH/SOL in Wallet.
+- Dev flavor Firebase JSON now present:
+  - `app/src/dev/google-services.json`
+  - `app/src/staging/google-services.json`
+  - `app/src/prod/google-services.json`
+- Runtime networking tuned for demo reliability/latency:
+  - connection retry enabled
+  - explicit connect/read/write timeouts
+
+## Play Store readiness: required keys/config before release
+Put these in `local.properties` (for local/release build pipeline secrets injection), or CI secret manager equivalents:
+1. `MAPS_API_KEY=`  
+   Where used: Android manifest placeholder in `app/build.gradle.kts` (`manifestPlaceholders["MAPS_API_KEY"]`).
+2. `GOOGLE_PLACES_API_KEY=`  
+   Where used: `BuildConfig.GOOGLE_PLACES_API_KEY` via `app/build.gradle.kts`.
+3. `GEMINI_API_KEY=`  
+   Where used: `BuildConfig.GEMINI_API_KEY` (AI generation and chat).
+4. `OPENAI_API_KEY=`  
+   Where used: `BuildConfig.OPENAI_API_KEY` (multi-model router path, if enabled).
+5. `CLAUDE_API_KEY=`  
+   Where used: `BuildConfig.CLAUDE_API_KEY` (multi-model router path, if enabled).
+6. `default_web_client_id` (Google Sign-In)  
+   Where to set: generated from Firebase `google-services.json` + console OAuth client; referenced in `app/src/main/res/values/strings.xml`.
+
+Also ensure Firebase package registration and SHA-1/SHA-256 are configured for release app id variants.

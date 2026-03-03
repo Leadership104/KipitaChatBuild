@@ -268,7 +268,7 @@ fun MapScreen(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(horizontal = 12.dp, vertical = 20.dp)
+                    .padding(horizontal = 12.dp, vertical = 28.dp)
                     .size(36.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.92f))
