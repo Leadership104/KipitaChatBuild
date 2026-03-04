@@ -281,7 +281,7 @@ fun HomeScreen(
                             color = KipitaOnSurface,
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             items(quickTools.size) { i ->
                                 val tool = quickTools[i]
                                 QuickToolPill(tool = tool) {
@@ -317,7 +317,7 @@ fun HomeScreen(
                             color = KipitaOnSurface,
                             modifier = Modifier.padding(bottom = 10.dp)
                         )
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             val transports = listOf(
                                 Triple("✈️", "Flights",   "https://expedia.com/affiliate/eA2cKky"),
                                 Triple("🏨", "Hotels",    "https://www.hotels.com/affiliate/RrZ7bmg"),
@@ -334,14 +334,14 @@ fun HomeScreen(
                                         .background(Color.White)
                                         .border(1.dp, KipitaBorder, RoundedCornerShape(14.dp))
                                         .clickable { onOpenWebView(url, label) }
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                        .padding(horizontal = 20.dp, vertical = 16.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Text(emoji, fontSize = 22.sp)
-                                    Spacer(Modifier.height(4.dp))
+                                    Text(emoji, fontSize = 26.sp)
+                                    Spacer(Modifier.height(6.dp))
                                     Text(
                                         label,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                                         color = KipitaOnSurface
                                     )
                                 }
@@ -423,7 +423,8 @@ fun HomeScreen(
         ) {
             Icon(
                 if (isListening) Icons.Default.Stop else Icons.Default.Mic,
-                contentDescription = "Voice search"
+                contentDescription = "Voice search",
+                modifier = Modifier.size(24.dp)
             )
         }
     }

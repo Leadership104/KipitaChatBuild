@@ -308,7 +308,7 @@ fun MyTripsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             QuickToolCard(
                                 icon = Icons.Default.SwapHoriz,
@@ -342,7 +342,7 @@ fun MyTripsScreen(
                         SectionHeader("Book Transport", "")
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             val transports = listOf(
                                 Triple(Icons.Default.FlightTakeoff, "Flights", "https://expedia.com/affiliate/eA2cKky"),
@@ -378,7 +378,11 @@ fun MyTripsScreen(
             contentColor = Color.White,
             shape = CircleShape
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Plan New Trip")
+            Icon(
+                Icons.Default.Add,
+                contentDescription = "Plan New Trip",
+                modifier = Modifier.size(26.dp)
+            )
         }
     }
 
@@ -755,13 +759,13 @@ private fun SectionHeader(title: String, subtitle: String) {
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color = KipitaOnSurface
         )
         if (subtitle.isNotBlank()) {
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelLarge,
                 color = KipitaTextSecondary
             )
         }
@@ -1174,28 +1178,28 @@ private fun QuickToolCard(
     Column(
         modifier = modifier
             .scale(scale)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(18.dp))
             .background(Color.White)
             .clickable { pressed = !pressed; onClick() }
-            .padding(16.dp),
+            .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier
-                .size(44.dp)
+                .size(56.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(KipitaRedLight),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = label, tint = KipitaRed, modifier = Modifier.size(22.dp))
+            Icon(icon, contentDescription = label, tint = KipitaRed, modifier = Modifier.size(28.dp))
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.titleSmall,
             color = KipitaOnSurface,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -1214,25 +1218,25 @@ private fun TransportChip(icon: ImageVector, label: String, onClick: () -> Unit)
     Column(
         modifier = Modifier
             .scale(scale)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(18.dp))
             .background(Color.White)
             .clickable { pressed = !pressed; onClick() }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 18.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
-                .size(44.dp)
+                .size(54.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(KipitaCardBg),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = label, tint = KipitaOnSurface, modifier = Modifier.size(22.dp))
+            Icon(icon, contentDescription = label, tint = KipitaOnSurface, modifier = Modifier.size(28.dp))
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
             color = KipitaOnSurface
         )
     }
