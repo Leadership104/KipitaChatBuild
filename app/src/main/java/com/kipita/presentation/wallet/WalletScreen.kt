@@ -172,6 +172,7 @@ private val kipitaPerks = listOf(
 @Composable
 fun WalletScreen(
     paddingValues: PaddingValues,
+    walletOpenSignal: Int = 0,
     viewModel: WalletViewModel = hiltViewModel(),
     onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> }
 ) {
@@ -197,6 +198,12 @@ fun WalletScreen(
     LaunchedEffect(Unit) { viewModel.refreshPrices() }
     LaunchedEffect(walletTab) {
         if (walletTab == 0) viewModel.refreshPrices()
+    }
+    LaunchedEffect(walletOpenSignal) {
+        if (walletOpenSignal > 0) {
+            walletTab = 0
+            viewModel.refreshPrices()
+        }
     }
     LaunchedEffect(state.coinbaseBalance + state.cashAppBalance) {
         animatedBalance.animateTo((state.coinbaseBalance + state.cashAppBalance).toFloat(), animationSpec = tween(700))

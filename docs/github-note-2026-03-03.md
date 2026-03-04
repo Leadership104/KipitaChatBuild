@@ -157,3 +157,12 @@ Also ensure Firebase package registration and SHA-1/SHA-256 are configured for r
   - Refactored category UI from small horizontal chips into larger boxed grid cards for simpler selection.
   - Added BTC button under `Finance & Services` that opens in-app webview to `https://btcmap.org/map`.
   - Increased icon/text size across Places cards and controls for easier usability.
+
+## Wallet live-price reliability hotfix
+- Root-cause mitigation from prior working builds applied:
+  - Wallet open signal is now passed from app navigation to Wallet screen.
+  - Every time user opens/clicks Wallet tab, Wallet forces:
+    - Crypto sub-tab selection
+    - immediate live price refresh call
+- Polling cadence normalized to 30s for stable live updates and reduced API throttling risk.
+- Live prices remain visible when entering Wallet so users can verify feed quickly.

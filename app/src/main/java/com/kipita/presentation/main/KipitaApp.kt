@@ -156,6 +156,7 @@ fun KipitaApp() {
     var placesResultCategory by rememberSaveable { mutableStateOf(PlaceCategory.HOTELS) }
     var showPerks by rememberSaveable { mutableStateOf(false) }
     var openSosSignal by rememberSaveable { mutableStateOf(0) }
+    var walletOpenSignal by rememberSaveable { mutableStateOf(0) }
     val topBarWeatherViewModel: WeatherViewModel = hiltViewModel()
     val topBarWeatherState by topBarWeatherViewModel.state.collectAsStateWithLifecycleCompat()
 
@@ -224,7 +225,10 @@ fun KipitaApp() {
                         NavigationBarItem(
                             modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
                             selected = selected,
-                            onClick = { route = item.route },
+                            onClick = {
+                                route = item.route
+                                if (item.route == MainRoute.WALLET) walletOpenSignal += 1
+                            },
                             icon = {
                                 if (item.isCenter) {
                                     Box(
@@ -416,7 +420,10 @@ fun KipitaApp() {
                         MainRoute.HOME -> KipitaErrorBoundary("HomeScreen") { _ ->
                             HomeScreen(
                                 paddingValues    = padding,
-                                onOpenWallet     = { route = MainRoute.WALLET },
+                                onOpenWallet     = {
+                                    route = MainRoute.WALLET
+                                    walletOpenSignal += 1
+                                },
                                 onOpenMap        = { showMap = true },
                                 onOpenAI         = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
                                 onOpenTranslate  = { showTranslate = true },
@@ -457,7 +464,10 @@ fun KipitaApp() {
                             MyTripsScreen(
                                 paddingValues = padding,
                                 onAiSuggest  = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
-                                onOpenWallet = { route = MainRoute.WALLET },
+                                onOpenWallet = {
+                                    route = MainRoute.WALLET
+                                    walletOpenSignal += 1
+                                },
                                 onOpenMap    = { showMap = true },
                                 onOpenWebView = { url, title ->
                                     webViewUrl = url
@@ -471,6 +481,7 @@ fun KipitaApp() {
                         MainRoute.WALLET -> KipitaErrorBoundary("WalletScreen") { _ ->
                             WalletScreen(
                                 paddingValues = padding,
+                                walletOpenSignal = walletOpenSignal,
                                 onOpenWebView = { url, title ->
                                     webViewUrl = url
                                     webViewTitle = title
