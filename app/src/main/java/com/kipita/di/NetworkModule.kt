@@ -23,6 +23,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import okhttp3.CertificatePinner
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -50,6 +51,15 @@ object NetworkModule {
     fun provideOkHttp(certificatePinner: CertificatePinner): OkHttpClient = OkHttpClient.Builder()
         // Demo mode: disable strict pin checks so third-party APIs (CoinGecko/Maps/Gemini) can resolve reliably.
         // Placeholder pins in this repo block live responses.
+        .addInterceptor(
+            Interceptor { chain ->
+                val req = chain.request().newBuilder()
+                    .header("User-Agent", "KipitaAndroid/1.0")
+                    .header("Accept", "application/json")
+                    .build()
+                chain.proceed(req)
+            }
+        )
         .retryOnConnectionFailure(true)
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(12, TimeUnit.SECONDS)
