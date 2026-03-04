@@ -762,31 +762,29 @@ private fun PlacesTab(
                                 }
                             }
                             if (group.label == "Finance & Services") {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(Color(0xFFFFF3E0))
-                                        .border(1.dp, KipitaBorder, RoundedCornerShape(16.dp))
-                                        .clickable { onOpenWebView("https://btcmap.org/map", "BTC Map") }
-                                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("₿", fontSize = 26.sp)
-                                        Spacer(Modifier.width(10.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                "Bitcoin Merchants Map",
-                                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                                color = KipitaOnSurface
-                                            )
-                                            Text(
-                                                "Open BTCMap in-app",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = KipitaTextSecondary
-                                            )
-                                        }
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(18.dp))
+                                            .background(Color.White)
+                                            .border(1.dp, KipitaBorder, RoundedCornerShape(18.dp))
+                                            .clickable { onOpenWebView("https://btcmap.org/map", "BTC Map") }
+                                            .padding(horizontal = 12.dp, vertical = 18.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text("₿", fontSize = 28.sp)
+                                        Spacer(Modifier.height(8.dp))
+                                        Text(
+                                            "BTC Map",
+                                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                            color = KipitaOnSurface
+                                        )
                                     }
+                                    Spacer(modifier = Modifier.weight(1f))
                                 }
                             }
                         }

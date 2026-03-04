@@ -517,16 +517,18 @@ private fun QuickToolPill(tool: QuickTool, onClick: () -> Unit) {
         shape = RoundedCornerShape(24.dp),
         color = Color.White
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Text(tool.emoji, fontSize = 20.sp)
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.height(6.dp))
             Text(
                 tool.label,
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = KipitaOnSurface
+                color = KipitaOnSurface,
+                textAlign = TextAlign.Center
             )
         }
     }

@@ -33,6 +33,7 @@ class WalletViewModel @Inject constructor(
     init {
         loadAvailableCurrencies()
         loadCryptoWallets()
+        refreshPrices()
         startPricePoll()
     }
 
