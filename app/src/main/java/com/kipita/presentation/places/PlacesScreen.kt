@@ -73,6 +73,14 @@ import kotlinx.coroutines.delay
 // Group configuration for the category strip
 // ---------------------------------------------------------------------------
 private data class CategorySection(val label: String, val categories: List<PlaceCategory>)
+private data class QuickIntent(val label: String, val category: PlaceCategory, val query: String = "")
+
+private val quickIntents = listOf(
+    QuickIntent("🍕 Pizza", PlaceCategory.RESTAURANTS, "pizza"),
+    QuickIntent("☕ Coffee", PlaceCategory.CAFES, "coffee"),
+    QuickIntent("🏧 ATM", PlaceCategory.BANKS_ATMS, "atm"),
+    QuickIntent("⛽ Gas", PlaceCategory.GAS_STATIONS, "gas")
+)
 
 private val baseCategorySections = listOf(
     CategorySection("Restaurants", listOf(
@@ -109,8 +117,9 @@ fun PlacesScreen(
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
     var visible by remember { mutableStateOf(false) }
     var activeSectionIndex by rememberSaveable { mutableIntStateOf(0) }
-    val sections = if (state.showDestinations) baseCategorySections
+    val enabledSections = if (state.showDestinations) baseCategorySections
     else baseCategorySections.filterNot { it.label == "Destinations" }
+    val sections = sortSectionsForCurrentTime(enabledSections) { it.label }
 
     LaunchedEffect(Unit) { delay(80); visible = true }
     LaunchedEffect(sections.size) {
@@ -234,6 +243,48 @@ fun PlacesScreen(
                                 }
                             )
                         }
+
+                        Spacer(Modifier.height(10.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(quickIntents) { intent ->
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(18.dp))
+                                        .background(Color.White.copy(alpha = 0.16f))
+                                        .clickable {
+                                            viewModel.searchQuery(intent.query)
+                                            viewModel.selectCategory(intent.category)
+                                            onCategorySelected(intent.category)
+                                        }
+                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        intent.label,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                            if (state.searchQuery.isNotBlank()) {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(18.dp))
+                                            .background(Color.White.copy(alpha = 0.16f))
+                                            .clickable {
+                                                onCategorySelected(state.selectedCategory)
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    ) {
+                                        Text(
+                                            "🔁 ${state.searchQuery}",
+                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -325,7 +376,7 @@ fun PlacesScreen(
                             Text("👆", fontSize = 28.sp)
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "Select a section tab, then a category tab to explore nearby places",
+                                "1-tap quick intents or choose section + category to explore nearby places",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                 color = KipitaOnSurface,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center

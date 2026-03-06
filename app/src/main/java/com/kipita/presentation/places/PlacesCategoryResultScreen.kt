@@ -12,9 +12,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,9 +30,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -53,7 +59,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -118,8 +126,10 @@ fun PlacesCategoryResultScreen(
     var visible by remember { mutableStateOf(false) }
     var currentCategory by rememberSaveable { mutableStateOf(category) }
     var activeSectionIndex by rememberSaveable { mutableIntStateOf(0) }
-    val sections = if (state.showDestinations) resultCategorySections
+    val enabledSections = if (state.showDestinations) resultCategorySections
     else resultCategorySections.filterNot { it.label == "Destinations" }
+    val sections = sortSectionsForCurrentTime(enabledSections) { it.label }
+    val uriHandler = LocalUriHandler.current
 
     val gpsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -238,6 +248,48 @@ fun PlacesCategoryResultScreen(
                     }
                     Spacer(Modifier.height(12.dp))
                 }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color.White)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = KipitaTextSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    BasicTextField(
+                        value = state.searchQuery,
+                        onValueChange = viewModel::searchQuery,
+                        modifier = Modifier.weight(1f),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = KipitaOnSurface),
+                        cursorBrush = SolidColor(KipitaOnSurface),
+                        decorationBox = { inner ->
+                            if (state.searchQuery.isBlank()) {
+                                Text(
+                                    "Search in ${currentCategory.label.lowercase()}...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = KipitaTextSecondary
+                                )
+                            } else inner()
+                        }
+                    )
+                    if (state.searchQuery.isNotBlank()) {
+                        Text(
+                            "Clear",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = KipitaRed,
+                            modifier = Modifier.clickable { viewModel.searchQuery("") }
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
             }
 
             if (state.isLoading) {
@@ -323,6 +375,19 @@ fun PlacesCategoryResultScreen(
                                     val query = Uri.encode("${place.name} ${place.address}")
                                     onOpenWebView("https://www.google.com/maps/search/$query", "Find ${place.name}")
                                 }
+                            },
+                            onCall = {
+                                if (place.phone.isNotBlank()) {
+                                    uriHandler.openUri("tel:${place.phone.filter { it.isDigit() || it == '+' }}")
+                                }
+                            },
+                            onDirections = {
+                                val query = Uri.encode("${place.name} ${place.address}")
+                                uriHandler.openUri("https://www.google.com/maps/search/$query")
+                            },
+                            onMoreInfo = {
+                                val query = Uri.encode("${place.name} ${place.address}")
+                                onOpenWebView("https://www.google.com/search?q=$query", place.name)
                             }
                         )
                     }
@@ -339,7 +404,10 @@ fun PlacesCategoryResultScreen(
 private fun PlaceResultCard(
     place: NearbyPlace,
     isEmergency: Boolean = false,
-    onTap: () -> Unit = {}
+    onTap: () -> Unit = {},
+    onCall: () -> Unit = {},
+    onDirections: () -> Unit = {},
+    onMoreInfo: () -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -417,6 +485,16 @@ private fun PlaceResultCard(
             }
         }
 
+        if (!isEmergency) {
+            Spacer(Modifier.height(12.dp))
+            QuickActionRow(
+                hasPhone = place.phone.isNotBlank(),
+                onCall = onCall,
+                onDirections = onDirections,
+                onMoreInfo = onMoreInfo
+            )
+        }
+
         if (expanded && !isEmergency) {
             Spacer(Modifier.height(12.dp))
             Box(
@@ -453,6 +531,54 @@ private fun PlaceResultCard(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun QuickActionRow(
+    hasPhone: Boolean,
+    onCall: () -> Unit,
+    onDirections: () -> Unit,
+    onMoreInfo: () -> Unit
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        ActionPill("CALL", Icons.Default.Phone, enabled = hasPhone, onClick = onCall)
+        ActionPill("DIRECTIONS", Icons.Default.Navigation, onClick = onDirections)
+        ActionPill("MORE INFO", Icons.Default.Info, onClick = onMoreInfo)
+    }
+}
+
+@Composable
+private fun ActionPill(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(if (enabled) KipitaCardBg else Color(0xFFEEEEEE))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = if (enabled) KipitaOnSurface else KipitaTextSecondary,
+            modifier = Modifier.size(14.dp)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = if (enabled) KipitaOnSurface else KipitaTextSecondary
+        )
     }
 }
 
