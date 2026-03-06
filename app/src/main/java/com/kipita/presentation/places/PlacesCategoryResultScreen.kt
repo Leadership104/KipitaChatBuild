@@ -35,15 +35,18 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,21 +64,45 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.kipita.data.api.PlaceCategory
 import com.kipita.data.repository.NearbyPlace
 import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import com.kipita.presentation.theme.KipitaCardBg
 import com.kipita.presentation.theme.KipitaGreenAccent
 import com.kipita.presentation.theme.KipitaOnSurface
 import com.kipita.presentation.theme.KipitaRed
 import com.kipita.presentation.theme.KipitaTextSecondary
-import com.kipita.presentation.theme.KipitaTextTertiary
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-// Emergency categories that open Google Maps in the in-app WebView on tap
 private val emergencyCategories = setOf(
     PlaceCategory.SAFETY,
     PlaceCategory.URGENT_CARE,
     PlaceCategory.PHARMACIES,
     PlaceCategory.FITNESS
+)
+
+private data class ResultCategorySection(val label: String, val categories: List<PlaceCategory>)
+
+private val resultCategorySections = listOf(
+    ResultCategorySection("Restaurants", listOf(
+        PlaceCategory.RESTAURANTS, PlaceCategory.CAFES, PlaceCategory.NIGHTLIFE
+    )),
+    ResultCategorySection("Entertainment", listOf(
+        PlaceCategory.ENTERTAINMENT, PlaceCategory.ARTS, PlaceCategory.PARKS
+    )),
+    ResultCategorySection("Shopping", listOf(PlaceCategory.SHOPPING)),
+    ResultCategorySection("Transportation", listOf(
+        PlaceCategory.TRANSPORT, PlaceCategory.CAR_RENTAL,
+        PlaceCategory.EV_CHARGING, PlaceCategory.GAS_STATIONS, PlaceCategory.AIRPORTS
+    )),
+    ResultCategorySection("Services", listOf(
+        PlaceCategory.BANKS_ATMS, PlaceCategory.FITNESS
+    )),
+    ResultCategorySection("Safety", listOf(
+        PlaceCategory.SAFETY, PlaceCategory.URGENT_CARE, PlaceCategory.PHARMACIES
+    )),
+    ResultCategorySection("Destinations", listOf(
+        PlaceCategory.HOTELS, PlaceCategory.VACATION_RENTALS, PlaceCategory.TOURS
+    ))
 )
 
 @Composable
@@ -87,31 +114,38 @@ fun PlacesCategoryResultScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
     val context = LocalContext.current
-    var visible by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    var visible by remember { mutableStateOf(false) }
+    var currentCategory by rememberSaveable { mutableStateOf(category) }
+    var activeSectionIndex by rememberSaveable { mutableIntStateOf(0) }
+    val sections = if (state.showDestinations) resultCategorySections
+    else resultCategorySections.filterNot { it.label == "Destinations" }
 
-    // Trigger GPS and fetch on launch
     val gpsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            scope.launch { resolveLocationAndFetch(context, viewModel, category) }
+            scope.launch { resolveLocationAndFetch(context, viewModel, currentCategory) }
         }
     }
 
     LaunchedEffect(category) {
+        currentCategory = category
         visible = true
         val hasPerm = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-
         if (hasPerm) {
-            resolveLocationAndFetch(context, viewModel, category)
+            resolveLocationAndFetch(context, viewModel, currentCategory)
         } else {
             gpsLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            // Fallback: fetch with default Tokyo coords from ViewModel
-            viewModel.selectCategory(category)
+            viewModel.selectCategory(currentCategory)
         }
+    }
+
+    LaunchedEffect(sections, currentCategory) {
+        val idx = sections.indexOfFirst { currentCategory in it.categories }
+        if (idx >= 0) activeSectionIndex = idx
     }
 
     Column(
@@ -119,16 +153,12 @@ fun PlacesCategoryResultScreen(
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
     ) {
-        // ── Header ─────────────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(listOf(Color(0xFF0D1B2A), Color(0xFF1B3A5C)))
-                )
+                .background(Brush.linearGradient(listOf(Color(0xFF0D1B2A), Color(0xFF1B3A5C))))
                 .padding(horizontal = 16.dp, vertical = 18.dp)
         ) {
-            // Back button
             Box(
                 modifier = Modifier
                     .size(38.dp)
@@ -138,25 +168,16 @@ fun PlacesCategoryResultScreen(
                     .align(Alignment.CenterStart),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White, modifier = Modifier.size(20.dp))
             }
 
-            // Title
             Column(
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Text(currentCategory.emoji, fontSize = 28.sp)
                 Text(
-                    category.emoji,
-                    fontSize = 28.sp
-                )
-                Text(
-                    category.label,
+                    currentCategory.label,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = Color.White
                 )
@@ -169,8 +190,7 @@ fun PlacesCategoryResultScreen(
                 }
             }
 
-            // Emergency badge
-            if (category in emergencyCategories) {
+            if (currentCategory in emergencyCategories) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
@@ -179,7 +199,7 @@ fun PlacesCategoryResultScreen(
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        "🚨 Emergency",
+                        "Emergency",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = Color.White
                     )
@@ -187,26 +207,47 @@ fun PlacesCategoryResultScreen(
             }
         }
 
-        // ── Content ────────────────────────────────────────────────────────────
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // Loading state
+            item {
+                if (sections.isNotEmpty()) {
+                    ScrollableTabRow(selectedTabIndex = activeSectionIndex, edgePadding = 0.dp) {
+                        sections.forEachIndexed { index, section ->
+                            Tab(
+                                selected = activeSectionIndex == index,
+                                onClick = { activeSectionIndex = index },
+                                text = { Text(section.label) }
+                            )
+                        }
+                    }
+                    val children = sections[activeSectionIndex].categories
+                    val selectedChild = children.indexOf(currentCategory).let { if (it >= 0) it else 0 }
+                    ScrollableTabRow(selectedTabIndex = selectedChild, edgePadding = 0.dp) {
+                        children.forEachIndexed { index, child ->
+                            Tab(
+                                selected = selectedChild == index,
+                                onClick = {
+                                    currentCategory = child
+                                    scope.launch { resolveLocationAndFetch(context, viewModel, child) }
+                                },
+                                text = { Text("${child.emoji} ${child.label}") }
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
+
             if (state.isLoading) {
                 item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(48.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(
-                                color = KipitaRed,
-                                modifier = Modifier.size(36.dp)
-                            )
+                            CircularProgressIndicator(color = KipitaRed, modifier = Modifier.size(36.dp))
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                "Finding ${category.label} near you...",
+                                "Finding ${currentCategory.label} near you...",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = KipitaTextSecondary
                             )
@@ -215,7 +256,6 @@ fun PlacesCategoryResultScreen(
                 }
             }
 
-            // Error
             if (state.error != null && !state.isLoading) {
                 item {
                     Box(
@@ -237,7 +277,6 @@ fun PlacesCategoryResultScreen(
                 }
             }
 
-            // Empty
             if (!state.isLoading && state.filteredPlaces.isEmpty() && state.error == null) {
                 item {
                     Box(
@@ -250,10 +289,10 @@ fun PlacesCategoryResultScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(category.emoji, fontSize = 40.sp)
+                            Text(currentCategory.emoji, fontSize = 40.sp)
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                "No ${category.label} found nearby",
+                                "No ${currentCategory.label} found nearby",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = KipitaOnSurface,
                                 textAlign = TextAlign.Center
@@ -270,7 +309,6 @@ fun PlacesCategoryResultScreen(
                 }
             }
 
-            // Place result cards
             if (!state.isLoading && state.filteredPlaces.isNotEmpty()) {
                 itemsIndexed(state.filteredPlaces, key = { _, p -> p.id }) { index, place ->
                     AnimatedVisibility(
@@ -279,16 +317,12 @@ fun PlacesCategoryResultScreen(
                     ) {
                         PlaceResultCard(
                             place = place,
-                            isEmergency = category in emergencyCategories,
+                            isEmergency = currentCategory in emergencyCategories,
                             onTap = {
-                                if (category in emergencyCategories) {
+                                if (currentCategory in emergencyCategories) {
                                     val query = Uri.encode("${place.name} ${place.address}")
-                                    onOpenWebView(
-                                        "https://www.google.com/maps/search/$query",
-                                        "Find ${place.name}"
-                                    )
+                                    onOpenWebView("https://www.google.com/maps/search/$query", "Find ${place.name}")
                                 }
-                                // Non-emergency: expand handled inside the card
                             }
                         )
                     }
@@ -301,9 +335,6 @@ fun PlacesCategoryResultScreen(
     }
 }
 
-// ---------------------------------------------------------------------------
-// Place result card — round curves + shadow, expand in-place for non-emergency
-// ---------------------------------------------------------------------------
 @Composable
 private fun PlaceResultCard(
     place: NearbyPlace,
@@ -318,29 +349,21 @@ private fun PlaceResultCard(
             .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp))
             .clip(RoundedCornerShape(20.dp))
             .background(Color.White)
-            .clickable {
-                if (isEmergency) onTap()
-                else expanded = !expanded
-            }
+            .clickable { if (isEmergency) onTap() else expanded = !expanded }
             .padding(16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Emoji badge
             Box(
                 modifier = Modifier
                     .size(52.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(
-                        if (isEmergency) Color(0xFFFFEBEE) else KipitaCardBg
-                    ),
+                    .background(if (isEmergency) Color(0xFFFFEBEE) else KipitaCardBg),
                 contentAlignment = Alignment.Center
             ) {
                 Text(place.emoji, fontSize = 24.sp)
             }
 
             Spacer(Modifier.width(12.dp))
-
-            // Main info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     place.name,
@@ -364,31 +387,17 @@ private fun PlaceResultCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Rating
                     if (place.rating > 0) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Star,
-                                contentDescription = null,
-                                tint = Color(0xFFFFC107),
-                                modifier = Modifier.size(12.dp)
-                            )
+                            Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(12.dp))
                             Spacer(Modifier.width(2.dp))
-                            Text(
-                                "${"%.1f".format(place.rating)}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = KipitaTextSecondary
-                            )
+                            Text("${"%.1f".format(place.rating)}", style = MaterialTheme.typography.labelSmall, color = KipitaTextSecondary)
                         }
                     }
-                    // Open badge
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .background(
-                                if (place.isOpen) KipitaGreenAccent.copy(alpha = 0.15f)
-                                else KipitaRed.copy(alpha = 0.10f)
-                            )
+                            .background(if (place.isOpen) KipitaGreenAccent.copy(alpha = 0.15f) else KipitaRed.copy(alpha = 0.10f))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
@@ -400,25 +409,14 @@ private fun PlaceResultCard(
                 }
             }
 
-            // Right column: distance + emergency indicator
             Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    "${"%.1f".format(place.distanceKm)} km",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = KipitaOnSurface
-                )
+                Text("${"%.1f".format(place.distanceKm)} km", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = KipitaOnSurface)
                 if (isEmergency) {
-                    Text(
-                        "View →",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = KipitaRed,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
+                    Text("View ->", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = KipitaRed, modifier = Modifier.padding(top = 4.dp))
                 }
             }
         }
 
-        // Expanded detail — only for non-emergency categories
         if (expanded && !isEmergency) {
             Spacer(Modifier.height(12.dp))
             Box(
@@ -431,28 +429,15 @@ private fun PlaceResultCard(
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (place.phone.isNotBlank()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Phone,
-                                contentDescription = null,
-                                tint = KipitaTextSecondary,
-                                modifier = Modifier.size(14.dp)
-                            )
+                            Icon(Icons.Default.Phone, contentDescription = null, tint = KipitaTextSecondary, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text(
-                                place.phone,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = KipitaOnSurface
-                            )
+                            Text(place.phone, style = MaterialTheme.typography.bodySmall, color = KipitaOnSurface)
                         }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("📍", fontSize = 12.sp)
                         Spacer(Modifier.width(6.dp))
-                        Text(
-                            "${"%.2f".format(place.distanceKm)} km away",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = KipitaTextSecondary
-                        )
+                        Text("${"%.2f".format(place.distanceKm)} km away", style = MaterialTheme.typography.bodySmall, color = KipitaTextSecondary)
                     }
                     if (place.reviewCount > 0) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -471,9 +456,6 @@ private fun PlaceResultCard(
     }
 }
 
-// ---------------------------------------------------------------------------
-// Helper — resolve device GPS and trigger category fetch in ViewModel
-// ---------------------------------------------------------------------------
 @android.annotation.SuppressLint("MissingPermission")
 private suspend fun resolveLocationAndFetch(
     context: Context,
@@ -488,6 +470,7 @@ private suspend fun resolveLocationAndFetch(
         }
         if (loc != null) {
             viewModel.updateLocation(loc.latitude, loc.longitude)
+            viewModel.selectCategory(category)
         } else {
             viewModel.selectCategory(category)
         }

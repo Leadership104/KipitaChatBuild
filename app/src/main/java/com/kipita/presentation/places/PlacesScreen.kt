@@ -30,16 +30,18 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,28 +72,29 @@ import kotlinx.coroutines.delay
 // ---------------------------------------------------------------------------
 // Group configuration for the category strip
 // ---------------------------------------------------------------------------
-private data class CategoryGroup(val label: String, val categories: List<PlaceCategory>)
+private data class CategorySection(val label: String, val categories: List<PlaceCategory>)
 
-private val baseCategoryGroups = listOf(
-    CategoryGroup("Travel & Lodging", listOf(
-        PlaceCategory.HOTELS, PlaceCategory.VACATION_RENTALS,
-        PlaceCategory.AIRPORTS, PlaceCategory.TOURS
-    )),
-    CategoryGroup("Transportation", listOf(
-        PlaceCategory.TRANSPORT, PlaceCategory.CAR_RENTAL,
-        PlaceCategory.EV_CHARGING, PlaceCategory.GAS_STATIONS
-    )),
-    CategoryGroup("Dining", listOf(
+private val baseCategorySections = listOf(
+    CategorySection("Restaurants", listOf(
         PlaceCategory.RESTAURANTS, PlaceCategory.CAFES, PlaceCategory.NIGHTLIFE
     )),
-    CategoryGroup("Finance & Services", listOf(PlaceCategory.BANKS_ATMS)),
-    CategoryGroup("Safety & Health", listOf(
-        PlaceCategory.SAFETY, PlaceCategory.URGENT_CARE,
-        PlaceCategory.PHARMACIES, PlaceCategory.FITNESS
+    CategorySection("Entertainment", listOf(
+        PlaceCategory.ENTERTAINMENT, PlaceCategory.ARTS, PlaceCategory.PARKS
     )),
-    CategoryGroup("Culture & Shopping", listOf(
-        PlaceCategory.ARTS, PlaceCategory.SHOPPING,
-        PlaceCategory.PARKS, PlaceCategory.ENTERTAINMENT
+    CategorySection("Shopping", listOf(PlaceCategory.SHOPPING)),
+    CategorySection("Transportation", listOf(
+        PlaceCategory.TRANSPORT, PlaceCategory.CAR_RENTAL,
+        PlaceCategory.EV_CHARGING, PlaceCategory.GAS_STATIONS, PlaceCategory.AIRPORTS
+    )),
+    CategorySection("Services", listOf(
+        PlaceCategory.BANKS_ATMS, PlaceCategory.FITNESS
+    )),
+    CategorySection("Safety", listOf(
+        PlaceCategory.SAFETY, PlaceCategory.URGENT_CARE, PlaceCategory.PHARMACIES
+    )),
+    CategorySection("Destinations", listOf(
+        PlaceCategory.HOTELS, PlaceCategory.VACATION_RENTALS,
+        PlaceCategory.TOURS
     ))
 )
 
@@ -105,8 +108,15 @@ fun PlacesScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
     var visible by remember { mutableStateOf(false) }
+    var activeSectionIndex by rememberSaveable { mutableIntStateOf(0) }
+    val sections = if (state.showDestinations) baseCategorySections
+    else baseCategorySections.filterNot { it.label == "Destinations" }
 
     LaunchedEffect(Unit) { delay(80); visible = true }
+    LaunchedEffect(sections.size) {
+        if (sections.isEmpty()) return@LaunchedEffect
+        if (activeSectionIndex > sections.lastIndex) activeSectionIndex = 0
+    }
 
     Box(
         modifier = Modifier
@@ -229,44 +239,67 @@ fun PlacesScreen(
             }
 
             // ----------------------------------------------------------------
-            // Category groups + horizontal scroll strips
+            // Two-level category tabs (Kipita-style)
             // ----------------------------------------------------------------
             item {
                 AnimatedVisibility(visible = visible, enter = fadeIn(tween(150)) + slideInVertically(tween(150)) { 20 }) {
                     Column(modifier = Modifier.padding(top = 16.dp)) {
-                        val categoryGroups = if (state.showDestinations) baseCategoryGroups
-                        else baseCategoryGroups.filterNot { it.label == "Travel & Lodging" }
-                        categoryGroups.forEach { group ->
-                            Text(
-                                text = group.label,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = KipitaTextTertiary,
-                                modifier = Modifier.padding(start = 20.dp, bottom = 8.dp)
-                            )
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = 20.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.padding(bottom = 16.dp)
+                        if (sections.isNotEmpty()) {
+                            ScrollableTabRow(
+                                selectedTabIndex = activeSectionIndex,
+                                edgePadding = 20.dp
                             ) {
-                                items(group.categories) { cat ->
-                                    CategoryChip(
-                                        category = cat,
-                                        selected = state.selectedCategory == cat,
-                                        onClick = { onCategorySelected(cat) }
+                                sections.forEachIndexed { index, section ->
+                                    Tab(
+                                        selected = activeSectionIndex == index,
+                                        onClick = { activeSectionIndex = index },
+                                        text = {
+                                            Text(
+                                                section.label,
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                                            )
+                                        }
                                     )
                                 }
-                                // BTCMap special chip — only in Finance & Services
-                                if (group.label == "Finance & Services") {
-                                    item {
-                                        BtcMapChip(
-                                            onClick = {
-                                                onOpenWebView(
-                                                    "https://btcmap.org/map",
-                                                    "BTCMap — Bitcoin Merchants"
-                                                )
-                                            }
-                                        )
-                                    }
+                            }
+
+                            val childCategories = sections[activeSectionIndex].categories
+                            val selectedChildIndex = childCategories.indexOf(state.selectedCategory).let {
+                                if (it >= 0) it else 0
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            ScrollableTabRow(
+                                selectedTabIndex = selectedChildIndex,
+                                edgePadding = 20.dp
+                            ) {
+                                childCategories.forEachIndexed { index, cat ->
+                                    Tab(
+                                        selected = selectedChildIndex == index,
+                                        onClick = {
+                                            viewModel.selectCategory(cat)
+                                            onCategorySelected(cat)
+                                        },
+                                        text = {
+                                            Text(
+                                                "${cat.emoji} ${cat.label}",
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                        }
+                                    )
+                                }
+                                if (sections[activeSectionIndex].label == "Services") {
+                                    Tab(
+                                        selected = false,
+                                        onClick = {
+                                            onOpenWebView(
+                                                "https://btcmap.org/map",
+                                                "BTCMap — Bitcoin Merchants"
+                                            )
+                                        },
+                                        text = {
+                                            Text("₿ BTCMap", style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    )
                                 }
                             }
                         }
@@ -292,7 +325,7 @@ fun PlacesScreen(
                             Text("👆", fontSize = 28.sp)
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "Tap a category above to explore nearby places",
+                                "Select a section tab, then a category tab to explore nearby places",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                 color = KipitaOnSurface,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
