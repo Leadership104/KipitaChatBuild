@@ -25,6 +25,8 @@ $map = @{
     "OPENAI_API_KEY"        = @("OPENAI_API_KEY", "openai_api_key")
     "CLAUDE_API_KEY"        = @("CLAUDE_API_KEY", "anthropic_api_key", "claude_api_key")
     "GEMINI_API_KEY"        = @("GEMINI_API_KEY", "gemini_api_key")
+    "DWAAT_BASE_URL"        = @("DWAAT_BASE_URL", "dwaat_base_url", "api_base_url", "base_url")
+    "DWAAT_FALLBACK_BASE_URL" = @("DWAAT_FALLBACK_BASE_URL", "dwaat_fallback_base_url", "api_alt_base_url", "alt_base_url")
 }
 
 $existing = @{}

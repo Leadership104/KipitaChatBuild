@@ -443,6 +443,12 @@ interface DwaatApiService {
     @POST("affiliates.php")
     suspend fun getAffiliates(@Body request: AffiliatesRequest = AffiliatesRequest()): AffiliatesResponse
 
+    @POST
+    suspend fun getAffiliatesAt(
+        @Url url: String,
+        @Body request: AffiliatesRequest = AffiliatesRequest()
+    ): AffiliatesResponse
+
     // Images
     @POST("imageList.php")
     suspend fun getImages(@Body request: DwaatImageListRequest): DwaatResponse<List<DwaatImage>>

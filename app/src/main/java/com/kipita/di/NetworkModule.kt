@@ -211,7 +211,7 @@ object NetworkModule {
     @Singleton
     @DwaatApi
     fun provideDwaatRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.dwaat.com/")
+        .baseUrl(BuildConfig.DWAAT_BASE_URL)
         .client(okHttpClient)
         .addConverterFactory(MoshiConverterFactory.create())
         .build()

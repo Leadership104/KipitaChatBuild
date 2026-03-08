@@ -49,6 +49,8 @@ android {
         buildConfigField("String", "GEMINI_API_KEY", "\"${localProp("GEMINI_API_KEY")}\"")
         buildConfigField("String", "OPENAI_API_KEY", "\"${localProp("OPENAI_API_KEY")}\"")
         buildConfigField("String", "CLAUDE_API_KEY", "\"${localProp("CLAUDE_API_KEY")}\"")
+        buildConfigField("String", "DWAAT_BASE_URL", "\"${localProp("DWAAT_BASE_URL", "https://api.dwaat.com/")}\"")
+        buildConfigField("String", "DWAAT_FALLBACK_BASE_URL", "\"${localProp("DWAAT_FALLBACK_BASE_URL", "https://dwaat.com/")}\"")
     }
 
     signingConfigs {

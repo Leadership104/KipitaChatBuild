@@ -80,6 +80,12 @@ $lines += "- $postmanSummary"
 $lines += "- local.properties key status:"
 foreach ($k in $keyState) { $lines += "  - $k" }
 $lines += ""
+$lines += "## Dwaat URL config"
+$baseLine = $localLines | Where-Object { $_ -match "^DWAAT_BASE_URL=" } | Select-Object -First 1
+$fallbackLine = $localLines | Where-Object { $_ -match "^DWAAT_FALLBACK_BASE_URL=" } | Select-Object -First 1
+if ($baseLine) { $lines += "- DWAAT_BASE_URL is configured" } else { $lines += "- DWAAT_BASE_URL missing (default BuildConfig used)" }
+if ($fallbackLine) { $lines += "- DWAAT_FALLBACK_BASE_URL is configured" } else { $lines += "- DWAAT_FALLBACK_BASE_URL missing (default BuildConfig used)" }
+$lines += ""
 $lines += "## Notes"
 $lines += "- Key values are intentionally not printed to keep secrets private."
 $lines += "- App runtime can only use live APIs whose keys are present in local.properties/keystore."

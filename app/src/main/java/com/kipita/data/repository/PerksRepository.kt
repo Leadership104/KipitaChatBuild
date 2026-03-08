@@ -1,5 +1,6 @@
 package com.kipita.data.repository
 
+import com.kipita.BuildConfig
 import com.kipita.data.api.AffiliatesRequest
 import com.kipita.data.api.DwaatApiService
 import com.kipita.data.api.PerkItem
@@ -20,6 +21,24 @@ class PerksRepository @Inject constructor(
 
     /** Dynamic affiliate perks loaded from the Dwaat backend. */
     suspend fun getDynamicPerks(): Result<List<PerkItem>> = runCatching {
-        dwaatApiService.getAffiliates(AffiliatesRequest()).data ?: emptyList()
+        val primary = runCatching {
+            dwaatApiService.getAffiliates(AffiliatesRequest()).data ?: emptyList()
+        }.getOrNull().orEmpty()
+        if (primary.isNotEmpty()) return@runCatching primary
+
+        // Fallback probes for host/path variants when the primary Dwaat route has TLS/path issues.
+        val candidates = listOf(
+            BuildConfig.DWAAT_BASE_URL.trimEnd('/') + "/affiliates.php",
+            BuildConfig.DWAAT_FALLBACK_BASE_URL.trimEnd('/') + "/affiliates.php"
+        ).distinct()
+
+        candidates.forEach { url ->
+            val items = runCatching {
+                dwaatApiService.getAffiliatesAt(url, AffiliatesRequest()).data ?: emptyList()
+            }.getOrNull().orEmpty()
+            if (items.isNotEmpty()) return@runCatching items
+        }
+
+        emptyList()
     }
 }

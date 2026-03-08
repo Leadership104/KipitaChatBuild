@@ -14,6 +14,10 @@
   - CLAUDE_API_KEY=SET
   - GEMINI_API_KEY=SET
 
+## Dwaat URL config
+- DWAAT_BASE_URL is configured
+- DWAAT_FALLBACK_BASE_URL is configured
+
 ## Notes
 - Key values are intentionally not printed to keep secrets private.
 - App runtime can only use live APIs whose keys are present in local.properties/keystore.
