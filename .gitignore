@@ -14,3 +14,4 @@ app/src/**/google-services.json
 
 # Local secret vault (Kipita artifacts)
 /security-vault/
+/credentials/

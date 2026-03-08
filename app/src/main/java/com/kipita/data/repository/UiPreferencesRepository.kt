@@ -19,7 +19,7 @@ class UiPreferencesRepository @Inject constructor(
     private val showDestinationsKey = booleanPreferencesKey("show_destinations_tab")
 
     val showDestinations: Flow<Boolean> = context.uiPrefsDataStore.data
-        .map { prefs -> prefs[showDestinationsKey] ?: false }
+        .map { prefs -> prefs[showDestinationsKey] ?: true }
 
     suspend fun setShowDestinations(enabled: Boolean) {
         context.uiPrefsDataStore.edit { prefs ->
@@ -27,4 +27,3 @@ class UiPreferencesRepository @Inject constructor(
         }
     }
 }
-

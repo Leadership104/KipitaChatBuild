@@ -436,6 +436,7 @@ fun KipitaApp() {
                         MainRoute.PLACES -> KipitaErrorBoundary("PlacesScreen") { _ ->
                             PlacesScreen(
                                 paddingValues      = padding,
+                                onAskKipita        = { route = MainRoute.AI },
                                 onOpenWebView      = { url, title ->
                                     webViewUrl = url
                                     webViewTitle = title

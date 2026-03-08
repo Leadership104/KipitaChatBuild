@@ -93,6 +93,7 @@ fun PlacesScreen(
     paddingValues: PaddingValues,
     viewModel: PlacesViewModel = hiltViewModel(),
     onCategorySelected: (PlaceCategory) -> Unit = {},
+    onAskKipita: () -> Unit = {},
     onOpenWebView: (url: String, title: String) -> Unit = { _, _ -> }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycleCompat()
@@ -201,8 +202,13 @@ fun PlacesScreen(
                                         category = category,
                                         selected = category == state.selectedCategory,
                                         onClick = {
-                                            viewModel.selectCategory(category)
-                                            resultsExpanded = true
+                                            if (category == state.selectedCategory) {
+                                                resultsExpanded = !resultsExpanded
+                                            } else {
+                                                viewModel.selectCategory(category)
+                                                onCategorySelected(category)
+                                                resultsExpanded = true
+                                            }
                                         }
                                     )
                                 }
@@ -231,37 +237,28 @@ fun PlacesScreen(
                 }
             }
 
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White)
-                        .border(1.dp, KipitaBorder, RoundedCornerShape(16.dp))
-                        .clickable { resultsExpanded = !resultsExpanded }
-                        .padding(horizontal = 16.dp, vertical = 14.dp)
-                ) {
+            if (resultsExpanded) {
+                item {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 8.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White)
+                            .border(1.dp, KipitaBorder, RoundedCornerShape(16.dp))
+                            .clickable { resultsExpanded = false }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Nearby Results (${state.filteredPlaces.size})",
+                            "Nearby ${state.selectedCategory.label} (${state.filteredPlaces.size})",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = KipitaOnSurface,
                             modifier = Modifier.weight(1f)
                         )
-                        Icon(
-                            imageVector = if (resultsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (resultsExpanded) "Collapse results" else "Expand results",
-                            tint = KipitaOnSurface
-                        )
+                        Icon(Icons.Default.ExpandLess, contentDescription = "Close results", tint = KipitaOnSurface)
                     }
                 }
-            }
-
-            if (resultsExpanded) {
                 if (state.isLoading) {
                     item {
                         Box(
@@ -295,24 +292,19 @@ fun PlacesScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp, vertical = 12.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(KipitaCardBg)
-                            .padding(20.dp),
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(Color(0xFF1A1A2E))
+                            .clickable(onClick = onAskKipita)
+                            .padding(horizontal = 20.dp, vertical = 18.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("👆 1 tap flow", fontSize = 24.sp)
-                            Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("✨", fontSize = 24.sp)
+                            Spacer(Modifier.width(10.dp))
                             Text(
-                                "Pick one big tab, tap one big button, and see live nearby results",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = KipitaOnSurface,
-                            )
-                            Text(
-                                "Designed for high-visibility, simple navigation, and fast access",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = KipitaTextSecondary,
-                                modifier = Modifier.padding(top = 4.dp)
+                                "Ask Kipita",
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                color = Color.White
                             )
                         }
                     }
@@ -336,15 +328,15 @@ private fun MainTabButton(label: String, icon: String, selected: Boolean, onClic
                 shape = RoundedCornerShape(20.dp)
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(horizontal = 24.dp, vertical = 18.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(icon, fontSize = 20.sp)
+            Text(icon, fontSize = 22.sp)
             Spacer(Modifier.width(8.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = if (selected) Color.White else KipitaOnSurface
             )
         }
