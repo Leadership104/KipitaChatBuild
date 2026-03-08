@@ -39,6 +39,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.FlightTakeoff
@@ -184,59 +185,43 @@ fun AiAssistantScreen(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            // Header with sparkle branding
+            // Dark navy header — Places-style
             item {
                 AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically { -20 }) {
-                    Box(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(Color(0xFF1A1A2E), Color(0xFF0F3460))
-                                )
-                            )
+                            .background(Brush.linearGradient(listOf(Color(0xFF0D1B2A), Color(0xFF1B3A5C))))
+                            .padding(horizontal = 20.dp, vertical = 24.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 28.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                        // Sparkle icon
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.1f))
-                                .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("✨", fontSize = 28.sp)
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                            }
+                            Column {
+                                Text(
+                                    "Kipita AI ✨",
+                                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = Color.White
+                                )
+                                Text(
+                                    if (loading || isAiTyping) "Thinking..." else "How can I help you today?",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.65f)
+                                )
+                            }
                         }
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = "Kipita AI",
-                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
-                        Text(
-                            text = if (response == null && !loading && !isAiTyping) "How can I help you today?"
-                            else if (loading || isAiTyping) "Thinking..."
-                            else "Here's what I found",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-
-                        // Model badges
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             ModelBadge("Gemini", Color(0xFF4285F4))
                         }
                     }
                 }
             }
-        }
 
             // Quick action cards (staggered entrance)
             if (response == null && !loading && !isAiTyping) {
