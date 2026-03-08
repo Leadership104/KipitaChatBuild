@@ -49,6 +49,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -105,6 +106,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun MyTripsScreen(
     paddingValues: PaddingValues,
+    onBack: () -> Unit = {},
     onAiSuggest: (String) -> Unit = {},
     onOpenWallet: () -> Unit = {},
     onOpenMap: () -> Unit = {},
@@ -139,20 +141,8 @@ fun MyTripsScreen(
                     visible = visible,
                     enter = fadeIn() + slideInVertically { -20 }
                 ) {
-                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
-                        Text(
-                            text = "My Trips",
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = KipitaOnSurface
-                            )
-                        )
-                        Text(
-                            text = "Plan your next adventure",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = KipitaTextSecondary,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
+                    Column {
+                        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                         Spacer(Modifier.height(14.dp))
                         // AI Quick Actions row
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -190,6 +180,7 @@ fun MyTripsScreen(
                     }
                 }
             }
+        }
 
             // Upcoming Trips section
             item {

@@ -39,7 +39,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.FlightTakeoff
@@ -234,20 +233,10 @@ fun AiAssistantScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             ModelBadge("Gemini", Color(0xFF4285F4))
                         }
-                        // Back button overlay
-                        IconButton(
-                            onClick = onBack,
-                            modifier = Modifier.align(Alignment.TopStart)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = Color.White
-                            )
-                        }
                     }
                 }
             }
+        }
 
             // Quick action cards (staggered entrance)
             if (response == null && !loading && !isAiTyping) {

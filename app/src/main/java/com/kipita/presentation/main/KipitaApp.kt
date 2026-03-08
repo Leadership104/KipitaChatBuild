@@ -162,22 +162,24 @@ fun KipitaApp() {
         topBarWeatherViewModel.refresh()
     }
 
-    val canGoBack = showMap || showProfile || showAuth || showTranslate || showWebView ||
+    val isOnOverlay = showMap || showProfile || showAuth || showTranslate || showWebView ||
         showNearbyTravelers || showTravelGroups || showSocial || selectedTripId != null || showPerks || showWallet
+    val canGoBack = isOnOverlay || route != MainRoute.HOME
     val onBack: () -> Unit = {
         when {
-            showWebView         -> showWebView = false
-            showNearbyTravelers -> showNearbyTravelers = false
-            showTravelGroups    -> showTravelGroups = false
-            showSocial          -> showSocial = false
-            showTranslate       -> showTranslate = false
+            showWebView            -> showWebView = false
+            showNearbyTravelers    -> showNearbyTravelers = false
+            showTravelGroups       -> showTravelGroups = false
+            showSocial             -> showSocial = false
+            showTranslate          -> showTranslate = false
             selectedTripId != null -> selectedTripId = null
-            showPerks   -> showPerks = false
-            showWallet  -> showWallet = false
-            showAuth    -> showAuth = false
-            showMap     -> showMap = false
-            showProfile -> showProfile = false
-            else        -> {}
+            showPerks              -> showPerks = false
+            showWallet             -> showWallet = false
+            showAuth               -> showAuth = false
+            showMap                -> showMap = false
+            showProfile            -> showProfile = false
+            route != MainRoute.HOME -> route = MainRoute.HOME
+            else                   -> {}
         }
     }
 
@@ -458,6 +460,7 @@ fun KipitaApp() {
                         MainRoute.TRIPS -> KipitaErrorBoundary("MyTripsScreen") { _ ->
                             MyTripsScreen(
                                 paddingValues = padding,
+                                onBack        = { route = MainRoute.HOME },
                                 onAiSuggest  = { prompt -> aiPreFill = prompt; route = MainRoute.AI },
                                 onOpenWallet = {
                                     showWallet = true
@@ -550,17 +553,17 @@ private fun KipitaTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Transparent)
+            .background(Color(0xFF1565C0))
             .padding(horizontal = 12.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Silver back button — always reserves space; only visible/clickable when navigable
+        // Back button — white icon on semi-transparent circle, visible when navigable
         Box(
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(if (canGoBack) Color(0xFFE0E0E0) else Color.Transparent)
+                .background(if (canGoBack) Color.White.copy(alpha = 0.2f) else Color.Transparent)
                 .then(if (canGoBack) Modifier.clickable(onClick = onBack) else Modifier),
             contentAlignment = Alignment.Center
         ) {
@@ -568,7 +571,7 @@ private fun KipitaTopBar(
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = Color(0xFF757575),
+                    tint = Color.White,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -596,7 +599,7 @@ private fun KipitaTopBar(
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
-                    .background(KipitaCardBg)
+                    .background(Color.White.copy(alpha = 0.15f))
                     .padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -605,17 +608,17 @@ private fun KipitaTopBar(
                 Text(
                     weatherTempC?.let { "$it°C" } ?: "--°C",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = KipitaOnSurface
+                    color = Color.White
                 )
             }
             Box(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(CircleShape)
-                    .background(if (isGuest) KipitaCardBg else KipitaRedLight)
+                    .background(Color.White.copy(alpha = 0.15f))
                     .border(
                         width = 1.5.dp,
-                        color = if (isGuest) KipitaBorder else KipitaRed,
+                        color = Color.White.copy(alpha = 0.5f),
                         shape = CircleShape
                     )
                     .clickable(onClick = onProfileClick),
@@ -631,13 +634,13 @@ private fun KipitaTopBar(
                     isGuest || userName.isBlank() -> Icon(
                         Icons.Default.Person,
                         contentDescription = "Profile",
-                        tint = KipitaTextSecondary,
+                        tint = Color.White,
                         modifier = Modifier.size(19.dp)
                     )
                     else -> Text(
                         text = userName.first().uppercaseChar().toString(),
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        color = KipitaRed
+                        color = Color.White
                     )
                 }
             }
