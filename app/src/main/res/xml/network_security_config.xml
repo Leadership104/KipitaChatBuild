@@ -12,11 +12,23 @@
 
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">kipita.app</domain>
+        <!-- Google APIs -->
         <domain includeSubdomains="true">places.googleapis.com</domain>
+        <domain includeSubdomains="true">maps.googleapis.com</domain>
         <domain includeSubdomains="true">generativelanguage.googleapis.com</domain>
+        <!-- Crypto price feeds -->
         <domain includeSubdomains="true">api.coingecko.com</domain>
         <domain includeSubdomains="true">api.coinbase.com</domain>
         <domain includeSubdomains="true">api.gemini.com</domain>
+        <domain includeSubdomains="true">api.kraken.com</domain>
+        <domain includeSubdomains="true">api.coincap.io</domain>
+        <domain includeSubdomains="true">fx.fixer.io</domain>
+        <!-- BTCMap merchants -->
+        <domain includeSubdomains="true">api.btcmap.org</domain>
+        <!-- Dwaat travel backend -->
+        <domain includeSubdomains="true">api.dwaat.com</domain>
+        <domain includeSubdomains="true">dwaat.com</domain>
+        <!-- Wallet / River -->
         <domain includeSubdomains="true">app.river.com</domain>
     </domain-config>
 </network-security-config>

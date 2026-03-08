@@ -60,6 +60,19 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        // Release signing — set these four keys in local.properties before running prodRelease build
+        val ksPath = localProp("RELEASE_STORE_FILE", "")
+        val ksPass = localProp("RELEASE_STORE_PASSWORD", "")
+        val kAlias = localProp("RELEASE_KEY_ALIAS", "")
+        val kPass  = localProp("RELEASE_KEY_PASSWORD", "")
+        if (ksPath.isNotBlank() && ksPass.isNotBlank() && kAlias.isNotBlank() && kPass.isNotBlank()) {
+            create("release") {
+                storeFile = rootProject.file(ksPath)
+                storePassword = ksPass
+                keyAlias = kAlias
+                keyPassword = kPass
+            }
+        }
     }
 
     buildTypes {
@@ -67,11 +80,14 @@ android {
             signingConfig = signingConfigs.getByName("localDebug")
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            val releaseSigningConfig = runCatching { signingConfigs.getByName("release") }.getOrNull()
+            if (releaseSigningConfig != null) signingConfig = releaseSigningConfig
         }
     }
 
