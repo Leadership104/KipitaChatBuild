@@ -40,7 +40,6 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -131,6 +130,7 @@ fun HomeScreen(
     onOpenWallet: () -> Unit = {},
     onOpenMap: () -> Unit = {},
     onOpenAI: (String) -> Unit = {},
+    onOpenSocial: () -> Unit = {},
     onOpenTranslate: () -> Unit = {},
     onOpenPerks: () -> Unit = {},
     openSosSignal: Int = 0,
@@ -197,7 +197,7 @@ fun HomeScreen(
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA))) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 100.dp)
+            contentPadding = PaddingValues(bottom = 168.dp)
         ) {
 
             // ── Hero banner ──────────────────────────────────────────────────
@@ -370,80 +370,30 @@ fun HomeScreen(
                 }
             }
 
-            // ── AI Quick Prompts ─────────────────────────────────────────────
-            item {
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(tween(250)) + slideInVertically(tween(250)) { 40 }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = 20.dp)
-                            .padding(bottom = 16.dp)
-                    ) {
-                        Text(
-                            "Ask Kipita AI",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                            color = KipitaOnSurface,
-                            modifier = Modifier.padding(bottom = 10.dp)
-                        )
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0xFF1A1A2E))
-                                .padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            val prompts = listOf(
-                                "✈️ Plan my next trip",
-                                "₿ Find Bitcoin-friendly spots",
-                                "🛡️ Travel safety report",
-                                "💰 Best nomad cities 2026"
-                            )
-                            prompts.chunked(2).forEach { row ->
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    row.forEach { label ->
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(Color.White.copy(.10f))
-                                                .clickable { onOpenAI(label) }
-                                                .padding(horizontal = 10.dp, vertical = 10.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                label,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color.White,
-                                                textAlign = TextAlign.Center
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
         }
 
-        // ── Floating Mic FAB ─────────────────────────────────────────────────
-        FloatingActionButton(
-            onClick = { micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+        // ── Bottom action bar (few-click flow) ──────────────────────────────
+        Row(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = 16.dp),
-            containerColor = KipitaRed,
-            contentColor = Color.White,
-            shape = CircleShape
+                .align(Alignment.BottomCenter)
+                .padding(start = 16.dp, end = 16.dp, bottom = (paddingValues.calculateBottomPadding() + 10.dp)),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(
-                if (isListening) Icons.Default.Stop else Icons.Default.Mic,
-                contentDescription = "Voice search",
-                modifier = Modifier.size(24.dp)
+            HomeActionButton(
+                modifier = Modifier.weight(1f),
+                emoji = "✨",
+                label = "Kipita AI",
+                subtitle = "Plan fast",
+                background = KipitaRed,
+                onClick = { onOpenAI("Help me plan my next trip") }
+            )
+            HomeActionButton(
+                modifier = Modifier.weight(1f),
+                emoji = "👥",
+                label = "Socials",
+                subtitle = "Travel network",
+                background = Color(0xFF1A1A2E),
+                onClick = onOpenSocial
             )
         }
     }
@@ -500,6 +450,42 @@ fun HomeScreen(
                 }
             )
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Quick Tool Pill
+// ---------------------------------------------------------------------------
+@Composable
+private fun HomeActionButton(
+    modifier: Modifier = Modifier,
+    emoji: String,
+    label: String,
+    subtitle: String,
+    background: Color,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .shadow(4.dp, RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .background(background)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(emoji, fontSize = 20.sp)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = Color.White
+        )
+        Text(
+            subtitle,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.75f)
+        )
     }
 }
 

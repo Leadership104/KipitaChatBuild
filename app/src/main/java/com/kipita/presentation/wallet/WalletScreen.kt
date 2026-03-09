@@ -82,6 +82,9 @@ import com.kipita.presentation.theme.KipitaTextSecondary
 import com.kipita.presentation.theme.KipitaTextTertiary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private data class CurrencyInfo(val code: String, val flag: String, val name: String)
 
@@ -417,6 +420,9 @@ fun WalletScreen(
             item {
                 AnimatedVisibility(visible = visible, enter = fadeIn(tween(120)) + slideInVertically(tween(120)) { 16 }) {
                     val prices = state.cryptoPrices
+                    val lastUpdated = prices?.fetchedAtMs?.let {
+                        SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(it))
+                    } ?: "connecting..."
                     Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
@@ -429,7 +435,7 @@ fun WalletScreen(
                                 color = KipitaOnSurface
                             )
                             Text(
-                                "CoinGecko · live refresh",
+                                "Live · updated $lastUpdated",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = KipitaTextTertiary
                             )
@@ -763,7 +769,7 @@ private fun PriceTickerChip(
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = if (priceUsd > 0) "$${"%,.0f".format(priceUsd)}" else "—",
+            text = if (priceUsd > 0) "$${"%,.2f".format(priceUsd)}" else "—",
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
             color = KipitaOnSurface,
             maxLines = 1,

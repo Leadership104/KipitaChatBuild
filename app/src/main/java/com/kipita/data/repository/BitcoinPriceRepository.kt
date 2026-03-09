@@ -8,6 +8,11 @@ import javax.inject.Singleton
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 // ---------------------------------------------------------------------------
 // BitcoinPriceRepository
@@ -35,14 +40,6 @@ class BitcoinPriceRepository @Inject constructor(
     private val coinbaseApi: CoinbaseApiService,
     private val currencyApi: CurrencyApiService
 ) {
-    private val baseline = CryptoPrices(
-        btcUsd = 98_000.0,
-        btcChange24h = 0.0,
-        ethUsd = 3_400.0,
-        ethChange24h = 0.0,
-        solUsd = 180.0,
-        solChange24h = 0.0
-    )
     private var cached: CryptoPrices? = null
     private val cacheMaxAgeMs = 2_000L // 2 seconds
 
@@ -95,10 +92,20 @@ class BitcoinPriceRepository @Inject constructor(
             return fxFallback
         }
 
+        val krakenFallback = runCatching { fetchFromKraken(cache) }.getOrNull()
+        if (krakenFallback != null && (krakenFallback.btcUsd > 0.0 || krakenFallback.ethUsd > 0.0 || krakenFallback.solUsd > 0.0)) {
+            cached = krakenFallback
+            return krakenFallback
+        }
+
+        val coinCapFallback = runCatching { fetchFromCoinCap(cache) }.getOrNull()
+        if (coinCapFallback != null && (coinCapFallback.btcUsd > 0.0 || coinCapFallback.ethUsd > 0.0 || coinCapFallback.solUsd > 0.0)) {
+            cached = coinCapFallback
+            return coinCapFallback
+        }
+
         if (cache != null) return cache
-        // Keep wallet cards populated in constrained demo networks; live poll keeps retrying.
-        cached = baseline
-        return baseline
+        throw IllegalStateException("Live price fetch failed from CoinGecko, Coinbase, and FX fallbacks")
     }
 
     private suspend fun fetchFromCoinbase(cache: CryptoPrices?): CryptoPrices = coroutineScope {
@@ -133,5 +140,71 @@ class BitcoinPriceRepository @Inject constructor(
             solUsd = sol,
             solChange24h = cache?.solChange24h ?: 0.0
         )
+    }
+
+    private suspend fun fetchFromKraken(cache: CryptoPrices?): CryptoPrices = withContext(Dispatchers.IO) {
+        val raw = httpGet("https://api.kraken.com/0/public/Ticker?pair=XBTUSD,ETHUSD,SOLUSD")
+        val root = JSONObject(raw).getJSONObject("result")
+        val btc = parseKrakenLast(root, "XXBTZUSD", cache?.btcUsd)
+            ?: parseKrakenLast(root, "XBTUSD", cache?.btcUsd)
+            ?: cache?.btcUsd ?: 0.0
+        val eth = parseKrakenLast(root, "XETHZUSD", cache?.ethUsd)
+            ?: parseKrakenLast(root, "ETHUSD", cache?.ethUsd)
+            ?: cache?.ethUsd ?: 0.0
+        val sol = parseKrakenLast(root, "SOLUSD", cache?.solUsd)
+            ?: parseKrakenLast(root, "XSOLZUSD", cache?.solUsd)
+            ?: cache?.solUsd ?: 0.0
+        CryptoPrices(
+            btcUsd = btc,
+            btcChange24h = cache?.btcChange24h ?: 0.0,
+            ethUsd = eth,
+            ethChange24h = cache?.ethChange24h ?: 0.0,
+            solUsd = sol,
+            solChange24h = cache?.solChange24h ?: 0.0
+        )
+    }
+
+    private suspend fun fetchFromCoinCap(cache: CryptoPrices?): CryptoPrices = withContext(Dispatchers.IO) {
+        val raw = httpGet("https://api.coincap.io/v2/assets/bitcoin,ethereum,solana")
+        val data = JSONObject(raw).getJSONArray("data")
+        var btc = cache?.btcUsd ?: 0.0
+        var eth = cache?.ethUsd ?: 0.0
+        var sol = cache?.solUsd ?: 0.0
+        for (i in 0 until data.length()) {
+            val item = data.getJSONObject(i)
+            val id = item.optString("id")
+            val price = item.optString("priceUsd").toDoubleOrNull() ?: 0.0
+            when (id) {
+                "bitcoin" -> if (price > 0.0) btc = price
+                "ethereum" -> if (price > 0.0) eth = price
+                "solana" -> if (price > 0.0) sol = price
+            }
+        }
+        CryptoPrices(
+            btcUsd = btc,
+            btcChange24h = cache?.btcChange24h ?: 0.0,
+            ethUsd = eth,
+            ethChange24h = cache?.ethChange24h ?: 0.0,
+            solUsd = sol,
+            solChange24h = cache?.solChange24h ?: 0.0
+        )
+    }
+
+    private fun parseKrakenLast(result: JSONObject, pairKey: String, default: Double?): Double? {
+        if (!result.has(pairKey)) return default
+        return runCatching {
+            result.getJSONObject(pairKey).getJSONArray("c").getString(0).toDouble()
+        }.getOrElse { default }
+    }
+
+    private fun httpGet(url: String): String {
+        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 8_000
+            readTimeout = 8_000
+            requestMethod = "GET"
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("User-Agent", "KipitaAndroid/1.0")
+        }
+        return conn.inputStream.bufferedReader().use { it.readText() }
     }
 }
