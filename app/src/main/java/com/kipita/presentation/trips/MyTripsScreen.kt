@@ -367,7 +367,7 @@ fun MyTripsScreen(
                             TransportEntry(emoji = "🏨", label = "Hotels",  url = "https://www.hotels.com/affiliate/RrZ7bmg"),
                             TransportEntry(emoji = "🚗", label = "Car Rental", url = "https://expedia.com/affiliate/eA2cKky"),
                             TransportEntry(matIcon = Icons.Default.DirectionsCar, iconTint = Color.Black, label = "Uber", url = "https://www.uber.com"),
-                            TransportEntry(matIcon = Icons.Default.DirectionsCar, iconTint = Color(0xFFE91E63), label = "Lyft", url = "https://www.lyft.com"),
+                            TransportEntry(matIcon = Icons.Default.LocalTaxi, iconTint = Color(0xFFE91E63), label = "Lyft", url = "https://www.lyft.com"),
                             TransportEntry(emoji = "🚢", label = "Cruise", url = "https://expedia.com/affiliate/eA2cKky")
                         )
                         Column(
@@ -1241,7 +1241,7 @@ private fun QuickToolCard(
 private data class TransportEntry(
     val emoji: String? = null,
     val matIcon: ImageVector? = null,
-    val iconTint: Color = Color.Unspecified,
+    val iconTint: Color = KipitaOnSurface,
     val label: String,
     val url: String
 )
