@@ -59,6 +59,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.scale
@@ -202,69 +204,137 @@ fun KipitaApp() {
         bottomBar = {
             if (!showMap && !showProfile && !showAuth && !showTranslate && !showWebView &&
                 !showNearbyTravelers && !showTravelGroups && !showSocial && selectedTripId == null && !showPerks && !showWallet) {
-                NavigationBar(
-                    containerColor = KipitaNavBg,
-                    tonalElevation = 0.dp,
-                    modifier = Modifier.height(98.dp)
-                ) {
-                    navItems.forEach { item ->
-                        val selected = route == item.route
-                        val scale by animateFloatAsState(
-                            targetValue = if (selected) 1.1f else 1f,
-                            animationSpec = spring(stiffness = Spring.StiffnessMedium),
-                            label = "nav-scale"
+                // Glassmorphism + 3D shadow nav bar container
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(
+                            elevation = 24.dp,
+                            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                            ambientColor = Color.Black.copy(alpha = 0.05f),
+                            spotColor = Color.Black.copy(alpha = 0.09f)
                         )
-                        NavigationBarItem(
-                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
-                            selected = selected,
-                            onClick = {
-                                route = item.route
-                            },
-                            icon = {
-                                if (item.isCenter) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(52.dp)
-                                            .scale(scale)
-                                            .background(
-                                                color = if (selected) KipitaRed else KipitaRed.copy(alpha = 0.92f),
-                                                shape = CircleShape
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                            contentDescription = item.label,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    }
-                                } else {
-                                    Icon(
-                                        imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                        contentDescription = item.label,
-                                        modifier = Modifier
-                                            .size(26.dp)
-                                            .scale(scale)
-                                    )
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = item.label,
-                                    fontSize = 12.sp,
-                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                                    modifier = Modifier.padding(top = 2.dp)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.88f),
+                                    Color.White.copy(alpha = 0.96f)
                                 )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = KipitaRed,
-                                selectedTextColor = KipitaRed,
-                                unselectedIconColor = KipitaTextTertiary,
-                                unselectedTextColor = KipitaTextTertiary,
-                                indicatorColor = Color.Transparent
-                            )
+                            ),
+                            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
                         )
+                ) {
+                    // Subtle top highlight line — glass shimmer effect
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        Color.White.copy(alpha = 0.85f),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                    )
+                    NavigationBar(
+                        containerColor = Color.Transparent,
+                        tonalElevation = 0.dp,
+                        modifier = Modifier.height(98.dp)
+                    ) {
+                        navItems.forEach { item ->
+                            val selected = route == item.route
+                            val scale by animateFloatAsState(
+                                targetValue = if (selected) 1.1f else 1f,
+                                animationSpec = spring(stiffness = Spring.StiffnessMedium),
+                                label = "nav-scale"
+                            )
+                            NavigationBarItem(
+                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                                selected = selected,
+                                onClick = {
+                                    route = item.route
+                                },
+                                icon = {
+                                    if (item.isCenter) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(52.dp)
+                                                .scale(scale)
+                                                .shadow(
+                                                    elevation = if (selected) 8.dp else 2.dp,
+                                                    shape = CircleShape,
+                                                    spotColor = KipitaRed.copy(alpha = 0.28f),
+                                                    ambientColor = KipitaRed.copy(alpha = 0.12f)
+                                                )
+                                                .background(
+                                                    color = if (selected) KipitaRed else KipitaRed.copy(alpha = 0.92f),
+                                                    shape = CircleShape
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                                contentDescription = item.label,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(22.dp)
+                                            )
+                                        }
+                                    } else {
+                                        // Glassy pill behind selected icon
+                                        Box(
+                                            modifier = Modifier
+                                                .then(
+                                                    if (selected) Modifier
+                                                        .shadow(
+                                                            elevation = 4.dp,
+                                                            shape = RoundedCornerShape(12.dp),
+                                                            ambientColor = KipitaRed.copy(alpha = 0.07f),
+                                                            spotColor = KipitaRed.copy(alpha = 0.13f)
+                                                        )
+                                                        .background(
+                                                            brush = Brush.verticalGradient(
+                                                                colors = listOf(
+                                                                    KipitaRed.copy(alpha = 0.11f),
+                                                                    KipitaRed.copy(alpha = 0.04f)
+                                                                )
+                                                            ),
+                                                            shape = RoundedCornerShape(12.dp)
+                                                        )
+                                                    else Modifier
+                                                )
+                                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                                contentDescription = item.label,
+                                                modifier = Modifier
+                                                    .size(26.dp)
+                                                    .scale(scale)
+                                            )
+                                        }
+                                    }
+                                },
+                                label = {
+                                    Text(
+                                        text = item.label,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = KipitaRed,
+                                    selectedTextColor = KipitaRed,
+                                    unselectedIconColor = KipitaTextTertiary,
+                                    unselectedTextColor = KipitaTextTertiary,
+                                    indicatorColor = Color.Transparent
+                                )
+                            )
+                        }
                     }
                 }
             }
