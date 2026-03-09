@@ -93,7 +93,7 @@ fun AdvisoryScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             tabs.forEach { tab ->
@@ -105,7 +105,6 @@ fun AdvisoryScreen(
                 )
             }
         }
-        Spacer(Modifier.height(10.dp))
         if (state.loading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -175,12 +174,19 @@ private fun AdvisoryNoticeCard(notice: TravelNotice) {
             contentScale = ContentScale.Crop
         )
         Column(modifier = Modifier.weight(1f)) {
-            Text(notice.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(
+                notice.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
             Text(
                 notice.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF666666),
                 maxLines = 3,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 4.dp)
             )
             Row(
@@ -217,7 +223,9 @@ private fun AdvisoryNoticeCard(notice: TravelNotice) {
                 Text(
                     notice.sourceName,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF757575)
+                    color = Color(0xFF757575),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
         }
