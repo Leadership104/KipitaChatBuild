@@ -29,7 +29,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -85,48 +86,36 @@ fun InAppBrowserScreen(
             .padding(paddingValues)
     ) {
         // ── Browser toolbar ──────────────────────────────────────────────────
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = Color(0xFF1A1A2E),
-            tonalElevation = 4.dp
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.linearGradient(listOf(Color(0xFF0D1B2A), Color(0xFF1B3A5C))))
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Back button
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(.12f))
-                        .clickable(onClick = onBack),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back",
-                        tint = Color.White, modifier = Modifier.size(18.dp))
-                }
+            // Back button
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
+            }
 
-                // Title + URL display
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        currentUrl.removePrefix("https://").removePrefix("http://").take(50),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(.55f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            // Title + URL display
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    currentUrl.removePrefix("https://").removePrefix("http://").take(50),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(.55f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
 
                 // Refresh button
                 Box(
@@ -157,7 +146,6 @@ fun InAppBrowserScreen(
                     Icon(Icons.AutoMirrored.Filled.OpenInNew, "Open in browser",
                         tint = Color.White.copy(.70f), modifier = Modifier.size(16.dp))
                 }
-            }
         }
 
         // ── HTTPS lock indicator ─────────────────────────────────────────────

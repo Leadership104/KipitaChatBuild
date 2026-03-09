@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -539,45 +540,36 @@ private fun PackingListSheet(
     val allItems = defaultPackingItems + customItems
     var nextId by remember { mutableStateOf(100) }
 
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Dark navy header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.linearGradient(listOf(Color(0xFF0D1B2A), Color(0xFF1B3A5C))))
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onClose) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+            }
+            Column(modifier = Modifier.padding(start = 4.dp)) {
+                Text(
+                    "Packing List 🧳",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White
+                )
+                Text(
+                    "${checkedItems.size} / ${allItems.size} items packed",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.65f)
+                )
+            }
+        }
+
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
     ) {
-        // Header
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        "Packing List 🧳",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = KipitaOnSurface
-                    )
-                    Text(
-                        "${checkedItems.size} / ${allItems.size} items packed",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = KipitaTextSecondary,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(KipitaCardBg)
-                        .clickable(onClick = onClose),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = KipitaTextSecondary, modifier = Modifier.size(18.dp))
-                }
-            }
-        }
-
         // Progress bar
         item {
             LinearProgressIndicator(
@@ -810,6 +802,7 @@ private fun PackingListSheet(
             }
         }
     }
+    } // end outer Column
 }
 
 // ---------------------------------------------------------------------------

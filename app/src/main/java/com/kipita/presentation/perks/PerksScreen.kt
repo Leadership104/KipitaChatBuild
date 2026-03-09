@@ -17,7 +17,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,6 +47,7 @@ import com.kipita.presentation.theme.KipitaTextSecondary
 @Composable
 fun PerksScreen(
     paddingValues: PaddingValues = PaddingValues(),
+    onBack: () -> Unit = {},
     onOpenWebView: (url: String, title: String) -> Unit,
     viewModel: PerksViewModel = hiltViewModel()
 ) {
@@ -49,29 +55,47 @@ fun PerksScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycleCompat()
     val staticPerks = viewModel.staticPerks
 
-    LazyColumn(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFAFAFA))
-            .padding(paddingValues),
+            .padding(paddingValues)
+    ) {
+        // Dark navy header
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.linearGradient(listOf(Color(0xFF0D1B2A), Color(0xFF1B3A5C))))
+                .padding(horizontal = 20.dp, vertical = 24.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+                Column {
+                    Text(
+                        "Travel Deals",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                    Text(
+                        "Flights · Hotels · Car rentals and more",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.65f)
+                    )
+                }
+            }
+        }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().background(Color(0xFFFAFAFA)),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
-            Text(
-                text = "Travel Deals",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = KipitaOnSurface,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-            Text(
-                text = "Book flights, hotels, car rentals and more",
-                fontSize = 14.sp,
-                color = KipitaTextSecondary,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-        }
 
         // Static planner deals
         item {
@@ -115,6 +139,7 @@ fun PerksScreen(
 
         item { Spacer(Modifier.height(16.dp)) }
     }
+    } // end outer Column
 }
 
 @Composable

@@ -349,6 +349,7 @@ fun KipitaApp() {
                 showPerks -> KipitaErrorBoundary("PerksScreen") { _ ->
                     PerksScreen(
                         paddingValues = padding,
+                        onBack = { showPerks = false },
                         onOpenWebView = { url, title ->
                             webViewUrl = url
                             webViewTitle = title

@@ -195,12 +195,12 @@ fun MapScreen(
                 }
                 Column(modifier = Modifier.padding(start = if (onNavigateBack != null) 4.dp else 8.dp)) {
                     Text(
-                        "₿ Bitcoin Map",
+                        "Explore Map",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = Color.White
                     )
                     Text(
-                        "Bitcoin-friendly places near you",
+                        "Find places near you",
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White.copy(alpha = 0.65f)
                     )
