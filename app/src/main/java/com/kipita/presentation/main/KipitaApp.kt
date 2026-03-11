@@ -26,11 +26,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Luggage
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.HealthAndSafety
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Luggage
@@ -109,8 +111,8 @@ import com.kipita.presentation.wallet.WalletScreen
 
 // ---------------------------------------------------------------------------
 // Navigation routes
-// Bottom-tab routes: HOME | PLACES | TRIPS | ADVISORY
-// SETTINGS is not in the nav bar — accessed via the top-right profile avatar menu
+// Bottom-tab routes: HOME | AI | TRIPS | PLACES
+// ADVISORY and SETTINGS are not in the nav bar — accessed via the profile avatar menu
 // ---------------------------------------------------------------------------
 enum class MainRoute {
     HOME, PLACES, AI, TRIPS, ADVISORY, SETTINGS
@@ -125,10 +127,10 @@ private data class NavItem(
 )
 
 private val navItems = listOf(
-    NavItem(MainRoute.HOME,     "Home",     Icons.Filled.Home,           Icons.Outlined.Home),
-    NavItem(MainRoute.ADVISORY, "Advisory", Icons.Filled.HealthAndSafety, Icons.Outlined.HealthAndSafety),
-    NavItem(MainRoute.TRIPS,    "Trips",    Icons.Filled.Luggage,         Icons.Outlined.Luggage),
-    NavItem(MainRoute.PLACES,   "Places",   Icons.Filled.Place,           Icons.Outlined.Place)
+    NavItem(MainRoute.HOME,   "Home",   Icons.Filled.Home,        Icons.Outlined.Home),
+    NavItem(MainRoute.AI,     "AI",     Icons.Filled.AutoAwesome, Icons.Outlined.AutoAwesome),
+    NavItem(MainRoute.TRIPS,  "Trips",  Icons.Filled.Luggage,     Icons.Outlined.Luggage),
+    NavItem(MainRoute.PLACES, "Places", Icons.Filled.Place,       Icons.Outlined.Place)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -617,6 +619,8 @@ fun KipitaApp() {
                         onContinueAsGuest = { isGuest = true; showProfileMenu = false },
                         onSignOut         = { isGuest = true; userName = ""; userAvatarUri = ""; showProfileMenu = false },
                         onWallet          = { showProfileMenu = false; showWallet = true },
+                        onSocial          = { showProfileMenu = false; showSocial = true },
+                        onAdvisory        = { showProfileMenu = false; route = MainRoute.ADVISORY },
                         onSettings        = { showProfileMenu = false; route = MainRoute.SETTINGS }
                     )
                 }
@@ -892,6 +896,8 @@ private fun ProfileMenuContent(
     onContinueAsGuest: () -> Unit,
     onSignOut: () -> Unit,
     onWallet: () -> Unit,
+    onSocial: () -> Unit,
+    onAdvisory: () -> Unit,
     onSettings: () -> Unit
 ) {
     val context = LocalContext.current
@@ -978,6 +984,8 @@ private fun ProfileMenuContent(
         } else {
             ProfileMenuItem("View / Edit Profile", onClick = onSetupProfile)
             ProfileMenuItem("Wallet",              onClick = onWallet)
+            ProfileMenuItem("Community",           onClick = onSocial)
+            ProfileMenuItem("Travel Advisory",     onClick = onAdvisory)
             ProfileMenuItem("Settings",            onClick = onSettings)
             ProfileMenuItem("Sign Out",            onClick = onSignOut, isDestructive = true)
         }

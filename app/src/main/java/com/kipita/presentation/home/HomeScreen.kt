@@ -108,8 +108,8 @@ private val quickTools = listOf(
     QuickTool("💱", "Currency"),
     QuickTool("🗺️", "Maps"),
     QuickTool("🌐", "Translate"),
-    QuickTool("🎁", "Deals"),
-    QuickTool("🧳", "Packing List"),
+    QuickTool("✈️", "Flights"),
+    QuickTool("🆘", "Emergency"),
     QuickTool("🌤️", "Weather")
 )
 
@@ -302,12 +302,12 @@ fun HomeScreen(
                                         Box(modifier = Modifier.weight(1f)) {
                                             QuickToolPill(tool = tool) {
                                                 when (tool.label) {
-                                                    "Currency"     -> onOpenWallet()
-                                                    "Maps"         -> onOpenMap()
-                                                    "Translate"    -> onOpenTranslate()
-                                                    "Deals"        -> onOpenPerks()
-                                                    "Packing List" -> showPackingList = true
-                                                    "Weather"      -> showWeather = true
+                                                    "Currency"  -> onOpenWallet()
+                                                    "Maps"      -> onOpenMap()
+                                                    "Translate" -> onOpenTranslate()
+                                                    "Flights"   -> onOpenAI("Help me search for flights")
+                                                    "Emergency" -> showSosSheet = true
+                                                    "Weather"   -> showWeather = true
                                                 }
                                             }
                                         }
@@ -341,8 +341,8 @@ fun HomeScreen(
                             PlaceCategory.HOTELS,
                             PlaceCategory.SAFETY,
                             PlaceCategory.TRANSPORT,
-                            PlaceCategory.CAFES,
-                            PlaceCategory.BANKS_ATMS
+                            PlaceCategory.BANKS_ATMS,
+                            PlaceCategory.PHARMACIES
                         )
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             nearbyCategories.chunked(3).forEach { row ->
@@ -379,30 +379,18 @@ fun HomeScreen(
 
         }
 
-        // ── Bottom action bar (few-click flow) ──────────────────────────────
-        Row(
+        // ── Bottom action bar ────────────────────────────────────────────────
+        HomeActionButton(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(start = 16.dp, end = 16.dp, bottom = (paddingValues.calculateBottomPadding() + 10.dp)),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            HomeActionButton(
-                modifier = Modifier.weight(1f),
-                emoji = "✨",
-                label = "Kipita AI",
-                subtitle = "Plan fast",
-                background = KipitaRed,
-                onClick = { onOpenAI("Help me plan my next trip") }
-            )
-            HomeActionButton(
-                modifier = Modifier.weight(1f),
-                emoji = "👥",
-                label = "Socials",
-                subtitle = "Travel network",
-                background = Color(0xFF1A1A2E),
-                onClick = onOpenSocial
-            )
-        }
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, bottom = paddingValues.calculateBottomPadding() + 10.dp),
+            emoji = "✨",
+            label = "Kipita AI",
+            subtitle = "Ask anything · Plan trips · Explore",
+            background = KipitaRed,
+            onClick = { onOpenAI("Help me plan my next trip") }
+        )
     }
 
     // ── Packing List Modal ───────────────────────────────────────────────────
