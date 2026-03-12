@@ -15,3 +15,26 @@ app/src/**/google-services.json
 # Local secret vault (Kipita artifacts)
 /security-vault/
 /credentials/
+
+# Dev artifacts & logs
+*.log
+*.db
+window_dump*.xml
+latest_logcat*.txt
+wallet_runtime.log
+replay_pid*.log
+hs_err_pid*.log
+
+# One-off migration/fix scripts
+fix_*.py
+fix_*.js
+
+# Gradle user-home caches (local only)
+.gradle-local/
+.gradle-user-home/
+.gradle-user/
+.codex_android/
+.kotlin/
+
+# Claude Code session data
+.claude/
