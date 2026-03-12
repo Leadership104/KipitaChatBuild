@@ -1200,7 +1200,7 @@ private fun SosSheet(
                 Text("→", color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
             }
 
-            // Call emergency services
+            // Call 911 (US/Canada)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1208,8 +1208,7 @@ private fun SosSheet(
                     .background(Color(0xFFE8F5E9))
                     .clickable {
                         runCatching {
-                            val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:911"))
-                            context.startActivity(dialIntent)
+                            context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:911")))
                         }
                     }
                     .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -1219,17 +1218,48 @@ private fun SosSheet(
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "Call Emergency Services",
+                        "Call 911",
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = KipitaOnSurface
                     )
                     Text(
-                        "Dial 911 (US) — adjust for local emergency number",
+                        "US & Canada emergency number",
                         style = MaterialTheme.typography.labelSmall,
                         color = KipitaTextSecondary
                     )
                 }
                 Text("→", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+            }
+
+            // Call 112 (International)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFFE3F2FD))
+                    .clickable {
+                        runCatching {
+                            context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:112")))
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("🌍", fontSize = 22.sp)
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Call 112",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = KipitaOnSurface
+                    )
+                    Text(
+                        "International emergency number (EU & most countries)",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = KipitaTextSecondary
+                    )
+                }
+                Text("→", color = Color(0xFF1565C0), fontWeight = FontWeight.Bold)
             }
         }
 

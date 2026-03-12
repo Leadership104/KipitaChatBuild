@@ -3,6 +3,8 @@ package com.kipita.presentation.common
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
+import android.webkit.GeolocationPermissions
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -177,6 +179,16 @@ fun InAppBrowserScreen(
                             builtInZoomControls  = true
                             displayZoomControls  = false
                             setSupportZoom(true)
+                            setGeolocationEnabled(true)
+                        }
+                        // Grant geolocation to WebView — app already holds ACCESS_FINE_LOCATION
+                        webChromeClient = object : WebChromeClient() {
+                            override fun onGeolocationPermissionsShowPrompt(
+                                origin: String,
+                                callback: GeolocationPermissions.Callback
+                            ) {
+                                callback.invoke(origin, true, false)
+                            }
                         }
                         webViewClient = object : WebViewClient() {
                             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
