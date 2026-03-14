@@ -4,6 +4,31 @@ All notable changes to Kipita are documented here.
 
 ---
 
+## [v0.9.0] — 2026-03-13 — Real-Time Safety AI + Time-Aware Places
+
+### Real-Time Safety AI (Advisory Screen)
+- **`SafetyAiEngine`** — new singleton that fetches three Dwaat API endpoints in parallel (`advisorySections`, `getWeatherAdvisory`, `restrictions`) and passes the structured data to Gemini for a concise, verified safety briefing
+- **`AdvisoryScreen`** — GPS permission requested on open; reverse-geocodes to country name shown in header; `AiSafetyInsightCard` displays Gemini analysis with a color-coded US State Dept–style level badge (✅ Normal / 🟡 Caution / ⚠️ Reconsider / 🚫 Do Not Travel); live Dwaat advisory section cards replace static sample text; real weather line (temperature + condition) shown in the header gradient; refresh button re-runs AI analysis on demand
+- **`AdvisoryViewModel`** — now injects `SafetyAiEngine`; `loadWithLocation(country, lat, lng)` fires on GPS grant; `refreshAiInsight()` available for on-demand re-analysis; exposes `safetyReport`, `aiInsight`, `weatherLine`, `dwaatSections` in `AdvisoryUiState`
+- **`KipitaAIManager`** — new `analyzeSafetyContext(contextBlock, country)` method: Gemini call with a safety-analyst system persona, uses only verified Dwaat data, no filler
+- **AI Screen integration** — `AiViewModel.analyzeSafety(country, lat, lng)` fetches from `SafetyAiEngine` and formats a structured safety report as a chat response; "Travel Advisories" quick action card now calls this method instead of a generic chat prompt
+
+### Time-Aware Place Icons
+- **`PlaceCategory.timeAwareEmoji(hourOfDay: Int)`** extension function added to the `PlaceCategory` enum — returns a contextually appropriate emoji based on the current hour:
+  - Restaurants: 🥞 breakfast (5–10am) → 🍱 lunch (11am–3pm) → 🍽️ dinner (4–10pm) → 🌮 late night
+  - Cafes: ☕ morning (5–11am) → 🧋 afternoon boba (12–4pm) → 🍵 evening tea
+  - Nightlife: 🍻 happy hour (4–8pm) → 🌙 night
+  - Parks: 🌅 sunrise run (5–9am) → 🌳 daytime (10am–5pm) → 🌆 evening walk
+  - Shopping: 🛍️ morning → 🛒 prime hours → 🏪 late
+  - Entertainment: 🎡 morning attractions → 🎭 afternoon shows → 🎬 evening cinema
+  - Fitness: 🏃 morning workout → 🏋️ daytime gym → 🧘 evening yoga
+  - Transport: 🚇 rush hour → 🚌 daytime → 🌙 late night
+  - Hotels: 🛎️ check-in/evening → 🌙 overnight
+- **`PlacesCategoryResultScreen`** — header emoji + sibling category chip strip both use `timeAwareEmoji`
+- **`ExploreScreen`** category chip grid (`PlaceCategoryChip`) uses `timeAwareEmoji(currentHour)`
+
+---
+
 ## [v0.8.0] — 2026-03-12 — Pre-Launch Release
 
 ### Live Safety Level Bar
