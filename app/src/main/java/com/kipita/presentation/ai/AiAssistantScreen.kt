@@ -251,11 +251,16 @@ fun AiAssistantScreen(
                                                     action = action,
                                                     onClick = {
                                                         loading = true
-                                                        if (action.title == "Plan Trip") {
-                                                            viewModel.planTrip("Tokyo")
-                                                        } else {
-                                                            prompt = action.prompt
-                                                            viewModel.chat(action.prompt)
+                                                        when (action.title) {
+                                                            "Plan Trip" -> viewModel.planTrip("Tokyo")
+                                                            "Travel Advisories" -> {
+                                                                prompt = action.prompt
+                                                                viewModel.analyzeSafety("global")
+                                                            }
+                                                            else -> {
+                                                                prompt = action.prompt
+                                                                viewModel.chat(action.prompt)
+                                                            }
                                                         }
                                                     }
                                                 )

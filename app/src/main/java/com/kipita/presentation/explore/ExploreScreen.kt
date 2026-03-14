@@ -93,6 +93,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.kipita.data.api.PlaceCategory
+import com.kipita.data.api.timeAwareEmoji
 import com.kipita.data.repository.NearbyPlace
 import com.kipita.domain.model.ExploreDestination
 import com.kipita.domain.model.SampleData
@@ -1111,6 +1112,7 @@ private fun AiSuggestBar(
 // ---------------------------------------------------------------------------
 @Composable
 private fun PlaceCategoryChip(category: PlaceCategory, selected: Boolean, onClick: () -> Unit) {
+    val currentHour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1121,7 +1123,7 @@ private fun PlaceCategoryChip(category: PlaceCategory, selected: Boolean, onClic
             .padding(horizontal = 6.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(category.emoji, fontSize = 22.sp)
+        Text(category.timeAwareEmoji(currentHour), fontSize = 22.sp)
         Spacer(Modifier.height(4.dp))
         Text(
             text = category.label,

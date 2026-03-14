@@ -78,6 +78,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.kipita.BuildConfig
 import com.kipita.data.api.PlaceCategory
+import com.kipita.data.api.timeAwareEmoji
 import com.kipita.data.repository.NearbyPlace
 import com.kipita.presentation.map.collectAsStateWithLifecycleCompat
 import com.kipita.presentation.theme.KipitaCardBg
@@ -85,6 +86,7 @@ import com.kipita.presentation.theme.KipitaGreenAccent
 import com.kipita.presentation.theme.KipitaOnSurface
 import com.kipita.presentation.theme.KipitaRed
 import com.kipita.presentation.theme.KipitaTextSecondary
+import java.util.Calendar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -220,6 +222,7 @@ fun PlacesCategoryResultScreen(
     val uriHandler = LocalUriHandler.current
     val siblings = siblingCategories(currentCategory)
     val displayPlaces = state.filteredPlaces.applyFilter(activeFilter)
+    val currentHour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
 
     val gpsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -271,7 +274,7 @@ fun PlacesCategoryResultScreen(
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(currentCategory.emoji, fontSize = 28.sp)
+                Text(currentCategory.timeAwareEmoji(currentHour), fontSize = 28.sp)
                 Text(
                     currentCategory.label,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -338,7 +341,7 @@ fun PlacesCategoryResultScreen(
                                     .padding(horizontal = 14.dp, vertical = 9.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(sibling.emoji, fontSize = 15.sp)
+                                Text(sibling.timeAwareEmoji(currentHour), fontSize = 15.sp)
                                 Spacer(Modifier.width(5.dp))
                                 Text(
                                     sibling.label,

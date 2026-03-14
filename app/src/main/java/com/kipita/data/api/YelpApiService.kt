@@ -145,6 +145,59 @@ data class PlacePhoto(
 )
 
 // ---------------------------------------------------------------------------
+// Time-aware emoji helper — returns a contextually appropriate emoji for the
+// given hour of day (24-hr, local time of the user/searched location).
+// ---------------------------------------------------------------------------
+fun PlaceCategory.timeAwareEmoji(hourOfDay: Int): String = when (this) {
+    PlaceCategory.RESTAURANTS -> when (hourOfDay) {
+        in 5..10  -> "🥞"   // breakfast / brunch
+        in 11..15 -> "🍱"   // lunch
+        in 16..22 -> "🍽️"  // dinner
+        else      -> "🌮"   // late night
+    }
+    PlaceCategory.CAFES -> when (hourOfDay) {
+        in 5..11  -> "☕"   // morning coffee
+        in 12..16 -> "🧋"   // afternoon boba / tea
+        else      -> "🍵"   // evening herbal
+    }
+    PlaceCategory.NIGHTLIFE -> when (hourOfDay) {
+        in 16..20 -> "🍻"   // happy hour
+        else      -> "🌙"   // full nightlife
+    }
+    PlaceCategory.PARKS -> when (hourOfDay) {
+        in 5..9   -> "🌅"   // morning run / sunrise
+        in 10..17 -> "🌳"   // daytime leisure
+        else      -> "🌆"   // evening walk
+    }
+    PlaceCategory.SHOPPING -> when (hourOfDay) {
+        in 10..13 -> "🛍️"  // opening hours / morning
+        in 14..20 -> "🛒"   // prime shopping hours
+        else      -> "🏪"   // late / convenience
+    }
+    PlaceCategory.ENTERTAINMENT -> when (hourOfDay) {
+        in 6..12  -> "🎡"   // morning attractions
+        in 13..18 -> "🎭"   // afternoon shows
+        else      -> "🎬"   // evening cinema / events
+    }
+    PlaceCategory.FITNESS -> when (hourOfDay) {
+        in 5..9   -> "🏃"   // morning workout
+        in 10..17 -> "🏋️"  // daytime gym
+        else      -> "🧘"   // evening yoga
+    }
+    PlaceCategory.TRANSPORT -> when (hourOfDay) {
+        in 6..9   -> "🚇"   // morning commute
+        in 22..23, in 0..4 -> "🌙"  // night transit
+        else      -> "🚌"   // daytime transit
+    }
+    PlaceCategory.HOTELS -> when (hourOfDay) {
+        in 14..23 -> "🛎️"  // check-in / evening
+        in 0..11  -> "🌙"   // overnight / morning checkout
+        else      -> "🏨"
+    }
+    else -> this.emoji  // all other categories use their static emoji
+}
+
+// ---------------------------------------------------------------------------
 // Category grid config — maps each UI tile to Google Places includedTypes
 // Matches the 9-grid in the SOW exactly
 // ---------------------------------------------------------------------------

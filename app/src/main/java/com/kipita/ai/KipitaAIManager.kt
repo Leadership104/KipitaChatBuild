@@ -108,6 +108,24 @@ class KipitaAIManager @Inject constructor(
         response.text ?: "{}"
     }
 
+    /**
+     * Synthesizes a real-time safety briefing from structured Dwaat API data.
+     * [contextBlock] is a pre-formatted multi-line string of advisory/weather/restriction facts.
+     */
+    suspend fun analyzeSafetyContext(contextBlock: String, country: String): String =
+        withTypingIndicator {
+            val prompt = """
+                You are a travel safety analyst for Kipita. A traveler is asking about safety in $country.
+                Use ONLY the verified data below. Be direct, actionable, and concise (3-5 sentences max).
+                Flag any danger-level items first. Mention entry restrictions if present.
+                NO markdown. NO filler phrases.
+
+                Verified real-time data:
+                $contextBlock
+            """.trimIndent()
+            model.generateContent(prompt).text ?: "Safety data is loading. Exercise standard precautions."
+        }
+
     fun updateSharedPreference(hint: String) {
         _sharedPreferenceContext = hint
     }

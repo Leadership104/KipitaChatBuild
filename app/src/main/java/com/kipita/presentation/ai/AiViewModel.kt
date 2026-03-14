@@ -3,6 +3,7 @@ package com.kipita.presentation.ai
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kipita.ai.KipitaAIManager
+import com.kipita.ai.SafetyAiEngine
 import com.kipita.data.error.InHouseErrorLogger
 import com.kipita.domain.usecase.AiOrchestrator
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 class AiViewModel @Inject constructor(
     private val aiOrchestrator: AiOrchestrator,
     private val kipitaAI: KipitaAIManager,
+    private val safetyAiEngine: SafetyAiEngine,
     private val errorLogger: InHouseErrorLogger
 ) : ViewModel() {
 
@@ -69,4 +71,35 @@ class AiViewModel @Inject constructor(
                 .onFailure { errorLogger.log("AiViewModel.parseNlpSearch", it) }
         }
     }
+
+    /**
+     * Fetches live Dwaat advisory/weather/restriction data for [country],
+     * then synthesizes a safety briefing via Gemini. Results shown in chat UI.
+     */
+    fun analyzeSafety(country: String, lat: Double = 0.0, lng: Double = 0.0) {
+        _lastPlanDestination.value = null   // clear any trip plan state
+        viewModelScope.launch {
+            runCatching { safetyAiEngine.analyze(country, lat, lng) }
+                .onSuccess { report ->
+                    _response.value = buildString {
+                        appendLine("📍 Safety Report: ${report.country}")
+                        if (report.weatherLine.isNotBlank()) appendLine("🌤 ${report.weatherLine}")
+                        appendLine()
+                        appendLine(report.aiInsight)
+                        if (report.restrictionsSummary.isNotBlank()) {
+                            appendLine()
+                            appendLine("Entry restrictions: ${report.restrictionsSummary}")
+                        }
+                    }.trim()
+                }
+                .onFailure { errorLogger.log("AiViewModel.analyzeSafety", it) }
+        }
+    }
 }
+
+// Extension for weather line on RealTimeSafetyReport
+private val com.kipita.ai.RealTimeSafetyReport.weatherLine: String
+    get() = buildString {
+        if (weatherTemperature.isNotBlank()) append(weatherTemperature)
+        if (weatherCondition.isNotBlank()) { if (isNotEmpty()) append(" · "); append(weatherCondition) }
+    }
