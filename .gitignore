@@ -38,3 +38,12 @@ fix_*.js
 
 # Claude Code session data
 .claude/
+
+# iOS / Xcode
+ios/**/*.xcconfig
+!ios/**/*.xcconfig.template
+ios/**/GoogleService-Info.plist
+ios/**/.DS_Store
+ios/**/DerivedData/
+ios/**/*.xcuserstate
+ios/**/*.xcworkspace/xcuserdata/

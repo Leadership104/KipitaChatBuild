@@ -1,0 +1,8 @@
+// Copy this file to Config.xcconfig (gitignored) and fill in your keys.
+// In Xcode: Project → Info → Configurations → set to Config.xcconfig
+// Then add these keys to Info.plist as $(KEY_NAME)
+
+GEMINI_API_KEY = YOUR_GEMINI_API_KEY_HERE
+GOOGLE_PLACES_API_KEY = YOUR_GOOGLE_PLACES_API_KEY_HERE
+MAPS_API_KEY = YOUR_MAPS_API_KEY_HERE
+FIREBASE_PROJECT_ID = kipita-99351
