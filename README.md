@@ -13,17 +13,17 @@ Production-oriented Android foundation for Kipita with:
 
 ## Firebase flavor integration
 Configured Android package IDs per flavor:
-- `prod`: `com.mytum`
-- `dev`: `com.mytum.dev`
-- `staging`: `com.mytum.staging`
+- `prod`: `com.kipita`
+- `dev`: `com.kipita.dev`
+- `staging`: `com.kipita.staging`
 
-Place the **real** Firebase config files at:
+Firebase config files are in place at:
 - `app/src/prod/google-services.json`
 - `app/src/dev/google-services.json`
 - `app/src/staging/google-services.json`
 
-Template stubs are included as:
-- `google-services.json.template`
+Google Sign-In is configured — OAuth web client ID:
+`569078308896-4ieea4jr0jcrh1u8mtknuvgnlu8ebp95.apps.googleusercontent.com`
 
 ⚠️ Never commit service-account private keys into this repository. Use secure secret storage / CI secret managers.
 

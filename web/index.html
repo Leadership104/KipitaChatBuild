@@ -614,7 +614,7 @@
 // Service Worker
 // ─────────────────────────────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1640,6 +1640,119 @@ function trackAffiliate(partner) {
 // Init
 // ─────────────────────────────────────────────────────────────────────────────
 renderTripsGrid();
+</script>
+
+<!-- ── Mobile Bottom Navigation ── -->
+<style>
+  .mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:400;background:#fff;border-top:1px solid #e5e7eb;padding:0 0 env(safe-area-inset-bottom);box-shadow:0 -2px 16px rgba(0,0,0,.08)}
+  .mob-nav-inner{display:flex;height:58px}
+  .mob-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;cursor:pointer;font-family:inherit;transition:background .15s;-webkit-tap-highlight-color:transparent;text-decoration:none;color:#6b7280;padding:0}
+  .mob-tab:active{background:#f3f4f6}
+  .mob-tab.active{color:#FF5252}
+  .mob-tab .mt-icon{font-size:22px;line-height:1;transition:transform .15s}
+  .mob-tab.active .mt-icon{transform:scale(1.12)}
+  .mob-tab .mt-label{font-size:10px;font-weight:600;letter-spacing:.2px}
+  .pwa-banner{display:none;position:fixed;bottom:58px;left:12px;right:12px;z-index:500;background:var(--navy);color:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,.25);align-items:center;gap:12px}
+  .pwa-banner.show{display:flex}
+  .pwa-banner-text{flex:1;font-size:14px;font-weight:600}
+  .pwa-banner-sub{font-size:12px;color:#9ca3af;margin-top:2px}
+  .pwa-install-btn{background:var(--red);color:#fff;border:none;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .pwa-dismiss{background:rgba(255,255,255,.1);color:#fff;border:none;padding:9px 12px;border-radius:10px;font-size:13px;cursor:pointer}
+  body.has-mob-nav{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
+  #sosBtn.has-mob-nav{bottom:calc(58px + env(safe-area-inset-bottom) + 16px)}
+  @media(max-width:767px){
+    .mob-nav{display:block}
+    body{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
+    #sosBtn{bottom:calc(58px + env(safe-area-inset-bottom) + 16px)}
+  }
+</style>
+
+<!-- PWA install banner -->
+<div class="pwa-banner" id="pwaBanner">
+  <div>
+    <div class="pwa-banner-text">📲 Add Kipita to Home Screen</div>
+    <div class="pwa-banner-sub">Install for offline access & faster loads</div>
+  </div>
+  <button class="pwa-install-btn" id="pwaInstallBtn">Install</button>
+  <button class="pwa-dismiss" id="pwaDismiss">✕</button>
+</div>
+
+<!-- Mobile bottom nav -->
+<nav class="mob-nav" role="navigation" aria-label="Main navigation">
+  <div class="mob-nav-inner">
+    <a class="mob-tab active" id="mnt-home" href="#" onclick="mobNav(event,'home')" aria-label="Home">
+      <span class="mt-icon">🏠</span>
+      <span class="mt-label">Home</span>
+    </a>
+    <a class="mob-tab" id="mnt-explore" href="#explore" onclick="mobNav(event,'explore')" aria-label="Explore">
+      <span class="mt-icon">🌍</span>
+      <span class="mt-label">Explore</span>
+    </a>
+    <a class="mob-tab" id="mnt-map" href="#btcmap" onclick="mobNav(event,'map')" aria-label="BTC Map">
+      <span class="mt-icon">₿</span>
+      <span class="mt-label">BTC Map</span>
+    </a>
+    <a class="mob-tab" id="mnt-trips" href="#itinerary" onclick="mobNav(event,'trips')" aria-label="My Trips">
+      <span class="mt-icon">🧳</span>
+      <span class="mt-label">Trips</span>
+    </a>
+    <a class="mob-tab" id="mnt-book" href="#booking" onclick="mobNav(event,'book')" aria-label="Book Travel">
+      <span class="mt-icon">✈️</span>
+      <span class="mt-label">Book</span>
+    </a>
+  </div>
+</nav>
+
+<script>
+// ── Mobile nav ──
+function mobNav(e, tab) {
+  document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('active'));
+  const el = document.getElementById('mnt-' + tab);
+  if (el) el.classList.add('active');
+}
+
+// Highlight active tab on scroll
+const _sections = [
+  {id:'booking', tab:'book'},
+  {id:'itinerary', tab:'trips'},
+  {id:'btcmap', tab:'map'},
+  {id:'explore', tab:'explore'},
+];
+const _io = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const match = _sections.find(s => s.id === entry.target.id);
+    if (match) {
+      document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('active'));
+      const el = document.getElementById('mnt-' + match.tab);
+      if (el) el.classList.add('active');
+    }
+  });
+}, {threshold: 0.4});
+_sections.forEach(s => { const el = document.getElementById(s.id); if (el) _io.observe(el); });
+
+// ── PWA install prompt ──
+let _deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstall = e;
+  // Show banner after 3 s if not previously dismissed
+  if (!localStorage.getItem('pwa_dismissed')) {
+    setTimeout(() => document.getElementById('pwaBanner').classList.add('show'), 3000);
+  }
+});
+document.getElementById('pwaInstallBtn').addEventListener('click', () => {
+  document.getElementById('pwaBanner').classList.remove('show');
+  if (_deferredInstall) { _deferredInstall.prompt(); _deferredInstall = null; }
+});
+document.getElementById('pwaDismiss').addEventListener('click', () => {
+  document.getElementById('pwaBanner').classList.remove('show');
+  localStorage.setItem('pwa_dismissed', '1');
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwaBanner').classList.remove('show');
+  _deferredInstall = null;
+});
 </script>
 </body>
 </html>

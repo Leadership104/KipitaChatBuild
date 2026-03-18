@@ -43,7 +43,7 @@ object NetworkModule {
         .add("generativelanguage.googleapis.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
         .add("api.btcmap.org", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
         .add("api.nomadlist.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-        .add("api.exchangerate.host", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+        .add("api.frankfurter.app", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
         .build()
 
     @Provides
@@ -98,7 +98,7 @@ object NetworkModule {
     @Singleton
     @CurrencyApi
     fun provideCurrencyRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl("https://api.exchangerate.host/")
+        .baseUrl("https://api.frankfurter.app/")
         .client(okHttpClient)
         .addConverterFactory(MoshiConverterFactory.create())
         .build()

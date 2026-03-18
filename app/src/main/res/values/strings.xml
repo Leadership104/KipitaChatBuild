@@ -20,5 +20,5 @@
     <!-- Google Sign-In — overridden automatically by the google-services plugin when
          google-services.json is present and Google Sign-In is enabled in Firebase Console.
          Replace with your actual OAuth 2.0 web client ID to activate Google Sign-In. -->
-    <string name="default_web_client_id" translatable="false"></string>
+    <string name="default_web_client_id" translatable="false">569078308896-4ieea4jr0jcrh1u8mtknuvgnlu8ebp95.apps.googleusercontent.com</string>
 </resources>

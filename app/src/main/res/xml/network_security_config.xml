@@ -22,7 +22,7 @@
         <domain includeSubdomains="true">api.gemini.com</domain>
         <domain includeSubdomains="true">api.kraken.com</domain>
         <domain includeSubdomains="true">api.coincap.io</domain>
-        <domain includeSubdomains="true">fx.fixer.io</domain>
+        <domain includeSubdomains="true">api.frankfurter.app</domain>
         <!-- BTCMap merchants -->
         <domain includeSubdomains="true">api.btcmap.org</domain>
         <!-- Dwaat travel backend -->

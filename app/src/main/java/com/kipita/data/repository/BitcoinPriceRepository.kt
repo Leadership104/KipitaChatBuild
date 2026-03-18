@@ -165,7 +165,7 @@ class BitcoinPriceRepository @Inject constructor(
     }
 
     private suspend fun fetchFromCoinCap(cache: CryptoPrices?): CryptoPrices = withContext(Dispatchers.IO) {
-        val raw = httpGet("https://api.coincap.io/v2/assets/bitcoin,ethereum,solana")
+        val raw = httpGet("https://api.coincap.io/v2/assets?ids=bitcoin,ethereum,solana")
         val data = JSONObject(raw).getJSONArray("data")
         var btc = cache?.btcUsd ?: 0.0
         var eth = cache?.ethUsd ?: 0.0
