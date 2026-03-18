@@ -1,0 +1,20 @@
+{
+  "name": "Kipita – Digital Nomad Command Center",
+  "short_name": "Kipita",
+  "description": "Full-featured travel dashboard — AI itineraries, Bitcoin payments, live markets & nomad intel.",
+  "start_url": "/webapp/",
+  "display": "standalone",
+  "background_color": "#0D1B2A",
+  "theme_color": "#FF5252",
+  "orientation": "any",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["travel", "finance", "productivity"],
+  "shortcuts": [
+    { "name": "Dashboard", "url": "/webapp/#dashboard" },
+    { "name": "BTC Map",   "url": "/webapp/#map" },
+    { "name": "My Trips",  "url": "/webapp/#trips" }
+  ]
+}

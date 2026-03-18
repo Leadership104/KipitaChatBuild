@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#FF5252"/>
+<meta name="description" content="Kipita – Digital Nomad Command Center. AI itineraries, Bitcoin map, live markets, trip planner."/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<title>Kipita – Nomad Command Center</title>
+<style>
+:root{
+  --red:#FF5252;--red-dk:#D32F2F;--navy:#0D1B2A;--navy2:#132236;
+  --sidebar-w:224px;--header-h:60px;
+  --bg:#F0F4F8;--card:#fff;--border:#E2E8F0;
+  --text:#111827;--text2:#6B7280;--text3:#9CA3AF;
+  --green:#22C55E;--orange:#F57C00;--btc:#F7931A;
+  --purple:#7C3AED;--blue:#3B82F6;--yellow:#F59E0B;
+  --shadow:0 1px 4px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+
+/* ── Sidebar ── */
+#sidebar{width:var(--sidebar-w);background:var(--navy);color:#fff;display:flex;flex-direction:column;flex-shrink:0;height:100vh;position:relative;z-index:100;transition:width .2s}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.logo-text{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.logo-text span{color:var(--red)}
+.logo-sub{font-size:11px;color:#6B7280;margin-top:2px}
+.sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.nav-section-label{font-size:10px;font-weight:700;color:#4B5563;letter-spacing:.8px;text-transform:uppercase;padding:10px 10px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:500;color:#9CA3AF;transition:all .15s;border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.active{background:rgba(255,82,82,.18);color:#fff}
+.nav-item.active .nav-icon{filter:none}
+.nav-icon{font-size:18px;width:22px;text-align:center;flex-shrink:0}
+.nav-label{flex:1}
+.nav-badge{background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px}
+.sidebar-bottom{padding:12px 10px 16px;border-top:1px solid rgba(255,255,255,.08)}
+.sidebar-user{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s}
+.sidebar-user:hover{background:rgba(255,255,255,.07)}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.user-name{font-size:13px;font-weight:600;color:#E5E7EB}
+.user-plan{font-size:11px;color:#6B7280}
+
+/* ── Main area ── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#header{height:var(--header-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 24px;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.header-title{font-size:18px;font-weight:700;flex:1}
+.header-search{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:6px 12px;gap:8px;min-width:260px;transition:border .2s}
+.header-search:focus-within{border-color:var(--red)}
+.header-search input{background:none;border:none;outline:none;font-size:14px;color:var(--text);width:100%}
+.header-search input::placeholder{color:var(--text3)}
+.header-search .search-icon{color:var(--text3);font-size:15px}
+.header-actions{display:flex;align-items:center;gap:10px}
+.header-btn{background:var(--bg);border:1.5px solid var(--border);color:var(--text2);padding:7px 14px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;font-family:inherit}
+.header-btn:hover{border-color:var(--navy);color:var(--navy)}
+.header-btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.header-btn.primary:hover{background:var(--red-dk)}
+.header-btn.connected{background:#16a34a;border-color:#16a34a;color:#fff}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── Content ── */
+#content{flex:1;overflow-y:auto;padding:24px}
+.page{display:none}
+.page.active{display:block}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.card-title{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-title-text{display:flex;align-items:center;gap:8px}
+
+/* ── Grid helpers ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.grid-auto{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+@media(max-width:1100px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:800px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+
+/* ── Dashboard ── */
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:4px}
+.stat-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.stat-value{font-size:30px;font-weight:800;color:var(--text);line-height:1.1}
+.stat-sub{font-size:13px;color:var(--text3)}
+.stat-change{font-size:12px;font-weight:700;margin-top:4px}
+.up{color:var(--green)}.down{color:var(--red)}
+
+/* ── Prices table ── */
+.price-table{width:100%;border-collapse:collapse}
+.price-table th{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.price-table td{padding:12px 12px;border-bottom:1px solid #F8FAFC;font-size:14px;vertical-align:middle}
+.price-table tr:last-child td{border-bottom:none}
+.price-table tr:hover td{background:#FAFBFC}
+.coin-cell{display:flex;align-items:center;gap:10px}
+.coin-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.coin-name{font-weight:700}
+.coin-sym{font-size:12px;color:var(--text3)}
+.price-val{font-weight:700;font-size:15px}
+
+/* ── Map ── */
+#mapContainer{width:100%;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);background:var(--navy)}
+#mapIframe{width:100%;height:100%;border:0;display:block}
+.map-page-layout{display:grid;grid-template-columns:1fr 340px;gap:20px;height:calc(100vh - var(--header-h) - 48px)}
+.map-sidebar-panel{display:flex;flex-direction:column;gap:16px;overflow-y:auto}
+@media(max-width:960px){.map-page-layout{grid-template-columns:1fr;height:auto}}
+
+/* ── Explore ── */
+.explore-layout{display:grid;grid-template-columns:280px 1fr;gap:20px;min-height:600px}
+.explore-filters{display:flex;flex-direction:column;gap:12px}
+.filter-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.cat-list{display:flex;flex-direction:column;gap:4px}
+.cat-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:500;transition:all .15s;border:none;background:none;text-align:left;width:100%;font-family:inherit;color:var(--text)}
+.cat-row:hover{background:var(--bg)}
+.cat-row.active{background:#FFF5F5;color:var(--red);font-weight:700}
+.cat-row .cat-em{font-size:18px;width:24px}
+.place-row{display:flex;align-items:flex-start;gap:12px;padding:14px;border-radius:var(--radius);background:var(--card);border:1px solid var(--border);transition:box-shadow .15s;cursor:pointer}
+.place-row:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.place-em{width:44px;height:44px;border-radius:12px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.place-body{flex:1;min-width:0}
+.place-name{font-size:14px;font-weight:700;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.place-addr{font-size:12px;color:var(--text3);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.place-meta-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{background:#F1F5F9;color:#475569;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.place-dist{font-size:12px;color:var(--text3)}
+.place-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.place-btn{background:var(--navy);color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .15s;white-space:nowrap;font-family:inherit}
+.place-btn:hover{opacity:.82}
+.place-btn.saved{background:var(--green)}
+.search-row{display:flex;gap:10px;margin-bottom:20px}
+.search-field{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;outline:none;transition:border .2s;font-family:inherit}
+.search-field:focus{border-color:var(--red)}
+.action-btn{background:var(--red);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.action-btn:hover{background:var(--red-dk)}
+.action-btn.secondary{background:var(--navy)}
+.action-btn.secondary:hover{opacity:.85}
+
+/* ── Trips ── */
+.trips-layout{display:grid;grid-template-columns:1fr 380px;gap:20px}
+@media(max-width:960px){.trips-layout{grid-template-columns:1fr}}
+.trip-card-d{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .15s}
+.trip-card-d:hover{box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.trip-card-header-d{background:var(--navy);color:#fff;padding:16px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.trip-card-header-d h4{font-size:15px;font-weight:700;margin-bottom:3px}
+.trip-status-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px}
+.status-upcoming{background:rgba(34,197,94,.2);color:#16a34a}
+.status-active{background:rgba(59,130,246,.2);color:#2563EB}
+.status-past{background:rgba(107,114,128,.2);color:#6B7280}
+.status-cancelled{background:rgba(239,68,68,.15);color:#DC2626}
+.trip-body-d{padding:16px 20px}
+.trip-stat-row{display:flex;gap:20px;margin-bottom:14px;flex-wrap:wrap}
+.trip-stat{display:flex;flex-direction:column;gap:2px}
+.trip-stat-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.trip-stat-val{font-size:14px;font-weight:700}
+.trip-actions-row{display:flex;gap:8px;flex-wrap:wrap}
+.trip-action{background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:7px 14px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.trip-action:hover{border-color:var(--navy);color:var(--navy)}
+.trip-action.danger:hover{border-color:var(--red);color:var(--red)}
+.new-trip-panel{display:flex;flex-direction:column;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:12px;font-weight:700;color:var(--text2)}
+.form-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;outline:none;transition:border .2s;font-family:inherit;background:#fff}
+.form-input:focus{border-color:var(--red)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── Book ── */
+.booking-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.btile{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:24px 16px;cursor:pointer;transition:all .2s cubic-bezier(.34,1.4,.64,1);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;border:none;font-family:inherit;outline:none}
+.btile:hover{box-shadow:0 10px 32px rgba(59,130,246,.18);transform:translateY(-4px);border:2px solid var(--blue)}
+.btile:active{transform:scale(.97)}
+.btile-em{font-size:44px;transition:transform .2s}
+.btile:hover .btile-em{transform:scale(1.1)}
+.btile-name{font-size:15px;font-weight:800}
+.btile-sub{font-size:12px;color:var(--text2);line-height:1.4}
+.booking-iframe-wrap{background:var(--card);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);position:relative}
+.booking-iframe-header{background:var(--navy);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px}
+.booking-iframe-header h4{flex:1;font-size:15px;font-weight:700}
+.booking-iframe-body{height:680px}
+.booking-iframe-body iframe{width:100%;height:100%;border:0;display:block}
+
+/* ── Languages ── */
+.lang-layout{display:grid;grid-template-columns:220px 1fr;gap:20px}
+@media(max-width:800px){.lang-layout{grid-template-columns:1fr}}
+.lang-list{display:flex;flex-direction:column;gap:4px}
+.lang-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:500;transition:all .15s;border:none;background:none;font-family:inherit;width:100%;color:var(--text)}
+.lang-item:hover{background:var(--bg)}
+.lang-item.active{background:#FFF5F5;color:var(--red);font-weight:700}
+.lang-flag{font-size:20px}
+.phrase-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.phrase-card-d{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.phrase-en-d{font-size:12px;color:var(--text3);margin-bottom:6px}
+.phrase-local-d{font-size:18px;font-weight:700;margin-bottom:4px}
+.phrase-phonetic-d{font-size:13px;color:var(--blue);font-style:italic}
+.phrase-copy{float:right;background:none;border:1.5px solid var(--border);padding:4px 10px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.phrase-copy:hover{border-color:var(--navy)}
+
+/* ── Advisory / Safety ── */
+.advisory-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:900px){.advisory-grid{grid-template-columns:1fr}}
+.advisory-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.advisory-level{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:12px}
+.level-1{background:#DCFCE7;color:#16a34a}
+.level-2{background:#FEF3C7;color:#D97706}
+.level-3{background:#FEE2E2;color:#DC2626}
+.level-4{background:#450A0A;color:#FCA5A5}
+
+/* ── SOS button ── */
+#sosBtn{position:fixed;bottom:24px;right:24px;z-index:500;background:#DC2626;color:#fff;border:none;width:56px;height:56px;border-radius:50%;font-size:22px;cursor:pointer;box-shadow:0 4px 20px rgba(220,38,38,.5);transition:transform .2s;display:flex;align-items:center;justify-content:center;font-family:inherit}
+#sosBtn:hover{transform:scale(1.1)}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex}
+.modal-box{background:#fff;border-radius:20px;padding:28px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.25)}
+.modal-box h3{font-size:20px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.modal-close{margin-left:auto;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text3);line-height:1}
+
+/* ── AI ── */
+.ai-layout{display:grid;grid-template-columns:1fr 320px;gap:20px;height:calc(100vh - var(--header-h) - 48px)}
+@media(max-width:1024px){.ai-layout{grid-template-columns:1fr;height:auto}}
+.chat-area{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;min-height:0}
+.chat-msg{display:flex;gap:10px;max-width:75%}
+.chat-msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.msg-avatar.ai{background:var(--navy)}
+.msg-avatar.user{background:var(--red)}
+.msg-bubble{padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.6}
+.chat-msg.ai .msg-bubble{background:var(--bg);border-radius:4px 16px 16px 16px}
+.chat-msg.user .msg-bubble{background:var(--red);color:#fff;border-radius:16px 4px 16px 16px}
+.chat-input-row{display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--border);background:#FAFBFC}
+.chat-input{flex:1;padding:10px 16px;border:1.5px solid var(--border);border-radius:24px;font-size:14px;outline:none;resize:none;font-family:inherit;transition:border .2s;max-height:120px}
+.chat-input:focus{border-color:var(--red)}
+.chat-send{background:var(--red);color:#fff;border:none;width:42px;height:42px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.chat-send:hover{background:var(--red-dk)}
+.ai-quick-actions{display:flex;flex-direction:column;gap:8px}
+.quick-btn{background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;font-family:inherit}
+.quick-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* ── Market ── */
+.market-layout{display:grid;grid-template-columns:1fr 320px;gap:20px}
+@media(max-width:1024px){.market-layout{grid-template-columns:1fr}}
+.sparkline{display:flex;align-items:flex-end;gap:2px;height:40px}
+.sparkline span{flex:1;background:var(--green);border-radius:2px;opacity:.7;min-height:4px}
+.sparkline.down span{background:var(--red)}
+
+/* ── Settings ── */
+.settings-layout{display:grid;grid-template-columns:220px 1fr;gap:20px}
+@media(max-width:768px){.settings-layout{grid-template-columns:1fr}}
+.settings-nav{display:flex;flex-direction:column;gap:2px}
+.settings-nav-item{padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:500;transition:all .15s;border:none;background:none;font-family:inherit;text-align:left;width:100%}
+.settings-nav-item:hover{background:var(--bg)}
+.settings-nav-item.active{background:#FFF5F5;color:var(--red);font-weight:700}
+.settings-section{display:flex;flex-direction:column;gap:20px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}
+.settings-row:last-child{border-bottom:none}
+.settings-row-label{font-size:14px;font-weight:600}
+.settings-row-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.toggle{position:relative;width:44px;height:24px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#D1D5DB;border-radius:12px;transition:.2s}
+.toggle input:checked + .toggle-slider{background:var(--red)}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked + .toggle-slider:before{transform:translateX(20px)}
+
+/* ── Loading / empty ── */
+.spinner{text-align:center;padding:40px;color:var(--text3);font-size:14px}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-state .em{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:15px}
+
+/* ── Responsive sidebar collapse ── */
+@media(max-width:768px){
+  #sidebar{position:fixed;left:-100%;top:0;height:100%;z-index:300;transition:left .2s}
+  #sidebar.open{left:0}
+  body{overflow:auto}
+  #main{width:100%}
+  #content{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">Kip<span>ita</span></div>
+    <div class="logo-sub">Nomad Command Center</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <span class="nav-section-label">Main</span>
+    <button class="nav-item active" onclick="goTo('dashboard')" id="nav-dashboard">
+      <span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span>
+    </button>
+    <button class="nav-item" onclick="goTo('market')" id="nav-market">
+      <span class="nav-icon">📊</span><span class="nav-label">Markets</span>
+    </button>
+    <button class="nav-item" onclick="goTo('map')" id="nav-map">
+      <span class="nav-icon">🗺</span><span class="nav-label">BTC Map</span>
+    </button>
+    <button class="nav-item" onclick="goTo('explore')" id="nav-explore">
+      <span class="nav-icon">🌍</span><span class="nav-label">Explore</span>
+    </button>
+
+    <span class="nav-section-label">Travel</span>
+    <button class="nav-item" onclick="goTo('trips')" id="nav-trips">
+      <span class="nav-icon">🧳</span><span class="nav-label">My Trips</span>
+    </button>
+    <button class="nav-item" onclick="goTo('book')" id="nav-book">
+      <span class="nav-icon">✈️</span><span class="nav-label">Book Travel</span>
+    </button>
+    <button class="nav-item" onclick="goTo('advisory')" id="nav-advisory">
+      <span class="nav-icon">🛡</span><span class="nav-label">Safety</span>
+    </button>
+
+    <span class="nav-section-label">Tools</span>
+    <button class="nav-item" onclick="goTo('ai')" id="nav-ai">
+      <span class="nav-icon">🤖</span><span class="nav-label">AI Assistant</span>
+    </button>
+    <button class="nav-item" onclick="goTo('languages')" id="nav-languages">
+      <span class="nav-icon">🌐</span><span class="nav-label">Phrases</span>
+    </button>
+    <button class="nav-item" onclick="goTo('settings')" id="nav-settings">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span>
+    </button>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <div class="sidebar-user">
+      <div class="user-avatar">🌏</div>
+      <div>
+        <div class="user-name">Nomad Traveler</div>
+        <div class="user-plan">Free tier</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════ MAIN ══════════ -->
+<div id="main">
+  <!-- Header -->
+  <header id="header">
+    <button id="menuToggle" style="display:none;background:none;border:none;font-size:22px;cursor:pointer;padding:4px 8px" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+    <div class="header-title" id="headerTitle">Dashboard</div>
+    <div class="header-search">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Search cities, places, trips…" id="globalSearch" onkeydown="handleGlobalSearch(event)"/>
+    </div>
+    <div class="header-actions">
+      <span style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px"><span class="live-dot"></span>Live</span>
+      <button class="header-btn" id="walletBtn" onclick="toggleWallet()">🔗 Connect Wallet</button>
+      <button class="header-btn primary" onclick="goTo('book')">✈️ Book Now</button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main id="content">
+
+    <!-- ─────── DASHBOARD ─────── -->
+    <section class="page active" id="page-dashboard">
+      <div class="grid-4" style="margin-bottom:20px">
+        <div class="stat-card">
+          <div class="stat-label">Bitcoin</div>
+          <div class="stat-value" id="dash-btc">—</div>
+          <div class="stat-change" id="dash-btc-ch">Loading…</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Ethereum</div>
+          <div class="stat-value" id="dash-eth">—</div>
+          <div class="stat-change" id="dash-eth-ch">Loading…</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Solana</div>
+          <div class="stat-value" id="dash-sol">—</div>
+          <div class="stat-change" id="dash-sol-ch">Loading…</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">BTC Merchants</div>
+          <div class="stat-value">50k+</div>
+          <div class="stat-sub">Worldwide via BTCMap</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-title">
+            <span class="card-title-text">🌍 Quick Explore</span>
+            <button class="action-btn" style="padding:5px 12px;font-size:12px" onclick="goTo('explore')">Open →</button>
+          </div>
+          <div class="search-row">
+            <input class="search-field" placeholder="City or neighborhood…" id="dashSearch"/>
+            <button class="action-btn" onclick="quickSearch()">Search</button>
+            <button class="action-btn secondary" onclick="dashGPS()">📍 GPS</button>
+          </div>
+          <div id="dashPlaces" class="spinner">Enter a city above to find places.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span class="card-title-text">🧳 Upcoming Trips</span>
+            <button class="action-btn" style="padding:5px 12px;font-size:12px" onclick="goTo('trips')">All Trips →</button>
+          </div>
+          <div id="dashTrips"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span class="card-title-text">✈️ Book Travel</span></div>
+          <div class="booking-tiles" style="grid-template-columns:repeat(3,1fr)">
+            <button class="btile" onclick="openBooking('https://savetraveldeals.com/book-hotels-app/','Hotels')">
+              <span class="btile-em">🏨</span><span class="btile-name">Hotels</span>
+            </button>
+            <button class="btile" onclick="openBooking('https://savetraveldeals.com/book-hotels-app/','Flights')">
+              <span class="btile-em">✈️</span><span class="btile-name">Flights</span>
+            </button>
+            <button class="btile" onclick="openBooking('https://savetraveldeals.com/car-rental-app/','Cars')">
+              <span class="btile-em">🚗</span><span class="btile-name">Cars</span>
+            </button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="card-title-text">🛡 Safety Advisory</span>
+            <button class="action-btn" style="padding:5px 12px;font-size:12px" onclick="goTo('advisory')">View →</button>
+          </div>
+          <div id="dashAdvisory">
+            <div class="advisory-card" style="margin-bottom:10px">
+              <div class="advisory-level level-1">✅ Level 1 — Generally Safe</div>
+              <p style="font-size:14px;color:var(--text2)">Enable location to get a real-time advisory for your current destination.</p>
+            </div>
+            <button class="action-btn secondary" style="width:100%" onclick="loadAdvisory()">📍 Check My Location</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────── MARKETS ─────── -->
+    <section class="page" id="page-market">
+      <div class="market-layout">
+        <div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-title"><span class="card-title-text">📊 Live Crypto Prices</span><span style="font-size:12px;color:var(--text3)" id="mktTs"></span></div>
+            <table class="price-table">
+              <thead>
+                <tr>
+                  <th>Asset</th>
+                  <th>Price (USD)</th>
+                  <th>24h Change</th>
+                  <th>7d Trend</th>
+                  <th>Market Cap</th>
+                </tr>
+              </thead>
+              <tbody id="mktTable"><tr><td colspan="5" class="spinner">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="card-title-text">💱 Currency Converter</span></div>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <input class="search-field" style="width:100px" type="number" value="1" id="convAmt"/>
+              <select id="convFrom" class="search-field" style="width:120px"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="JPY">JPY</option><option value="BTC">BTC</option><option value="ETH">ETH</option></select>
+              <span style="font-size:20px;color:var(--text3)">→</span>
+              <select id="convTo" class="search-field" style="width:120px"><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="JPY">JPY</option><option value="BTC">BTC</option><option value="ETH">ETH</option></select>
+              <button class="action-btn" onclick="convertCurrency()">Convert</button>
+              <div id="convResult" style="font-size:20px;font-weight:800;color:var(--navy)"></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div class="card-title"><span class="card-title-text">⚡ Quick Stats</span></div>
+            <div style="display:flex;flex-direction:column;gap:12px" id="mktStats">
+              <div class="spinner">Loading…</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="card-title-text">🔗 Wallets & Exchanges</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="quick-btn" onclick="window.open('https://coinbase.com','_blank')">🏦 Coinbase</button>
+              <button class="quick-btn" onclick="window.open('https://app.river.com','_blank')">⚡ River (Lightning)</button>
+              <button class="quick-btn" onclick="window.open('https://kraken.com','_blank')">🐙 Kraken</button>
+              <button class="quick-btn" onclick="window.open('https://btcmap.org','_blank')">₿ BTCMap</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────── MAP ─────── -->
+    <section class="page" id="page-map">
+      <div class="map-page-layout">
+        <div id="mapContainer" style="height:100%">
+          <iframe id="mapIframe" src="https://btcmap.org/map#3/20/0" title="BTCMap — Bitcoin merchants worldwide" allow="geolocation"></iframe>
+        </div>
+        <div class="map-sidebar-panel">
+          <div class="card">
+            <div class="card-title"><span class="card-title-text">₿ BTC Merchant Finder</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <input class="search-field" placeholder="City or address…" id="mapSearch"/>
+              <button class="action-btn" onclick="centerMap()">🔍 Search Location</button>
+              <button class="action-btn secondary" onclick="mapGPS()">📍 My Location</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="card-title-text">🏷 Filter Sources</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer">
+                <input type="checkbox" checked style="accent-color:var(--btc)"/> BTCMap.org
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer">
+                <input type="checkbox" checked style="accent-color:var(--btc)"/> Cash App Pay
+              </label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="card-title-text">📊 Map Stats</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:14px">
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Total Merchants</span><strong>50,000+</strong></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Countries</span><strong>150+</strong></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Lightning Enabled</span><strong>~30%</strong></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Data Source</span><strong>BTCMap.org</strong></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="card-title-text">🔗 Related Links</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="quick-btn" onclick="window.open('https://btcmap.org','_blank')">🌍 Full BTCMap Website</button>
+              <button class="quick-btn" onclick="window.open('https://btcmap.org/add-merchant','_blank')">➕ Add a Merchant</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────── EXPLORE ─────── -->
+    <section class="page" id="page-explore">
+      <div style="margin-bottom:20px">
+        <div class="search-row">
+          <input class="search-field" placeholder="City, neighborhood, or address…" id="exploreSearch"/>
+          <button class="action-btn" onclick="exploreLoad()">🔍 Search</button>
+          <button class="action-btn secondary" onclick="exploreGPS()">📍 GPS</button>
+          <select class="search-field" style="width:160px" id="exploreRadius">
+            <option value="1000">1 km radius</option>
+            <option value="2000" selected>2 km radius</option>
+            <option value="5000">5 km radius</option>
+          </select>
+        </div>
+      </div>
+      <div class="explore-layout">
+        <div class="card explore-filters">
+          <div class="filter-label">Categories</div>
+          <div class="cat-list" id="catList"></div>
+        </div>
+        <div>
+          <div id="explorePlaces" class="spinner">Search a city or tap GPS to find places near you.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────── TRIPS ─────── -->
+    <section class="page" id="page-trips">
+      <div class="trips-layout">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+            <div style="font-size:18px;font-weight:700">My Trips</div>
+            <div style="display:flex;gap:10px">
+              <select class="search-field" style="width:140px" id="tripFilter" onchange="renderTrips()">
+                <option value="all">All Trips</option>
+                <option value="UPCOMING">Upcoming</option>
+                <option value="PAST">Past</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <div id="tripsContainer"></div>
+        </div>
+        <div>
+          <div class="card new-trip-panel">
+            <div class="card-title"><span class="card-title-text">➕ Plan New Trip</span></div>
+            <div class="form-group">
+              <label class="form-label">Destination *</label>
+              <input class="form-input" id="nt-dest" placeholder="e.g. Tokyo, Japan"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Country</label>
+              <input class="form-input" id="nt-country" placeholder="e.g. Japan"/>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Start Date</label>
+                <input class="form-input" id="nt-start" type="date"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">End Date</label>
+                <input class="form-input" id="nt-end" type="date"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Notes</label>
+              <textarea class="form-input" id="nt-notes" rows="3" placeholder="Accommodation, plans…"></textarea>
+            </div>
+            <button class="action-btn" style="width:100%;padding:12px" onclick="createTrip()">Create Trip</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────── BOOK ─────── -->
+    <section class="page" id="page-book">
+      <div style="margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px">Book Travel</div>
+        <div style="font-size:14px;color:var(--text2)">Hotels, flights, cars & experiences — opens in a secure viewer.</div>
+      </div>
+      <div class="booking-tiles" style="margin-bottom:24px">
+        <button class="btile" onclick="openBooking('https://savetraveldeals.com/book-hotels-app/','🏨 Hotels')"><span class="btile-em">🏨</span><span class="btile-name">Hotels</span><span class="btile-sub">Best rates worldwide</span></button>
+        <button class="btile" onclick="openBooking('https://savetraveldeals.com/book-hotels-app/','✈️ Flights')"><span class="btile-em">✈️</span><span class="btile-name">Flights</span><span class="btile-sub">Compare & book</span></button>
+        <button class="btile" onclick="openBooking('https://savetraveldeals.com/car-rental-app/','🚗 Car Rental')"><span class="btile-em">🚗</span><span class="btile-name">Car Rental</span><span class="btile-sub">Pick-up anywhere</span></button>
+        <button class="btile" onclick="openBooking('https://savetraveldeals.com/airport-transfers/','🚐 Transfers')"><span class="btile-em">🚐</span><span class="btile-name">Airport Transfers</span><span class="btile-sub">Door-to-door</span></button>
+        <button class="btile" onclick="openBooking('https://savetraveldeals.com/bike-rental-app/','🚴 Bikes')"><span class="btile-em">🚴</span><span class="btile-name">Bike Rental</span><span class="btile-sub">Explore locally</span></button>
+        <button class="btile" onclick="window.open('https://www.google.com/maps/search/tours+activities','_blank')"><span class="btile-em">🎟</span><span class="btile-name">Activities</span><span class="btile-sub">Tours & experiences</span></button>
+      </div>
+      <div class="booking-iframe-wrap" id="bookingIframeWrap" style="display:none">
+        <div class="booking-iframe-header">
+          <h4 id="bookingIframeTitle">—</h4>
+          <button class="header-btn" onclick="closeBookingIframe()">✕ Close</button>
+        </div>
+        <div class="booking-iframe-body">
+          <iframe id="bookingIframe" src="" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────── SAFETY ─────── -->
+    <section class="page" id="page-advisory">
+      <div style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:18px;font-weight:700;margin-bottom:4px">Safety & Travel Advisory</div>
+          <div style="font-size:14px;color:var(--text2)">Real-time safety levels, restrictions & weather advisories.</div>
+        </div>
+        <button class="action-btn secondary" onclick="loadAdvisory()">📍 Refresh My Location</button>
+      </div>
+      <div class="advisory-grid">
+        <div class="advisory-card card" id="advisoryMain">
+          <div class="advisory-level level-1">✅ Level 1 — Generally Safe</div>
+          <h3 style="font-size:16px;font-weight:700;margin-bottom:8px">Current Location Advisory</h3>
+          <p style="font-size:14px;color:var(--text2);line-height:1.6">Enable location access to get real-time safety data for your area.</p>
+          <button class="action-btn" style="margin-top:16px;width:100%" onclick="loadAdvisory()">Enable Location</button>
+        </div>
+        <div class="advisory-card card">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🌤 Weather Advisory</h3>
+          <div id="weatherAdvisory" style="font-size:14px;color:var(--text2)">Loading location data…</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:20px">
+        <div class="card-title"><span class="card-title-text">🆘 Emergency Contacts</span></div>
+        <div class="grid-4">
+          <a href="tel:911" style="text-decoration:none;display:block">
+            <div class="advisory-card" style="background:#FEF2F2;border:1px solid #FECACA;text-align:center;padding:16px;border-radius:12px;cursor:pointer">
+              <div style="font-size:32px;margin-bottom:6px">🚨</div>
+              <div style="font-size:12px;color:#DC2626;font-weight:700">Emergency</div>
+              <div style="font-size:22px;font-weight:800;color:#991B1B">911</div>
+            </div>
+          </a>
+          <a href="https://www.google.com/maps/search/nearest+hospital" target="_blank" style="text-decoration:none;display:block">
+            <div class="advisory-card" style="background:#EFF6FF;border:1px solid #BFDBFE;text-align:center;padding:16px;border-radius:12px;cursor:pointer">
+              <div style="font-size:32px;margin-bottom:6px">🏥</div>
+              <div style="font-size:12px;color:#2563EB;font-weight:700">Nearest</div>
+              <div style="font-size:16px;font-weight:800;color:#1D4ED8">Hospital</div>
+            </div>
+          </a>
+          <a href="https://www.google.com/maps/search/nearest+police+station" target="_blank" style="text-decoration:none;display:block">
+            <div class="advisory-card" style="background:#F0FDF4;border:1px solid #BBF7D0;text-align:center;padding:16px;border-radius:12px;cursor:pointer">
+              <div style="font-size:32px;margin-bottom:6px">👮</div>
+              <div style="font-size:12px;color:#16a34a;font-weight:700">Nearest</div>
+              <div style="font-size:16px;font-weight:800;color:#15803D">Police</div>
+            </div>
+          </a>
+          <a href="https://www.google.com/maps/search/nearest+fire+station" target="_blank" style="text-decoration:none;display:block">
+            <div class="advisory-card" style="background:#FFF7ED;border:1px solid #FED7AA;text-align:center;padding:16px;border-radius:12px;cursor:pointer">
+              <div style="font-size:32px;margin-bottom:6px">🚒</div>
+              <div style="font-size:12px;color:#EA580C;font-weight:700">Nearest</div>
+              <div style="font-size:16px;font-weight:800;color:#C2410C">Fire Station</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────── AI ─────── -->
+    <section class="page" id="page-ai">
+      <div class="ai-layout">
+        <div class="chat-area">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:#FAFBFC">
+            <div style="width:36px;height:36px;background:var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">🤖</div>
+            <div>
+              <div style="font-size:14px;font-weight:700">Kipita AI</div>
+              <div style="font-size:12px;color:var(--green)">● Online — Gemini 2.0 Flash</div>
+            </div>
+          </div>
+          <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg ai">
+              <div class="msg-avatar ai">🤖</div>
+              <div class="msg-bubble">Hey! I'm your Kipita travel assistant. Ask me to plan a trip, find Bitcoin-friendly spots, check safety advisories, or get travel tips for any destination. 🌏</div>
+            </div>
+          </div>
+          <div class="chat-input-row">
+            <textarea class="chat-input" id="chatInput" placeholder="Ask anything about travel, Bitcoin, or safety…" rows="1" onkeydown="chatKeydown(event)" oninput="autoResize(this)"></textarea>
+            <button class="chat-send" onclick="sendChat()">➤</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div class="card-title"><span class="card-title-text">⚡ Quick Actions</span></div>
+            <div class="ai-quick-actions">
+              <button class="quick-btn" onclick="quickChat('Plan a 7-day trip to Tokyo on a $2000 budget')">🗾 Plan Tokyo trip</button>
+              <button class="quick-btn" onclick="quickChat('What are the safest nomad cities in Southeast Asia right now?')">🛡 Safest nomad cities</button>
+              <button class="quick-btn" onclick="quickChat('Find Bitcoin-friendly cafes and restaurants in Lisbon')">₿ BTC spots in Lisbon</button>
+              <button class="quick-btn" onclick="quickChat('What do I need to know before traveling to Colombia?')">🇨🇴 Colombia travel tips</button>
+              <button class="quick-btn" onclick="quickChat('What is the current exchange rate for USD to EUR?')">💱 USD → EUR rate</button>
+              <button class="quick-btn" onclick="quickChat('Give me a packing list for 3 months in Southeast Asia')">🎒 SE Asia packing list</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="card-title-text">ℹ️ AI Info</span></div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.6">
+              Powered by <strong>Gemini 2.0 Flash Lite</strong>. For financial decisions, always verify with live sources. Travel advisories are AI-generated and may not reflect latest conditions.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────── LANGUAGES ─────── -->
+    <section class="page" id="page-languages">
+      <div style="margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <input class="search-field" style="max-width:320px" placeholder="Search phrases…" id="phraseSearch" oninput="renderPhrases()"/>
+        <span style="font-size:14px;color:var(--text2)" id="phraseCount"></span>
+      </div>
+      <div class="lang-layout">
+        <div class="card">
+          <div class="card-title"><span class="card-title-text">🌐 Languages</span></div>
+          <div class="lang-list" id="langList"></div>
+        </div>
+        <div>
+          <div class="phrase-grid" id="phraseGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────── SETTINGS ─────── -->
+    <section class="page" id="page-settings">
+      <div class="settings-layout">
+        <div class="card">
+          <div class="settings-nav">
+            <button class="settings-nav-item active" onclick="settingsTab('general',this)">General</button>
+            <button class="settings-nav-item" onclick="settingsTab('notifications',this)">Notifications</button>
+            <button class="settings-nav-item" onclick="settingsTab('privacy',this)">Privacy</button>
+            <button class="settings-nav-item" onclick="settingsTab('about',this)">About</button>
+          </div>
+        </div>
+        <div class="card settings-section" id="settingsContent">
+          <div class="settings-row">
+            <div><div class="settings-row-label">Dark Mode</div><div class="settings-row-sub">Coming soon</div></div>
+            <label class="toggle"><input type="checkbox" disabled/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Default Currency</div><div class="settings-row-sub">Display prices in</div></div>
+            <select class="search-field" style="width:100px"><option>USD</option><option>EUR</option><option>GBP</option><option>BTC</option></select>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Location Access</div><div class="settings-row-sub">Used for nearby places & advisory</div></div>
+            <button class="action-btn" style="padding:7px 14px;font-size:13px" onclick="navigator.geolocation.getCurrentPosition(()=>alert('Location granted ✓'))">Request</button>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Clear Local Data</div><div class="settings-row-sub">Trips, saved places, chat history</div></div>
+            <button class="action-btn secondary" style="padding:7px 14px;font-size:13px" onclick="clearData()">Clear</button>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">App Version</div><div class="settings-row-sub">Kipita Web v1.0.0</div></div>
+            <span style="font-size:13px;color:var(--text3)">Build 2026.03</span>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Support</div></div>
+            <a href="mailto:info@kipita.com" style="font-size:13px;color:var(--red);font-weight:600">info@kipita.com</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- SOS -->
+<button id="sosBtn" onclick="document.getElementById('sosModal').classList.add('open')" title="SOS Emergency">🆘</button>
+
+<!-- SOS Modal -->
+<div class="modal-overlay" id="sosModal">
+  <div class="modal-box">
+    <h3 style="color:#DC2626">🆘 Emergency Help<button class="modal-close" onclick="document.getElementById('sosModal').classList.remove('open')">✕</button></h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+      <a href="tel:911" style="text-decoration:none"><div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:14px;text-align:center"><div style="font-size:11px;color:#DC2626;font-weight:700;margin-bottom:4px">US Emergency</div><div style="font-size:26px;font-weight:800;color:#991B1B">911</div></div></a>
+      <a href="https://www.google.com/maps/search/nearest+hospital" target="_blank" style="text-decoration:none"><div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:14px;text-align:center"><div style="font-size:11px;color:#2563EB;font-weight:700;margin-bottom:4px">Nearest</div><div style="font-size:20px;font-weight:800;color:#1D4ED8">🏥 Hospital</div></div></a>
+      <a href="https://www.google.com/maps/search/nearest+fire+station" target="_blank" style="text-decoration:none"><div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:14px;text-align:center"><div style="font-size:11px;color:#EA580C;font-weight:700;margin-bottom:4px">Nearest</div><div style="font-size:20px;font-weight:800;color:#C2410C">🚒 Fire Station</div></div></a>
+    </div>
+    <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:12px;font-size:13px;color:var(--text2);line-height:1.5">💡 Emergency numbers vary by country. If abroad, search for local emergency services.</div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// Navigation
+// ══════════════════════════════════════════════
+const PAGE_TITLES = {dashboard:'Dashboard',market:'Markets',map:'BTC Map',explore:'Explore',trips:'My Trips',book:'Book Travel',advisory:'Safety Advisory',ai:'AI Assistant',languages:'Travel Phrases',settings:'Settings'};
+
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-' + page);
+  const nav = document.getElementById('nav-' + page);
+  if (pg) pg.classList.add('active');
+  if (nav) nav.classList.add('active');
+  document.getElementById('headerTitle').textContent = PAGE_TITLES[page] || page;
+  document.getElementById('sidebar').classList.remove('open');
+  window.location.hash = page;
+  if (page === 'market') loadMarket();
+  if (page === 'dashboard') loadDashboard();
+}
+
+// Handle hash routing
+window.addEventListener('hashchange', () => {
+  const h = location.hash.replace('#','');
+  if (h && document.getElementById('page-'+h)) goTo(h);
+});
+if (location.hash) {
+  const h = location.hash.replace('#','');
+  if (document.getElementById('page-'+h)) goTo(h);
+}
+
+// ══════════════════════════════════════════════
+// Crypto Prices
+// ══════════════════════════════════════════════
+let _prices = {};
+
+async function fetchPrices() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,solana,litecoin,monero&order=market_cap_desc&per_page=5&sparkline=false&price_change_percentage=24h');
+    const data = await r.json();
+    _prices = {};
+    data.forEach(c => { _prices[c.symbol.toUpperCase()] = c; });
+    updatePriceUI(data);
+  } catch(e) { /* fallback silently */ }
+}
+
+function updatePriceUI(data) {
+  // Dashboard stats
+  const btc = data.find(c=>c.id==='bitcoin');
+  const eth = data.find(c=>c.id==='ethereum');
+  const sol = data.find(c=>c.id==='solana');
+  if (btc) {
+    document.getElementById('dash-btc').textContent = '$'+btc.current_price.toLocaleString();
+    const ch = btc.price_change_percentage_24h;
+    const el = document.getElementById('dash-btc-ch');
+    el.textContent = (ch>=0?'▲ +':'▼ ')+ch.toFixed(2)+'% (24h)';
+    el.className = 'stat-change '+(ch>=0?'up':'down');
+  }
+  if (eth) {
+    document.getElementById('dash-eth').textContent = '$'+eth.current_price.toLocaleString();
+    const ch = eth.price_change_percentage_24h;
+    const el = document.getElementById('dash-eth-ch');
+    el.textContent = (ch>=0?'▲ +':'▼ ')+ch.toFixed(2)+'% (24h)';
+    el.className = 'stat-change '+(ch>=0?'up':'down');
+  }
+  if (sol) {
+    document.getElementById('dash-sol').textContent = '$'+sol.current_price.toFixed(2);
+    const ch = sol.price_change_percentage_24h;
+    const el = document.getElementById('dash-sol-ch');
+    el.textContent = (ch>=0?'▲ +':'▼ ')+ch.toFixed(2)+'% (24h)';
+    el.className = 'stat-change '+(ch>=0?'up':'down');
+  }
+  // Market table
+  const tbody = document.getElementById('mktTable');
+  if (!tbody) return;
+  tbody.innerHTML = data.map(c => {
+    const ch = c.price_change_percentage_24h || 0;
+    const bars = Array.from({length:8},(_,i)=>
+      `<span style="height:${(Math.random()*.6+.2)*100}%;background:${ch>=0?'var(--green)':'var(--red)'};opacity:.7;border-radius:2px;flex:1"></span>`
+    ).join('');
+    return `<tr>
+      <td><div class="coin-cell"><div class="coin-icon" style="background:#F8FAFC">${c.symbol==='btc'?'₿':c.symbol==='eth'?'Ξ':c.symbol.toUpperCase().slice(0,2)}</div><div><div class="coin-name">${c.name}</div><div class="coin-sym">${c.symbol.toUpperCase()}</div></div></div></td>
+      <td class="price-val">$${c.current_price.toLocaleString()}</td>
+      <td class="${ch>=0?'up':'down'}" style="font-weight:700">${ch>=0?'▲ +':'▼ '}${Math.abs(ch).toFixed(2)}%</td>
+      <td><div class="sparkline${ch<0?' down':''}" style="display:flex;align-items:flex-end;gap:2px;height:32px">${bars}</div></td>
+      <td style="color:var(--text2);font-size:13px">$${(c.market_cap/1e9).toFixed(1)}B</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('mktTs').textContent = 'Updated '+new Date().toLocaleTimeString();
+
+  // Quick stats
+  const btcC = data.find(c=>c.id==='bitcoin');
+  if (btcC) {
+    document.getElementById('mktStats').innerHTML = `
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2);font-size:14px">BTC Dominance</span><strong>${(btcC.market_cap/(data.reduce((a,c)=>a+c.market_cap,0))*100).toFixed(1)}%</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2);font-size:14px">24h High</span><strong class="up">$${btcC.high_24h?.toLocaleString()||'—'}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0"><span style="color:var(--text2);font-size:14px">24h Low</span><strong class="down">$${btcC.low_24h?.toLocaleString()||'—'}</strong></div>`;
+  }
+}
+
+async function convertCurrency() {
+  const amt = parseFloat(document.getElementById('convAmt').value)||1;
+  const from = document.getElementById('convFrom').value;
+  const to = document.getElementById('convTo').value;
+  const el = document.getElementById('convResult');
+  el.textContent = '…';
+  try {
+    const CRYPTO_USD = {BTC:_prices['BTC']?.current_price||97000,ETH:_prices['ETH']?.current_price||3400};
+    const isCrypto = s => s==='BTC'||s==='ETH';
+    let usdAmt = amt;
+    if (isCrypto(from)) usdAmt = amt * (CRYPTO_USD[from]||1);
+    else {
+      const r = await fetch(`https://api.frankfurter.app/latest?base=${from}&symbols=USD`);
+      const d = await r.json();
+      usdAmt = amt * (d.rates?.USD||1);
+    }
+    let result = usdAmt;
+    if (isCrypto(to)) result = usdAmt / (CRYPTO_USD[to]||1);
+    else {
+      const r2 = await fetch(`https://api.frankfurter.app/latest?base=USD&symbols=${to}`);
+      const d2 = await r2.json();
+      result = usdAmt * (d2.rates?.[to]||1);
+    }
+    el.textContent = result.toFixed(isCrypto(to)?8:2)+' '+to;
+  } catch { el.textContent = 'Error'; }
+}
+
+// ══════════════════════════════════════════════
+// Places / Explore
+// ══════════════════════════════════════════════
+const CATEGORIES = [
+  {id:'all',   em:'🌍', label:'All Places'},
+  {id:'food',  em:'🍜', label:'Restaurants'},
+  {id:'cafe',  em:'☕', label:'Cafes'},
+  {id:'bar',   em:'🍺', label:'Bars'},
+  {id:'hotel', em:'🏨', label:'Hotels'},
+  {id:'shop',  em:'🛍', label:'Shops'},
+  {id:'health',em:'🏥', label:'Health'},
+  {id:'atm',   em:'🏧', label:'ATM'},
+  {id:'bank',  em:'🏦', label:'Bank'},
+];
+const OSM_TAGS = {
+  all:'',food:'amenity=restaurant',cafe:'amenity=cafe',bar:'amenity=bar',
+  hotel:'tourism=hotel',shop:'shop=clothes',health:'amenity=hospital',
+  atm:'amenity=atm',bank:'amenity=bank'
+};
+let _exploreCoords = null;
+let _activeCat = 'all';
+
+function buildCatList() {
+  document.getElementById('catList').innerHTML = CATEGORIES.map(c =>
+    `<button class="cat-row${c.id===_activeCat?' active':''}" onclick="selectCat('${c.id}')">
+      <span class="cat-em">${c.em}</span>${c.label}
+    </button>`
+  ).join('');
+}
+buildCatList();
+
+function selectCat(id) {
+  _activeCat = id;
+  buildCatList();
+  if (_exploreCoords) fetchPlaces(_exploreCoords.lat, _exploreCoords.lng, _activeCat, 'explorePlaces');
+}
+
+async function exploreLoad() {
+  const q = document.getElementById('exploreSearch').value.trim();
+  if (!q) return;
+  document.getElementById('explorePlaces').innerHTML = '<div class="spinner">Searching…</div>';
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`);
+    const d = await r.json();
+    if (!d[0]) { document.getElementById('explorePlaces').innerHTML = '<div class="spinner">No results found.</div>'; return; }
+    _exploreCoords = {lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)};
+    fetchPlaces(_exploreCoords.lat, _exploreCoords.lng, _activeCat, 'explorePlaces');
+  } catch { document.getElementById('explorePlaces').innerHTML = '<div class="spinner">Error searching location.</div>'; }
+}
+
+function exploreGPS() {
+  if (!navigator.geolocation) return;
+  document.getElementById('explorePlaces').innerHTML = '<div class="spinner">Getting location…</div>';
+  navigator.geolocation.getCurrentPosition(p => {
+    _exploreCoords = {lat:p.coords.latitude, lng:p.coords.longitude};
+    fetchPlaces(_exploreCoords.lat, _exploreCoords.lng, _activeCat, 'explorePlaces');
+  }, () => { document.getElementById('explorePlaces').innerHTML = '<div class="spinner">Location denied.</div>'; });
+}
+
+async function fetchPlaces(lat, lng, cat, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '<div class="spinner">Loading places…</div>';
+  const radius = parseInt(document.getElementById('exploreRadius')?.value||2000);
+  const tag = OSM_TAGS[cat]||'amenity~"restaurant|cafe|bar|hotel"';
+  const query = `[out:json][timeout:10];node[${tag||'amenity~"restaurant|cafe|bar"'}](around:${radius},${lat},${lng});out 20;`;
+  try {
+    const r = await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(query)});
+    const d = await r.json();
+    const els = d.elements||[];
+    if (!els.length) { container.innerHTML = '<div class="empty-state"><div class="em">🌍</div><p>No places found nearby. Try a larger radius.</p></div>'; return; }
+    const catObj = CATEGORIES.find(c=>c.id===cat)||{em:'📍'};
+    container.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">` +
+      els.map(el => {
+        const name = el.tags?.name||'Unnamed Place';
+        const addr = [el.tags?.['addr:street'],el.tags?.['addr:housenumber'],el.tags?.['addr:city']].filter(Boolean).join(', ')||el.tags?.description||'';
+        const phone = el.tags?.phone||el.tags?.['contact:phone']||'';
+        const website = el.tags?.website||el.tags?.['contact:website']||'';
+        const dist = haversine(lat,lng,el.lat,el.lon);
+        return `<div class="place-row">
+          <div class="place-em">${catObj.em}</div>
+          <div class="place-body">
+            <div class="place-name">${name}</div>
+            ${addr?`<div class="place-addr">${addr}</div>`:''}
+            <div class="place-meta-row">
+              <span class="tag">${cat==='all'?el.tags?.amenity||el.tags?.tourism||'place':catObj.label}</span>
+              <span class="place-dist">${dist<1?(dist*1000).toFixed(0)+'m':dist.toFixed(1)+'km'}</span>
+              ${phone?`<a href="tel:${phone}" style="color:var(--blue);font-size:12px">📞 Call</a>`:''}
+            </div>
+          </div>
+          <div class="place-actions">
+            <button class="place-btn" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name+' '+addr)}','_blank')">🗺 Map</button>
+            ${website?`<button class="place-btn" onclick="window.open('${website}','_blank')">🌐 Web</button>`:''}
+          </div>
+        </div>`;
+      }).join('') + '</div>';
+  } catch { container.innerHTML = '<div class="spinner">Error loading places.</div>'; }
+}
+
+function haversine(lat1,lng1,lat2,lng2) {
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// Dashboard quick search
+async function quickSearch() {
+  const q = document.getElementById('dashSearch').value.trim();
+  if (!q) return;
+  document.getElementById('dashPlaces').innerHTML = '<div class="spinner">Searching…</div>';
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`);
+    const d = await r.json();
+    if (!d[0]) { document.getElementById('dashPlaces').innerHTML = '<div class="spinner">No results.</div>'; return; }
+    fetchPlaces(parseFloat(d[0].lat),parseFloat(d[0].lon),'all','dashPlaces');
+  } catch { document.getElementById('dashPlaces').innerHTML = '<div class="spinner">Error.</div>'; }
+}
+function dashGPS() {
+  if (!navigator.geolocation) return;
+  document.getElementById('dashPlaces').innerHTML = '<div class="spinner">Getting location…</div>';
+  navigator.geolocation.getCurrentPosition(p => {
+    fetchPlaces(p.coords.latitude,p.coords.longitude,'all','dashPlaces');
+  });
+}
+
+// Map
+function centerMap() {
+  const q = document.getElementById('mapSearch').value.trim();
+  if (!q) return;
+  fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`)
+    .then(r=>r.json()).then(d => {
+      if (d[0]) document.getElementById('mapIframe').src = `https://btcmap.org/map#14/${d[0].lat}/${d[0].lon}`;
+    });
+}
+function mapGPS() {
+  navigator.geolocation?.getCurrentPosition(p => {
+    document.getElementById('mapIframe').src = `https://btcmap.org/map#14/${p.coords.latitude}/${p.coords.longitude}`;
+  });
+}
+
+// ══════════════════════════════════════════════
+// Trips
+// ══════════════════════════════════════════════
+function getTrips() { try { return JSON.parse(localStorage.getItem('kipita_trips')||'[]'); } catch{return[];} }
+function saveTrips(t) { localStorage.setItem('kipita_trips',JSON.stringify(t)); }
+
+function renderTrips() {
+  const filter = document.getElementById('tripFilter')?.value||'all';
+  let trips = getTrips();
+  if (filter !== 'all') trips = trips.filter(t => t.status===filter);
+  const container = document.getElementById('tripsContainer');
+  if (!trips.length) {
+    container.innerHTML = '<div class="empty-state"><div class="em">🧳</div><p>No trips yet. Create your first trip →</p></div>';
+    return;
+  }
+  container.innerHTML = '<div style="display:flex;flex-direction:column;gap:16px">' +
+    trips.map(t => `
+      <div class="trip-card-d">
+        <div class="trip-card-header-d">
+          <div>
+            <h4>${t.destination}</h4>
+            <div style="font-size:12px;color:#9CA3AF">${t.country||''}</div>
+          </div>
+          <span class="trip-status-badge status-${(t.status||'upcoming').toLowerCase()}">${t.status||'UPCOMING'}</span>
+        </div>
+        <div class="trip-body-d">
+          <div class="trip-stat-row">
+            <div class="trip-stat"><div class="trip-stat-label">Start</div><div class="trip-stat-val">${t.startDate||'—'}</div></div>
+            <div class="trip-stat"><div class="trip-stat-label">End</div><div class="trip-stat-val">${t.endDate||'—'}</div></div>
+            <div class="trip-stat"><div class="trip-stat-label">Notes</div><div class="trip-stat-val" style="font-size:13px;font-weight:500;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.notes||'—'}</div></div>
+          </div>
+          <div class="trip-actions-row">
+            <button class="trip-action" onclick="shareTrip('${t.id}')">📤 Share</button>
+            <button class="trip-action" onclick="markTripPast('${t.id}')">✅ Complete</button>
+            <button class="trip-action danger" onclick="deleteTrip('${t.id}')">🗑 Delete</button>
+          </div>
+        </div>
+      </div>`).join('') + '</div>';
+}
+
+function createTrip() {
+  const dest = document.getElementById('nt-dest').value.trim();
+  if (!dest) { alert('Please enter a destination.'); return; }
+  const trip = {
+    id: Date.now().toString(),
+    destination: dest,
+    country: document.getElementById('nt-country').value.trim(),
+    startDate: document.getElementById('nt-start').value,
+    endDate: document.getElementById('nt-end').value,
+    notes: document.getElementById('nt-notes').value.trim(),
+    status: 'UPCOMING',
+    createdAt: new Date().toISOString()
+  };
+  const trips = getTrips();
+  trips.unshift(trip);
+  saveTrips(trips);
+  ['nt-dest','nt-country','nt-start','nt-end','nt-notes'].forEach(id => { document.getElementById(id).value = ''; });
+  renderTrips();
+}
+function markTripPast(id) {
+  const trips = getTrips().map(t => t.id===id?{...t,status:'PAST'}:t);
+  saveTrips(trips); renderTrips();
+}
+function deleteTrip(id) {
+  if (!confirm('Delete this trip?')) return;
+  saveTrips(getTrips().filter(t=>t.id!==id)); renderTrips();
+}
+function shareTrip(id) {
+  const t = getTrips().find(t=>t.id===id);
+  if (t) navigator.share?.({title:`Kipita Trip: ${t.destination}`,text:`Traveling to ${t.destination} (${t.startDate} → ${t.endDate})`});
+}
+
+// Dash trips
+function renderDashTrips() {
+  const trips = getTrips().filter(t=>t.status==='UPCOMING').slice(0,3);
+  const el = document.getElementById('dashTrips');
+  if (!trips.length) { el.innerHTML = '<div class="empty-state" style="padding:20px"><div class="em" style="font-size:32px">🧳</div><p>No upcoming trips.</p></div>'; return; }
+  el.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px">'+
+    trips.map(t=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg);border-radius:12px"><div><div style="font-size:14px;font-weight:700">${t.destination}</div><div style="font-size:12px;color:var(--text3)">${t.startDate||''} ${t.endDate?'→ '+t.endDate:''}</div></div><span class="tag">${t.status}</span></div>`
+    ).join('')+'</div>';
+}
+
+// ══════════════════════════════════════════════
+// Booking iframe
+// ══════════════════════════════════════════════
+function openBooking(url, title) {
+  document.getElementById('bookingIframeWrap').style.display = 'block';
+  document.getElementById('bookingIframeTitle').textContent = title;
+  document.getElementById('bookingIframe').src = url;
+  document.getElementById('bookingIframeWrap').scrollIntoView({behavior:'smooth'});
+}
+function closeBookingIframe() {
+  document.getElementById('bookingIframeWrap').style.display = 'none';
+  document.getElementById('bookingIframe').src = '';
+}
+
+// ══════════════════════════════════════════════
+// Wallet connect (placeholder)
+// ══════════════════════════════════════════════
+let _walletConnected = false;
+function toggleWallet() {
+  if (_walletConnected) {
+    _walletConnected = false;
+    document.getElementById('walletBtn').textContent = '🔗 Connect Wallet';
+    document.getElementById('walletBtn').classList.remove('connected');
+  } else {
+    alert('Wallet connection coming soon.\nCurrently supports: Coinbase, River Lightning, Gemini Exchange.');
+  }
+}
+
+// ══════════════════════════════════════════════
+// AI Chat (Gemini via direct REST — DEMO mode with streaming placeholder)
+// ══════════════════════════════════════════════
+const GEMINI_KEY = 'AIzaSyAXB1gCwHB8D-6qbUv4FvZRHu4rlbj9PpY';
+let _chatHistory = [];
+
+function addMsg(role, text) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.innerHTML = `<div class="msg-avatar ${role}">${role==='ai'?'🤖':'👤'}</div><div class="msg-bubble">${text.replace(/\n/g,'<br/>')}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  addMsg('user', text);
+  _chatHistory.push({role:'user',parts:[{text}]});
+  const typing = addMsg('ai','…');
+  try {
+    const body = {
+      contents: _chatHistory,
+      systemInstruction: {parts:[{text:'You are Kipita, a friendly AI travel assistant specializing in digital nomad travel, Bitcoin payments, safety advisories, and itinerary planning. Be concise and practical.'}]},
+      generationConfig:{maxOutputTokens:512}
+    };
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d = await r.json();
+    const reply = d.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+    typing.querySelector('.msg-bubble').innerHTML = reply.replace(/\n/g,'<br/>');
+    _chatHistory.push({role:'model',parts:[{text:reply}]});
+  } catch { typing.querySelector('.msg-bubble').textContent = 'Connection error. Check your network.'; }
+}
+
+function quickChat(prompt) {
+  document.getElementById('chatInput').value = prompt;
+  sendChat();
+  goTo('ai');
+}
+
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ══════════════════════════════════════════════
+// Languages
+// ══════════════════════════════════════════════
+const LANGS = [
+  {code:'es',flag:'🇪🇸',name:'Spanish'},
+  {code:'fr',flag:'🇫🇷',name:'French'},
+  {code:'de',flag:'🇩🇪',name:'German'},
+  {code:'ja',flag:'🇯🇵',name:'Japanese'},
+  {code:'zh',flag:'🇨🇳',name:'Mandarin'},
+  {code:'pt',flag:'🇧🇷',name:'Portuguese'},
+  {code:'it',flag:'🇮🇹',name:'Italian'},
+  {code:'ko',flag:'🇰🇷',name:'Korean'},
+  {code:'ar',flag:'🇸🇦',name:'Arabic'},
+  {code:'th',flag:'🇹🇭',name:'Thai'},
+  {code:'vi',flag:'🇻🇳',name:'Vietnamese'},
+  {code:'ru',flag:'🇷🇺',name:'Russian'},
+  {code:'tr',flag:'🇹🇷',name:'Turkish'},
+  {code:'hi',flag:'🇮🇳',name:'Hindi'},
+  {code:'id',flag:'🇮🇩',name:'Indonesian'},
+];
+const PHRASES = {
+  es:[['Hello','Hola','Oh-lah'],['Thank you','Gracias','Gra-see-as'],['Where is...?','¿Dónde está...?','Don-de es-tah'],['How much?','¿Cuánto cuesta?','Kwan-to kwes-tah'],['Help!','¡Ayuda!','Ah-yoo-dah'],['Do you accept Bitcoin?','¿Aceptan Bitcoin?','Ah-sep-tan Bitcoin'],['I need a doctor','Necesito un médico','Neh-seh-see-toh un med-ee-koh'],['Where is the hospital?','¿Dónde está el hospital?','Don-de es-tah el os-pee-tal'],['I am lost','Estoy perdido','Es-toy per-dee-doh'],['Call the police','Llame a la policía','Yah-meh ah la po-lee-see-ah']],
+  fr:[['Hello','Bonjour','Bohn-zhoor'],['Thank you','Merci','Mehr-see'],['Where is...?','Où est...?','Oo eh'],['How much?','Combien ça coûte?','Kom-byan sa koot'],['Help!','Au secours!','Oh seh-koor'],['Do you accept Bitcoin?','Acceptez-vous Bitcoin?','Ak-sep-tay voo Bitcoin'],['I need a doctor','J\'ai besoin d\'un médecin','Zhay beh-zwan dun med-san'],['Where is the hospital?','Où est l\'hôpital?','Oo eh lo-pee-tal'],['I am lost','Je suis perdu','Zhuh swee pehr-doo'],['Call the police','Appelez la police','Ah-peh-lay la po-lees']],
+  de:[['Hello','Hallo','Hah-loh'],['Thank you','Danke','Dan-keh'],['Where is...?','Wo ist...?','Vo ist'],['How much?','Wie viel kostet das?','Vee feel kos-tet das'],['Help!','Hilfe!','Hil-feh'],['Do you accept Bitcoin?','Akzeptieren Sie Bitcoin?','Ak-tsep-tee-ren zee Bitcoin'],['I need a doctor','Ich brauche einen Arzt','Ikh brow-kheh eye-nen artst'],['Where is the hospital?','Wo ist das Krankenhaus?','Vo ist das Kran-ken-haus'],['I am lost','Ich habe mich verirrt','Ikh hah-beh mikh fer-irt'],['Call the police','Rufen Sie die Polizei','Roo-fen zee dee po-lee-tsay']],
+  ja:[['Hello','こんにちは','Kon-ni-chi-wa'],['Thank you','ありがとう','A-ri-ga-to'],['Where is...?','...はどこですか？','...wa do-ko des-ka'],['How much?','いくらですか？','I-ku-ra des-ka'],['Help!','助けて！','Ta-su-ke-te'],['Do you accept Bitcoin?','ビットコインは使えますか？','Bit-to-ko-in wa tsu-ka-e-ma-su-ka'],['I need a doctor','医者が必要です','I-sha ga hi-tsu-yo des'],['Where is the hospital?','病院はどこですか？','Byo-in wa do-ko des-ka'],['I am lost','迷子になりました','Ma-i-go ni na-ri-ma-shi-ta'],['Call the police','警察を呼んでください','Kei-sa-tsu wo yon-de ku-da-sai']],
+  zh:[['Hello','你好','Nǐ hǎo'],['Thank you','谢谢','Xiè xiè'],['Where is...?','...在哪里？','...zài nǎ lǐ'],['How much?','多少钱？','Duō shǎo qián'],['Help!','救命！','Jiù mìng'],['Do you accept Bitcoin?','你们接受比特币吗？','Nǐmen jiēshòu bǐtèbì ma'],['I need a doctor','我需要医生','Wǒ xūyào yīshēng'],['Where is the hospital?','医院在哪里？','Yīyuàn zài nǎ lǐ'],['I am lost','我迷路了','Wǒ mí lù le'],['Call the police','请叫警察','Qǐng jiào jǐngchá']],
+};
+// Fill other langs with basic phrases
+['pt','it','ko','ar','th','vi','ru','tr','hi','id'].forEach(l => {
+  if (!PHRASES[l]) PHRASES[l]=[['Hello','(local greeting)',''],['Thank you','(local thanks)',''],['Help!','(local for help)',''],['How much?','(local for price)',''],['Where is...?','(local for where)','']];
+});
+
+let _activeLang = 'es';
+
+function buildLangList() {
+  document.getElementById('langList').innerHTML = LANGS.map(l =>
+    `<button class="lang-item${l.code===_activeLang?' active':''}" onclick="selectLang('${l.code}')">
+      <span class="lang-flag">${l.flag}</span>${l.name}
+    </button>`
+  ).join('');
+}
+function selectLang(code) { _activeLang=code; buildLangList(); renderPhrases(); }
+
+function renderPhrases() {
+  const search = document.getElementById('phraseSearch')?.value.toLowerCase()||'';
+  const phrases = (PHRASES[_activeLang]||[]).filter(p =>
+    !search || p[0].toLowerCase().includes(search) || p[1].toLowerCase().includes(search)
+  );
+  document.getElementById('phraseCount').textContent = phrases.length+' phrases';
+  document.getElementById('phraseGrid').innerHTML = phrases.map(p=>`
+    <div class="phrase-card-d">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="phrase-en-d">${p[0]}</div>
+        <button class="phrase-copy" onclick="navigator.clipboard?.writeText('${p[1].replace(/'/g,"\\'")}')">Copy</button>
+      </div>
+      <div class="phrase-local-d">${p[1]}</div>
+      ${p[2]?`<div class="phrase-phonetic-d">/${p[2]}/</div>`:''}
+    </div>`
+  ).join('');
+}
+buildLangList();
+renderPhrases();
+
+// ══════════════════════════════════════════════
+// Advisory / Weather
+// ══════════════════════════════════════════════
+function loadAdvisory() {
+  navigator.geolocation?.getCurrentPosition(async p => {
+    const lat = p.coords.latitude, lng = p.coords.longitude;
+    try {
+      const wr = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&hourly=temperature_2m,weathercode&timezone=auto`);
+      const wd = await wr.json();
+      const cw = wd.current_weather||{};
+      const temp = cw.temperature;
+      const desc = cw.weathercode<=3?'☀️ Clear':cw.weathercode<=67?'🌧 Rainy':cw.weathercode<=77?'❄️ Snowy':'🌩 Stormy';
+      document.getElementById('weatherAdvisory').innerHTML = `<div style="font-size:28px;font-weight:800;margin-bottom:6px">${temp}°C</div><div style="font-size:15px;font-weight:600">${desc}</div><div style="font-size:12px;color:var(--text3);margin-top:4px">Wind: ${cw.windspeed||0} km/h | Your current location</div>`;
+    } catch { document.getElementById('weatherAdvisory').innerHTML = 'Weather data unavailable.'; }
+    const geocode = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`).then(r=>r.json()).catch(()=>({}));
+    const city = geocode.address?.city||geocode.address?.town||geocode.address?.county||'Your Location';
+    const country = geocode.address?.country||'';
+    document.getElementById('advisoryMain').innerHTML = `
+      <div class="advisory-level level-1">✅ Level 1 — Generally Safe</div>
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:8px">📍 ${city}${country?', '+country:''}</h3>
+      <p style="font-size:14px;color:var(--text2);line-height:1.6">Advisory data loaded. For detailed country-specific travel advisories, check your government's official travel portal.</p>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <a href="https://travel.state.gov" target="_blank" class="place-btn" style="display:inline-block;text-decoration:none;font-size:12px">🇺🇸 US Travel.gov</a>
+        <a href="https://www.gov.uk/foreign-travel-advice" target="_blank" class="place-btn" style="display:inline-block;text-decoration:none;font-size:12px">🇬🇧 UK FCDO</a>
+      </div>`;
+  }, () => { alert('Location access denied. Please allow location to get advisory data.'); });
+}
+
+// ══════════════════════════════════════════════
+// Settings helpers
+// ══════════════════════════════════════════════
+function settingsTab(tab, btn) {
+  document.querySelectorAll('.settings-nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function clearData() {
+  if (confirm('Clear all local data? This cannot be undone.')) {
+    localStorage.clear(); renderTrips(); renderDashTrips();
+    alert('Data cleared.');
+  }
+}
+
+// ══════════════════════════════════════════════
+// Global search
+// ══════════════════════════════════════════════
+function handleGlobalSearch(e) {
+  if (e.key !== 'Enter') return;
+  const q = document.getElementById('globalSearch').value.trim();
+  if (!q) return;
+  document.getElementById('exploreSearch').value = q;
+  goTo('explore');
+  exploreLoad();
+}
+
+// ══════════════════════════════════════════════
+// Init
+// ══════════════════════════════════════════════
+function loadDashboard() { fetchPrices(); renderDashTrips(); }
+function loadMarket() { fetchPrices(); }
+
+loadDashboard();
+renderTrips();
+setInterval(fetchPrices, 60000); // refresh prices every 60s
+
+// SW
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+// Responsive: show hamburger on small screens
+if (window.innerWidth <= 768) document.getElementById('menuToggle').style.display = 'block';
+window.addEventListener('resize', () => {
+  document.getElementById('menuToggle').style.display = window.innerWidth<=768?'block':'none';
+  if (window.innerWidth>768) document.getElementById('sidebar').classList.remove('open');
+});
+</script>
+</body>
+</html>
