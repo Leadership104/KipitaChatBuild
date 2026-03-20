@@ -2,1757 +2,717 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <meta name="theme-color" content="#FF5252"/>
-  <meta name="description" content="Kipita – Travel smarter with AI itineraries, Bitcoin payments & global nomad intel."/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+  <meta name="theme-color" content="#DD3B49"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="description" content="Kipita – Digital Nomad Travel App. Travel smarter with Bitcoin payments, AI itineraries & global nomad intel."/>
+  <title>Kipita</title>
   <link rel="manifest" href="manifest.json"/>
   <link rel="apple-touch-icon" href="icons/icon-192.png"/>
-  <title>Kipita – Digital Nomad Travel App</title>
-  <style>
-    :root{
-      --red:#FF5252;--red-dk:#D32F2F;--navy:#0D1B2A;
-      --card-bg:#F9FAFB;--border:#E5E7EB;--text:#111827;--text2:#6B7280;
-      --green:#22C55E;--orange:#F57C00;--btc:#F7931A;
-      --purple:#7C3AED;--yellow:#F59E0B;--blue:#3B82F6;
-    }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:var(--text);min-height:100dvh}
-
-    /* ── Nav ── */
-    nav{background:var(--navy);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.3);gap:12px}
-    .logo{font-size:22px;font-weight:800;letter-spacing:-.5px;white-space:nowrap}
-    .logo span{color:var(--red)}
-    .nav-links{display:flex;gap:20px;font-size:14px}
-    .nav-links a{color:#ccc;text-decoration:none;transition:color .2s}
-    .nav-links a:hover{color:#fff}
-    .nav-right{display:flex;align-items:center;gap:10px}
-    .wallet-btn{background:var(--purple);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .2s}
-    .wallet-btn:hover{opacity:.85}
-    .wallet-btn.connected{background:#16a34a}
-    .download-btn{background:var(--red);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
-
-    /* ── Hero ── */
-    .hero{background:linear-gradient(135deg,var(--navy) 0%,#1a2744 60%,#0d2233 100%);color:#fff;padding:64px 24px 48px;text-align:center}
-    .hero h1{font-size:clamp(28px,6vw,56px);font-weight:800;line-height:1.15;margin-bottom:16px}
-    .hero h1 span{color:var(--red)}
-    .hero p{font-size:clamp(15px,2vw,20px);color:#adb5bd;max-width:560px;margin:0 auto 32px}
-    .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-    .btn-primary{background:var(--red);color:#fff;padding:14px 28px;border-radius:12px;font-weight:700;font-size:16px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:background .2s;border:none;cursor:pointer}
-    .btn-primary:hover{background:var(--red-dk)}
-    .btn-secondary{background:rgba(255,255,255,.12);color:#fff;padding:14px 28px;border-radius:12px;font-weight:600;font-size:16px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.2);transition:background .2s;cursor:pointer}
-    .btn-secondary:hover{background:rgba(255,255,255,.2)}
-    .hero-badges{margin-top:40px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-    .badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:6px 14px;font-size:13px;color:#e0e0e0}
-
-    /* ── Live Data ── */
-    .live-section{padding:32px 24px;background:var(--card-bg);border-bottom:1px solid var(--border)}
-    .live-section h2{font-size:20px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px}
-    .live-dot{width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block;animation:pulse 2s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-    .price-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
-    .price-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:4px}
-    .price-card .coin{font-size:13px;font-weight:600;color:var(--text2)}
-    .price-card .price{font-size:26px;font-weight:800;color:var(--text)}
-    .price-card .change{font-size:13px;font-weight:600}
-    .up{color:var(--green)}.down{color:var(--red)}
-    .price-ts{font-size:12px;color:var(--text2);margin-top:8px}
-
-    /* ── Wallet Section ── */
-    .wallet-section{padding:28px 24px;background:linear-gradient(135deg,#1e1b4b,#2d1b6e);border-bottom:1px solid rgba(124,58,237,.3)}
-    .wallet-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
-    .wallet-info h3{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px}
-    .wallet-info p{font-size:14px;color:#c4b5fd}
-    .wallet-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:20px 24px;min-width:280px}
-    .wallet-addr{font-size:12px;color:#a78bfa;margin-bottom:8px;font-family:monospace}
-    .wallet-balance{font-size:28px;font-weight:800;color:#fff}
-    .wallet-balance-sub{font-size:13px;color:#c4b5fd;margin-top:2px}
-    .wallet-actions{display:flex;gap:8px;margin-top:12px}
-    .wbtn{background:rgba(255,255,255,.15);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s}
-    .wbtn:hover{background:rgba(255,255,255,.25)}
-    .wbtn.danger{background:rgba(239,68,68,.2);color:#fca5a5}
-    #walletConnectPrompt{color:#c4b5fd;font-size:15px}
-
-    /* ── Sections ── */
-    section{padding:56px 24px;max-width:1100px;margin:0 auto}
-    h2.section-title{font-size:clamp(22px,4vw,36px);font-weight:800;margin-bottom:8px}
-    p.section-sub{color:var(--text2);font-size:16px;margin-bottom:36px;max-width:520px}
-
-    /* ── Feature grid ── */
-    .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
-    .feature-card{background:var(--card-bg);border:1px solid var(--border);border-radius:20px;padding:28px 24px}
-    .feature-icon{font-size:36px;margin-bottom:12px}
-    .feature-card h3{font-size:18px;font-weight:700;margin-bottom:8px}
-    .feature-card p{color:var(--text2);font-size:14px;line-height:1.6}
-
-    /* ── BTC Map ── */
-    .btcmap-wrap{background:#f1f5f9;padding:56px 24px}
-    .map-embed{background:var(--navy);border-radius:20px;overflow:hidden;height:480px;position:relative}
-    .map-embed iframe{width:100%;height:100%;border:0}
-    .map-overlay{position:absolute;top:16px;left:16px;background:rgba(13,27,42,.85);backdrop-filter:blur(8px);border-radius:12px;padding:12px 16px;color:#fff}
-    .map-overlay .label{font-size:12px;color:#9ca3af}
-    .map-overlay .count{font-size:20px;font-weight:800;color:var(--btc)}
-
-    /* ── Explore / Places ── */
-    .explore-wrap{padding:56px 24px;background:#fff}
-    .explore-inner{max-width:1100px;margin:0 auto}
-    .search-bar{display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap}
-    .search-input{flex:1;min-width:200px;padding:12px 16px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;outline:none;transition:border .2s}
-    .search-input:focus{border-color:var(--red)}
-    .search-btn{background:var(--red);color:#fff;border:none;padding:12px 20px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap}
-    .search-btn:hover{background:var(--red-dk)}
-    .geo-btn{background:var(--navy);color:#fff;border:none;padding:12px 16px;border-radius:12px;font-size:18px;cursor:pointer;transition:opacity .2s}
-    .geo-btn:hover{opacity:.8}
-
-    /* 4x4 category grid — see enhanced version in Places 4×4 block below */
-
-    /* Place cards */
-    .places-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
-    .place-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:box-shadow .2s}
-    .place-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.1)}
-    .place-img-placeholder{width:100%;height:120px;background:linear-gradient(135deg,#e5e7eb,#d1d5db);display:flex;align-items:center;justify-content:center;font-size:44px}
-    .place-info{padding:14px 16px}
-    .place-name{font-size:15px;font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .place-addr{font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-    .place-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-    .place-tag{font-size:11px;background:#e5e7eb;color:#374151;padding:3px 8px;border-radius:20px;font-weight:600}
-    .add-itinerary-btn{width:100%;background:var(--navy);color:#fff;border:none;padding:9px 12px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s;text-align:center}
-    .add-itinerary-btn:hover{opacity:.85}
-    .add-itinerary-btn.added{background:var(--green)}
-    .loading-spinner{text-align:center;padding:48px;color:var(--text2);font-size:15px}
-    .error-msg{background:#FEE2E2;border:1px solid #FECACA;color:#DC2626;padding:12px 16px;border-radius:10px;font-size:14px;margin:16px 0}
-
-    /* ── SOS Floating Button ── */
-    #sosBtn{position:fixed;bottom:24px;right:24px;z-index:500;background:#DC2626;color:#fff;border:none;width:60px;height:60px;border-radius:50%;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(220,38,38,.5);transition:transform .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center}
-    #sosBtn:hover{transform:scale(1.1);box-shadow:0 6px 28px rgba(220,38,38,.6)}
-    #sosBtn:active{transform:scale(.95)}
-
-    /* ── Modal base ── */
-    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px}
-    .modal-overlay.open{display:flex}
-    .modal{background:#fff;border-radius:24px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-    .modal h3{font-size:20px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:10px}
-    .modal-close{margin-left:auto;background:none;border:none;font-size:24px;cursor:pointer;color:var(--text2);padding:0 4px;line-height:1}
-    .modal-close:hover{color:var(--text)}
-
-    /* SOS modal styles */
-    .sos-modal h3{color:#DC2626}
-    .sos-country{font-size:14px;color:var(--text2);margin-bottom:20px}
-    .sos-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px}
-    .sos-card{background:#FEF2F2;border:1px solid #FECACA;border-radius:14px;padding:16px;text-align:center}
-    .sos-card .sos-label{font-size:12px;color:#DC2626;font-weight:600;margin-bottom:6px}
-    .sos-card .sos-number{font-size:24px;font-weight:800;color:#991B1B}
-    .sos-call-btn{display:block;width:100%;background:#DC2626;color:#fff;border:none;padding:14px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px;text-decoration:none;text-align:center}
-    .sos-call-btn:hover{background:#b91c1c}
-    .sos-tip{font-size:13px;color:var(--text2);line-height:1.5;background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:12px}
-
-    /* Itinerary modal */
-    .trip-list{display:flex;flex-direction:column;gap:10px;margin:16px 0}
-    .trip-item{background:var(--card-bg);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:space-between}
-    .trip-item:hover{border-color:var(--red);background:#fff5f5}
-    .trip-item.selected{border-color:var(--green);background:#f0fdf4}
-    .trip-name{font-size:15px;font-weight:700}
-    .trip-date{font-size:12px;color:var(--text2)}
-    .new-trip-form{display:flex;gap:10px;margin-top:14px}
-    .new-trip-input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;outline:none}
-    .new-trip-input:focus{border-color:var(--green)}
-    .confirm-add-btn{background:var(--green);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
-    .confirm-add-btn:disabled{opacity:.5;cursor:not-allowed}
-
-    /* ── Languages ── */
-    .lang-wrap{padding:56px 24px;background:var(--card-bg)}
-    .lang-inner{max-width:1100px;margin:0 auto}
-    .lang-selector{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
-    .lang-chip{background:#fff;border:2px solid var(--border);border-radius:20px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
-    .lang-chip:hover{border-color:var(--navy)}
-    .lang-chip.active{background:var(--navy);border-color:var(--navy);color:#fff}
-    .phrase-search{width:100%;max-width:400px;padding:10px 16px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;outline:none;margin-bottom:20px}
-    .phrase-search:focus{border-color:var(--navy)}
-    .phrase-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
-    .phrase-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px}
-    .phrase-en{font-size:14px;color:var(--text2);margin-bottom:6px}
-    .phrase-local{font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px}
-    .phrase-phonetic{font-size:13px;color:var(--blue);font-style:italic}
-    .lang-actions{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
-    .lang-action-btn{background:#fff;border:1.5px solid var(--border);color:var(--text);padding:9px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
-    .lang-action-btn:hover{border-color:var(--navy);background:#f8fafc}
-
-    /* ── Itinerary ── */
-    .itinerary-wrap{padding:56px 24px;background:#fff}
-    .itinerary-inner{max-width:1100px;margin:0 auto}
-    .itin-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px}
-    .new-trip-btn{background:var(--red);color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
-    .new-trip-btn:hover{background:var(--red-dk)}
-    .trips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
-    .trip-card{background:var(--card-bg);border:1px solid var(--border);border-radius:20px;overflow:hidden}
-    .trip-card-header{background:var(--navy);color:#fff;padding:16px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-    .trip-card-header h4{font-size:16px;font-weight:700;margin-bottom:2px}
-    .trip-card-header .trip-meta-small{font-size:12px;color:#9ca3af}
-    .trip-delete-btn{background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0}
-    .trip-places-list{padding:16px 20px;display:flex;flex-direction:column;gap:10px}
-    .trip-place-item{display:flex;align-items:center;gap:10px;font-size:14px}
-    .trip-place-emoji{font-size:20px;flex-shrink:0}
-    .trip-place-info{flex:1;min-width:0}
-    .trip-place-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .trip-place-cat{font-size:12px;color:var(--text2)}
-    .trip-place-remove{background:none;border:none;color:#9ca3af;cursor:pointer;font-size:18px;padding:0 4px}
-    .trip-place-remove:hover{color:#DC2626}
-    .empty-trip{padding:20px;text-align:center;color:var(--text2);font-size:14px}
-
-    /* ── App Download ── */
-    .cta-section{background:linear-gradient(135deg,var(--navy),#1a2744);color:#fff;text-align:center;padding:72px 24px}
-    .cta-section h2{font-size:clamp(24px,5vw,44px);font-weight:800;margin-bottom:12px}
-    .cta-section p{color:#adb5bd;font-size:17px;margin-bottom:36px}
-    .store-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
-    .store-btn{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:14px 24px;border-radius:14px;font-size:15px;font-weight:600;text-decoration:none;transition:background .2s}
-    .store-btn:hover{background:rgba(255,255,255,.22)}
-
-    /* ── Footer ── */
-    footer{background:var(--navy);color:#6b7280;text-align:center;padding:28px 24px;font-size:14px}
-    footer a{color:#9ca3af;text-decoration:none}
-
-    /* ── Travel Booking Tiles ── */
-    .booking-wrap{padding:48px 24px;background:linear-gradient(180deg,#f0f4ff 0%,#fff 100%);border-bottom:1px solid var(--border)}
-    .booking-inner{max-width:1100px;margin:0 auto}
-    .booking-tiles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;margin-bottom:36px}
-    .booking-tile{background:#fff;border:2px solid var(--border);border-radius:20px;padding:24px 16px;cursor:pointer;transition:all .25s cubic-bezier(.34,1.4,.64,1);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;position:relative;outline:none;font-family:inherit}
-    .booking-tile:hover{box-shadow:0 10px 32px rgba(59,130,246,.18);transform:translateY(-4px);border-color:var(--blue)}
-    .booking-tile:active{transform:scale(.97)}
-    .booking-tile .tile-emoji{font-size:44px;transition:transform .2s}
-    .booking-tile:hover .tile-emoji{transform:scale(1.12)}
-    .booking-tile .tile-label{font-size:16px;font-weight:800;color:var(--text)}
-    .booking-tile .tile-sub{font-size:13px;color:var(--text2);line-height:1.4}
-    .tile-badge{position:absolute;top:12px;right:12px;background:var(--blue);color:#fff;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;letter-spacing:.3px}
-    .tile-badge.placeholder{background:#94a3b8}
-
-    /* ── Affiliate Tiles ── */
-    .affiliate-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
-    .affiliate-tile{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:22px 16px;background:#fff;border:2px solid var(--border);border-radius:20px;text-decoration:none;color:var(--text);transition:all .25s cubic-bezier(.34,1.4,.64,1)}
-    .affiliate-tile:hover{box-shadow:0 8px 28px rgba(0,0,0,.1);transform:translateY(-3px);border-color:var(--btc)}
-    .affiliate-tile:active{transform:scale(.97)}
-    .affiliate-tile .aff-emoji{font-size:38px;transition:transform .2s}
-    .affiliate-tile:hover .aff-emoji{transform:scale(1.12)}
-    .affiliate-tile .aff-name{font-size:15px;font-weight:800}
-    .affiliate-tile .aff-desc{font-size:12px;color:var(--text2);line-height:1.5}
-    .affiliate-tile .aff-cta{margin-top:6px;background:var(--btc);color:#fff;padding:7px 16px;border-radius:10px;font-size:12px;font-weight:700}
-    .affiliate-tile.aff-btcmap .aff-cta{background:var(--navy)}
-
-    /* ── Full-screen Booking Iframe ── */
-    .iframe-modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.75);display:none;flex-direction:column}
-    .iframe-modal.open{display:flex}
-    .iframe-header{background:var(--navy);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0}
-    .iframe-header h4{font-size:16px;font-weight:700;flex:1}
-    .iframe-note{font-size:12px;color:#9ca3af}
-    .iframe-close{background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:background .2s}
-    .iframe-close:hover{background:rgba(255,255,255,.28)}
-    .iframe-body{flex:1;display:flex;overflow:hidden}
-    .iframe-body iframe{flex:1;border:0;width:100%;height:100%}
-    .iframe-fallback{flex:1;align-items:center;justify-content:center;flex-direction:column;gap:16px;background:#f8fafc;padding:32px;text-align:center;display:none}
-    .iframe-fallback p{color:var(--text2);font-size:15px;max-width:420px}
-    .iframe-fallback a{color:var(--red);font-weight:600}
-
-    /* ── Places 4×4 Category Grid (enhanced) ── */
-    .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:32px}
-    .cat-btn{background:var(--card-bg);border:2px solid var(--border);border-radius:18px;padding:22px 8px;text-align:center;cursor:pointer;transition:all .25s cubic-bezier(.34,1.56,.64,1);display:flex;flex-direction:column;align-items:center;gap:8px;outline:none;font-family:inherit;user-select:none}
-    .cat-btn:hover{border-color:var(--red);background:#fff5f5;transform:translateY(-4px);box-shadow:0 8px 24px rgba(255,82,82,.15)}
-    .cat-btn:active{transform:scale(.94)}
-    .cat-btn.active{border-color:var(--red);background:#fff5f5;box-shadow:0 0 0 3px rgba(255,82,82,.2),0 6px 20px rgba(255,82,82,.12);transform:translateY(-3px)}
-    .cat-btn .cat-emoji{font-size:34px;transition:transform .2s}
-    .cat-btn:hover .cat-emoji,.cat-btn.active .cat-emoji{transform:scale(1.15)}
-    .cat-btn .cat-label{font-size:12px;font-weight:700;color:var(--text2);line-height:1.3}
-    .cat-btn.active .cat-label{color:var(--red)}
-
-    /* ── Responsive ── */
-    @media(max-width:900px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:640px){
-      .nav-links{display:none}
-      .hero h1{font-size:30px}
-      .sos-grid{grid-template-columns:1fr 1fr}
-      .cat-grid{grid-template-columns:repeat(2,1fr)}
-    }
-  </style>
+  <link rel="icon" href="icons/icon-192.png" type="image/png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
 
-<!-- ── NAV ── -->
-<nav>
-  <div class="logo">✈️&nbsp;Kip<span>ita</span></div>
-  <div class="nav-links">
-    <a href="#features">Features</a>
-    <a href="#booking">Book</a>
-    <a href="#btcmap">BTC Map</a>
-    <a href="#explore">Explore</a>
-    <a href="#languages">Languages</a>
-    <a href="#itinerary">Itinerary</a>
-    <a href="#download">Get App</a>
-  </div>
-  <div class="nav-right">
-    <button class="wallet-btn" id="walletNavBtn" onclick="toggleWallet()">🔗 Connect Wallet</button>
-    <a href="#download" class="download-btn">📲 Download</a>
-  </div>
-</nav>
-
-<!-- ── HERO ── -->
-<div class="hero">
-  <h1>Travel Smarter.<br><span>Spend Bitcoin.</span><br>Live Freely.</h1>
-  <p>Your AI travel concierge — AI itineraries, real-time BTC merchant maps, nomad intel, and Google-powered place discovery. All in one app.</p>
-  <div class="hero-btns">
-    <a href="#download" class="btn-primary">📱 Get Kipita Free</a>
-    <a href="#explore" class="btn-secondary">🗺️ Explore Now</a>
-  </div>
-  <div class="hero-badges">
-    <span class="badge">⚡ Lightning Network</span>
-    <span class="badge">🤖 Gemini AI</span>
-    <span class="badge">₿ BTCMap</span>
-    <span class="badge">🌍 Google Places</span>
-    <span class="badge">💼 Digital Nomad Ready</span>
+<!-- ════════════════════════════════════════════ SPLASH ══════ -->
+<div id="splash">
+  <div class="splash-inner">
+    <div class="splash-logo">ki<span>pi</span>ta</div>
+    <p class="splash-tag">Travel Smarter. Live Bolder.</p>
+    <div class="splash-dots"><span></span><span></span><span></span></div>
   </div>
 </div>
 
-<!-- ── LIVE CRYPTO PRICES ── -->
-<div class="live-section">
-  <div style="max-width:1100px;margin:0 auto">
-    <h2><span class="live-dot"></span> Live Crypto Prices</h2>
-    <div class="price-grid" id="priceGrid"><div class="loading-spinner">Fetching prices…</div></div>
-    <div class="price-ts" id="priceTs"></div>
-  </div>
-</div>
+<!-- ════════════════════════════════════════════ APP ════════ -->
+<div id="app" class="hidden">
 
-<!-- ── WALLET SECTION ── -->
-<div class="wallet-section">
-  <div class="wallet-inner">
-    <div class="wallet-info">
-      <h3>🔐 Crypto Wallet</h3>
-      <p>Connect MetaMask to view your ETH balance in-app.</p>
+  <!-- ── TOP BAR ── -->
+  <header id="topbar">
+    <div class="tb-left">
+      <span class="kipita-logo">ki<span>pi</span>ta</span>
     </div>
-    <div id="walletConnectPrompt" style="color:#c4b5fd;font-size:15px">
-      No wallet connected. Click <strong style="color:#a78bfa">Connect Wallet</strong> in the nav to get started.
-    </div>
-    <div class="wallet-card" id="walletCard" style="display:none">
-      <div class="wallet-addr" id="walletAddr">—</div>
-      <div class="wallet-balance" id="walletBalance">0.0000 ETH</div>
-      <div class="wallet-balance-sub" id="walletBalanceUsd">≈ $0.00 USD</div>
-      <div class="wallet-actions">
-        <button class="wbtn" id="copyAddrBtn" onclick="copyWalletAddr()">📋 Copy Address</button>
-        <button class="wbtn danger" onclick="disconnectWallet()">Disconnect</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── TRAVEL BOOKING + PARTNER TILES ── -->
-<div class="booking-wrap" id="booking">
-  <div class="booking-inner">
-    <h2 class="section-title">✈️ Book Travel</h2>
-    <p class="section-sub">Hotels, flights, cruises & experiences — opens in a secure in-app viewer.</p>
-
-    <!-- Travel Booking Tiles (Expedia placeholder — swap URL only when referral link is ready) -->
-    <!-- EXPEDIA_SWAP_GUIDE: Replace the `data-url` attribute on each tile with the referral URL.  -->
-    <!-- No JS refactoring needed — openBookingIframe() reads data-url at click time.            -->
-    <div class="booking-tiles-grid">
-      <button class="booking-tile"
-        data-label="Hotels" data-emoji="🏨"
-        data-url="https://www.expedia.com/Hotels"
-        onclick="openBookingIframe(this)">
-        <span class="tile-badge placeholder">Expedia</span>
-        <span class="tile-emoji">🏨</span>
-        <span class="tile-label">Hotels</span>
-        <span class="tile-sub">Find & book hotels worldwide</span>
+    <button class="tb-location" id="tb-location" onclick="App.switchTab('maps')">
+      <span class="ms">location_on</span>
+      <span id="location-text">Detecting…</span>
+    </button>
+    <div class="tb-right">
+      <button class="tb-weather" onclick="App.openModal('advisory')">
+        <span id="tb-wx-emoji">🌤️</span>
+        <span id="tb-wx-temp">--°</span>
       </button>
-      <button class="booking-tile"
-        data-label="Cruises" data-emoji="🚢"
-        data-url="https://www.expedia.com/Cruises"
-        onclick="openBookingIframe(this)">
-        <span class="tile-badge placeholder">Expedia</span>
-        <span class="tile-emoji">🚢</span>
-        <span class="tile-label">Cruises</span>
-        <span class="tile-sub">Explore cruise packages</span>
+      <button class="tb-safety" onclick="App.openModal('advisory')" title="Safety Level">
+        <span class="sl-dot active"></span>
+        <span class="sl-dot active"></span>
+        <span class="sl-dot active"></span>
+        <span class="sl-dot"></span>
       </button>
-      <button class="booking-tile"
-        data-label="Flights" data-emoji="✈️"
-        data-url="https://www.expedia.com/Flights"
-        onclick="openBookingIframe(this)">
-        <span class="tile-badge placeholder">Expedia</span>
-        <span class="tile-emoji">✈️</span>
-        <span class="tile-label">Flights</span>
-        <span class="tile-sub">Search & book cheap flights</span>
-      </button>
-      <button class="booking-tile"
-        data-label="Entertainment" data-emoji="🎭"
-        data-url="https://www.expedia.com/Things-To-Do"
-        onclick="openBookingIframe(this)">
-        <span class="tile-badge placeholder">Expedia</span>
-        <span class="tile-emoji">🎭</span>
-        <span class="tile-label">Entertainment</span>
-        <span class="tile-sub">Tours, activities & experiences</span>
+      <button class="sos-btn" onclick="App.openModal('sos')">SOS</button>
+      <button class="tb-avatar" id="tb-avatar" onclick="App.toggleProfileMenu()">
+        <span class="ms" id="tb-avatar-icon">account_circle</span>
+        <img id="tb-avatar-img" src="" alt="" class="hidden"/>
       </button>
     </div>
+  </header>
 
-    <!-- Crypto & BTC Partner Tiles -->
-    <h3 style="font-size:18px;font-weight:800;margin-bottom:8px">₿ Crypto Partners</h3>
-    <p style="color:var(--text2);font-size:14px;margin-bottom:20px">Trusted platforms used by the Kipita community — opens in new tab.</p>
-    <div class="affiliate-grid">
-      <!-- BTC Map tile -->
-      <button class="affiliate-tile aff-btcmap"
-        onclick="openBookingIframe(this)"
-        data-label="BTC Map" data-emoji="🗺️"
-        data-url="https://btcmap.org/map">
-        <span class="aff-emoji">🗺️</span>
-        <span class="aff-name">BTC Map</span>
-        <span class="aff-desc">Find Bitcoin-accepting merchants worldwide. Community-maintained map.</span>
-        <span class="aff-cta">Open Map →</span>
-      </button>
-      <!-- Kinesis Money — iframed inside Kipita viewer -->
-      <button class="affiliate-tile"
-        onclick="openBookingIframe(this)"
-        data-url="https://kms.kinesis.money/signup/KM00083150"
-        data-label="Kinesis Money" data-emoji="🥇">
-        <span class="aff-emoji">🥇</span>
-        <span class="aff-name">Kinesis Money</span>
-        <span class="aff-desc">Gold & silver-backed digital money. Earn yields on your metals holdings.</span>
-        <span class="aff-cta">Sign Up →</span>
-      </button>
-      <!-- Swan Bitcoin — iframed inside Kipita viewer -->
-      <button class="affiliate-tile"
-        onclick="openBookingIframe(this)"
-        data-url="https://www.swanbitcoin.com/kipita/"
-        data-label="Swan Bitcoin" data-emoji="🦢">
-        <span class="aff-emoji">🦢</span>
-        <span class="aff-name">Swan Bitcoin</span>
-        <span class="aff-desc">The best way to accumulate Bitcoin. Auto-stack sats on your schedule.</span>
-        <span class="aff-cta">Stack Sats →</span>
-      </button>
-      <!-- Fold — iframed inside Kipita viewer -->
-      <button class="affiliate-tile"
-        onclick="openBookingIframe(this)"
-        data-url="https://use.foldapp.com/r/MAJL4MYU"
-        data-label="Fold" data-emoji="🃏">
-        <span class="aff-emoji">🃏</span>
-        <span class="aff-name">Fold</span>
-        <span class="aff-desc">Bitcoin rewards debit card. Earn sats on every purchase automatically.</span>
-        <span class="aff-cta">Get Card →</span>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ── FEATURES ── -->
-<section id="features">
-  <h2 class="section-title">Everything a nomad needs.</h2>
-  <p class="section-sub">One app replaces a dozen tools — AI, maps, payments, translation, and community.</p>
-  <div class="feature-grid">
-    <div class="feature-card"><div class="feature-icon">🤖</div><h3>AI Travel Concierge</h3><p>Powered by Gemini 2.0. Ask about destinations, generate day-by-day itineraries, check safety, and get local tips — all in natural language.</p></div>
-    <div class="feature-card"><div class="feature-icon">₿</div><h3>Bitcoin Merchant Map</h3><p>See every Bitcoin-accepting business near you via BTCMap.org. Supports Lightning Network, on-chain, and CashApp Pay.</p></div>
-    <div class="feature-card"><div class="feature-icon">🗺️</div><h3>Real Place Discovery</h3><p>Real-time nearby places via OpenStreetMap — restaurants, hotels, co-working spaces, ATMs and 16 categories — live by GPS.</p></div>
-    <div class="feature-card"><div class="feature-icon">🧳</div><h3>Smart Trip Planner</h3><p>Create, edit, and share multi-day itineraries. AI builds the day-by-day schedule; you customize it. Save places from the explore tab.</p></div>
-    <div class="feature-card"><div class="feature-icon">💱</div><h3>Currency & Crypto</h3><p>Live FX rates via ECB, BTC/ETH/SOL prices from CoinGecko, MetaMask wallet balance, and Lightning Network payments.</p></div>
-    <div class="feature-card"><div class="feature-icon">🚨</div><h3>Emergency SOS</h3><p>One tap to see local emergency numbers (police, fire, ambulance) for your current country — works offline once loaded.</p></div>
-  </div>
-</section>
-
-<!-- ── BTC MAP EMBED ── -->
-<div class="btcmap-wrap">
-  <div style="max-width:1100px;margin:0 auto">
-    <h2 class="section-title" id="btcmap">₿ Bitcoin Merchants Near You</h2>
-    <p class="section-sub">Live data from BTCMap.org — thousands of merchants worldwide that accept Bitcoin.</p>
-    <div class="map-embed">
-      <iframe src="https://btcmap.org/map#14/40.7128/-74.0060" title="BTCMap — Bitcoin merchant locations" loading="lazy" allow="geolocation" id="btcIframe"></iframe>
-      <div class="map-overlay">
-        <div class="label">₿ BTC Merchants</div>
-        <div class="count" id="merchantCount">—</div>
-      </div>
-    </div>
-    <p style="margin-top:14px;font-size:13px;color:#6b7280">Map data © <a href="https://btcmap.org" target="_blank" rel="noopener">BTCMap.org</a> &amp; OpenStreetMap contributors.</p>
-  </div>
-</div>
-
-<!-- ── EXPLORE / NEARBY PLACES ── -->
-<div class="explore-wrap" id="explore">
-  <div class="explore-inner">
-    <h2 class="section-title">🌍 Explore Nearby Places</h2>
-    <p class="section-sub">Search any city or use your GPS — real place data via OpenStreetMap, no API key needed.</p>
-
-    <!-- Search bar -->
-    <div class="search-bar">
-      <input type="text" class="search-input" id="locationInput" placeholder="City or address (e.g. Tokyo, Japan)"/>
-      <button class="geo-btn" id="geoBtn" title="Use my GPS location">📍</button>
-      <button class="search-btn" id="searchBtn">Search</button>
-    </div>
-
-    <!-- 4×4 Category grid -->
-    <div class="cat-grid" id="catGrid">
-      <button class="cat-btn active" data-cat="restaurant" data-tag='{"amenity":"restaurant"}' onclick="selectCat(this)"><span class="cat-emoji">🍜</span><span class="cat-label">Restaurants</span></button>
-      <button class="cat-btn" data-cat="hotel" data-tag='{"tourism":"hotel"}' onclick="selectCat(this)"><span class="cat-emoji">🏨</span><span class="cat-label">Hotels</span></button>
-      <button class="cat-btn" data-cat="cafe" data-tag='{"amenity":"cafe"}' onclick="selectCat(this)"><span class="cat-emoji">☕</span><span class="cat-label">Cafés</span></button>
-      <button class="cat-btn" data-cat="atm" data-tag='{"amenity":"atm"}' onclick="selectCat(this)"><span class="cat-emoji">🏧</span><span class="cat-label">ATMs</span></button>
-      <button class="cat-btn" data-cat="coworking" data-tag='{"amenity":"coworking_space"}' onclick="selectCat(this)"><span class="cat-emoji">💻</span><span class="cat-label">Co-working</span></button>
-      <button class="cat-btn" data-cat="attraction" data-tag='{"tourism":"attraction"}' onclick="selectCat(this)"><span class="cat-emoji">🎭</span><span class="cat-label">Attractions</span></button>
-      <button class="cat-btn" data-cat="pharmacy" data-tag='{"amenity":"pharmacy"}' onclick="selectCat(this)"><span class="cat-emoji">💊</span><span class="cat-label">Pharmacy</span></button>
-      <button class="cat-btn" data-cat="airport" data-tag='{"aeroway":"aerodrome"}' onclick="selectCat(this)"><span class="cat-emoji">✈️</span><span class="cat-label">Airport</span></button>
-      <button class="cat-btn" data-cat="supermarket" data-tag='{"shop":"supermarket"}' onclick="selectCat(this)"><span class="cat-emoji">🛒</span><span class="cat-label">Supermarket</span></button>
-      <button class="cat-btn" data-cat="gym" data-tag='{"leisure":"fitness_centre"}' onclick="selectCat(this)"><span class="cat-emoji">🏋️</span><span class="cat-label">Gym</span></button>
-      <button class="cat-btn" data-cat="beach" data-tag='{"natural":"beach"}' onclick="selectCat(this)"><span class="cat-emoji">🏖️</span><span class="cat-label">Beach</span></button>
-      <button class="cat-btn" data-cat="transit" data-tag='{"public_transport":"station"}' onclick="selectCat(this)"><span class="cat-emoji">🚉</span><span class="cat-label">Transit</span></button>
-      <button class="cat-btn" data-cat="fuel" data-tag='{"amenity":"fuel"}' onclick="selectCat(this)"><span class="cat-emoji">⛽</span><span class="cat-label">Gas Station</span></button>
-      <button class="cat-btn" data-cat="bar" data-tag='{"amenity":"bar"}' onclick="selectCat(this)"><span class="cat-emoji">🍺</span><span class="cat-label">Bar / Pub</span></button>
-      <button class="cat-btn" data-cat="hospital" data-tag='{"amenity":"hospital"}' onclick="selectCat(this)"><span class="cat-emoji">🏥</span><span class="cat-label">Hospital</span></button>
-      <button class="cat-btn" data-cat="library" data-tag='{"amenity":"library"}' onclick="selectCat(this)"><span class="cat-emoji">📚</span><span class="cat-label">Library</span></button>
-    </div>
-
-    <div id="placesContainer"><div class="loading-spinner">Select a category and search a city, or tap 📍 to use your GPS.</div></div>
-  </div>
-</div>
-
-<!-- ── OFFLINE LANGUAGES ── -->
-<div class="lang-wrap" id="languages">
-  <div class="lang-inner">
-    <h2 class="section-title">🌐 Offline Travel Phrases</h2>
-    <p class="section-sub">20 essential phrases in 15 languages — saved offline, no internet needed.</p>
-    <div class="lang-actions">
-      <button class="lang-action-btn" onclick="downloadPhrases()">⬇️ Download Current Language</button>
-    </div>
-    <div class="lang-selector" id="langSelector"></div>
-    <input type="text" class="phrase-search" id="phraseSearch" placeholder="Search phrases…" oninput="renderPhrases()"/>
-    <div class="phrase-list" id="phraseList"></div>
-  </div>
-</div>
-
-<!-- ── MY ITINERARY ── -->
-<div class="itinerary-wrap" id="itinerary">
-  <div class="itinerary-inner">
-    <div class="itin-header">
+  <!-- ── PROFILE MENU ── -->
+  <div id="profile-menu" class="profile-menu hidden">
+    <div class="pm-header">
+      <div class="pm-avatar"><span class="ms">account_circle</span></div>
       <div>
-        <h2 class="section-title" style="margin-bottom:4px">🧳 My Itinerary</h2>
-        <p style="color:var(--text2);font-size:15px">Save places from Explore — stored locally on your device.</p>
+        <div class="pm-name" id="pm-name">Guest User</div>
+        <div class="pm-email" id="pm-email">Not signed in</div>
       </div>
-      <button class="new-trip-btn" onclick="promptNewTrip()">+ New Trip</button>
     </div>
-    <div class="trips-grid" id="tripsGrid"><div class="loading-spinner">No trips yet. Tap <strong>+ New Trip</strong> to get started.</div></div>
+    <hr class="pm-divider"/>
+    <button class="pm-item" onclick="App.openModal('profile');App.closeProfileMenu()">
+      <span class="ms">edit</span> Edit Profile
+    </button>
+    <button class="pm-item" onclick="App.openModal('advisory');App.closeProfileMenu()">
+      <span class="ms">shield</span> Travel Safety
+    </button>
+    <button class="pm-item" onclick="App.openModal('settings');App.closeProfileMenu()">
+      <span class="ms">settings</span> Settings
+    </button>
+    <hr class="pm-divider"/>
+    <button class="pm-item pm-danger" onclick="App.signOut()">
+      <span class="ms">logout</span> Sign Out
+    </button>
   </div>
-</div>
 
-<!-- ── APP DOWNLOAD CTA ── -->
-<div class="cta-section" id="download">
-  <h2>Get the full Kipita experience.</h2>
-  <p>AI itineraries, offline maps, Lightning payments & real-time BTC merchants — on Android.</p>
-  <div class="store-btns">
-    <a href="https://play.google.com/store/apps/details?id=com.mytum" class="store-btn" target="_blank" rel="noopener">🤖 Google Play</a>
-    <a href="intent://kipita/#Intent;scheme=kipita;package=com.mytum;end" class="store-btn">📲 Open in App</a>
-  </div>
-</div>
+  <!-- ── MAIN SCREENS ── -->
+  <main id="main">
 
-<!-- ── FOOTER ── -->
-<footer>
-  <p>© 2026 Kipita. Built for digital nomads. &nbsp;|&nbsp;
-    <button onclick="openUrlInFrame('https://kipita.com/privacy','Privacy Policy','🔒')" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;font-family:inherit;padding:0">Privacy Policy</button> &nbsp;|&nbsp;
-    <button onclick="openUrlInFrame('https://kipita.com/terms','Terms of Service','📄')" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;font-family:inherit;padding:0">Terms of Service</button> &nbsp;|&nbsp;
-    <a href="mailto:info@kipita.com">Contact</a>
-  </p>
-</footer>
+    <!-- ══════════════════ HOME ══════════════════ -->
+    <section id="screen-home" class="screen active">
+      <div class="scr-scroll">
 
-<!-- ── SOS FLOATING BUTTON ── -->
-<button id="sosBtn" onclick="openSos()" title="Emergency SOS">🚨</button>
-
-<!-- ── SOS MODAL ── -->
-<div class="modal-overlay" id="sosModal">
-  <div class="modal sos-modal">
-    <h3>🚨 Emergency SOS <button class="modal-close" onclick="closeModal('sosModal')">×</button></h3>
-    <div class="sos-country" id="sosCountry">Detecting your location…</div>
-    <div class="sos-grid" id="sosGrid">
-      <div class="sos-card"><div class="sos-label">🚔 Police</div><div class="sos-number" id="sosPolice">—</div></div>
-      <div class="sos-card"><div class="sos-label">🚒 Fire</div><div class="sos-number" id="sosFire">—</div></div>
-      <div class="sos-card"><div class="sos-label">🚑 Ambulance</div><div class="sos-number" id="sosAmbulance">—</div></div>
-    </div>
-    <a href="#" class="sos-call-btn" id="sosCallBtn">📞 Call Emergency Services</a>
-    <div class="sos-tip">💡 <strong>Tip:</strong> Stay calm, state your location clearly, and do not hang up until told to do so. The international emergency number is <strong>112</strong> in most countries.</div>
-  </div>
-</div>
-
-<!-- ── ADD TO ITINERARY MODAL ── -->
-<div class="modal-overlay" id="itinModal">
-  <div class="modal">
-    <h3>🧳 Add to Itinerary <button class="modal-close" onclick="closeModal('itinModal')">×</button></h3>
-    <p style="font-size:14px;color:var(--text2);margin-bottom:8px">Select a trip or create a new one:</p>
-    <div class="trip-list" id="modalTripList"></div>
-    <div class="new-trip-form">
-      <input type="text" class="new-trip-input" id="newTripNameInput" placeholder="New trip name…" maxlength="40"/>
-      <button class="confirm-add-btn" id="createAndAddBtn" onclick="createAndAdd()">Create &amp; Add</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── BOOKING IFRAME MODAL ── -->
-<!-- Sandboxed: allow-scripts, allow-same-origin, allow-forms, allow-popups      -->
-<!-- allow-popups-to-escape-sandbox lets the iframe open checkout in a new tab   -->
-<!-- No allow-top-navigation — prevents iframe from navigating parent page       -->
-<div class="iframe-modal" id="bookingIframeModal">
-  <div class="iframe-header">
-    <h4 id="iframeModalTitle">Loading…</h4>
-    <span class="iframe-note">🔒 Secure viewer</span>
-    <button class="iframe-close" onclick="closeBookingIframe()">✕ Close</button>
-  </div>
-  <div class="iframe-body">
-    <iframe id="bookingIframe"
-      src="about:blank"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-      loading="lazy"
-      referrerpolicy="no-referrer-when-downgrade"
-      title="Travel Booking"
-    ></iframe>
-    <div class="iframe-fallback" id="iframeFallback">
-      <p style="font-size:32px">🚫</p>
-      <p>This page cannot be displayed inside the viewer (the site blocks iframes).</p>
-      <a id="iframeFallbackLink" href="#" target="_blank" rel="noopener noreferrer"
-         style="display:inline-block;background:var(--red);color:#fff;padding:12px 24px;border-radius:12px;font-weight:700;font-size:15px;text-decoration:none">
-        Open in New Tab ↗
-      </a>
-    </div>
-  </div>
-</div>
-
-<script>
-// ─────────────────────────────────────────────────────────────────────────────
-// Service Worker
-// ─────────────────────────────────────────────────────────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CoinGecko — live crypto prices
-// ─────────────────────────────────────────────────────────────────────────────
-const COIN_NAMES = { bitcoin: '₿ Bitcoin', ethereum: 'Ξ Ethereum', solana: '◎ Solana' };
-const COIN_EMOJI = { bitcoin: '₿', ethereum: 'Ξ', solana: '◎' };
-let ethPriceUsd = 0;
-
-async function fetchPrices() {
-  try {
-    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true&include_market_cap=true';
-    const data = await fetch(url).then(r => r.json());
-    ethPriceUsd = data.ethereum?.usd || 0;
-    const grid = document.getElementById('priceGrid');
-    grid.innerHTML = '';
-    for (const [id, info] of Object.entries(data)) {
-      const change = info.usd_24h_change ?? 0;
-      const up = change >= 0;
-      const cap = info.usd_market_cap ? `$${(info.usd_market_cap / 1e9).toFixed(1)}B mcap` : '';
-      grid.insertAdjacentHTML('beforeend', `
-        <div class="price-card">
-          <div class="coin">${COIN_EMOJI[id] || '🪙'} ${COIN_NAMES[id] || id}</div>
-          <div class="price">$${info.usd.toLocaleString(undefined,{maximumFractionDigits:id==='bitcoin'?0:2})}</div>
-          <div class="change ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}% (24h)</div>
-          ${cap ? `<div style="font-size:12px;color:var(--text2)">${cap}</div>` : ''}
-        </div>
-      `);
-    }
-    document.getElementById('priceTs').textContent = `Last updated ${new Date().toLocaleTimeString()}`;
-    if (walletAccount) updateWalletBalanceUsd();
-  } catch(e) {
-    document.getElementById('priceGrid').innerHTML = '<div class="error-msg">⚠️ Could not load prices. Please try again later.</div>';
-  }
-}
-fetchPrices();
-setInterval(fetchPrices, 60_000);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// BTCMap — fetch active merchant count + update iframe
-// ─────────────────────────────────────────────────────────────────────────────
-async function fetchBtcCount(lat, lng) {
-  try {
-    const r = await fetch('https://api.btcmap.org/v2/elements?updated_since=2024-01-01T00:00:00Z');
-    if (!r.ok) return;
-    const data = await r.json();
-    const active = data.filter(e => !e.deleted_at).length;
-    document.getElementById('merchantCount').textContent = active.toLocaleString() + ' active';
-    if (lat && lng) {
-      document.getElementById('btcIframe').src = `https://btcmap.org/map#14/${lat.toFixed(4)}/${lng.toFixed(4)}`;
-    }
-  } catch(_) {}
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MetaMask / window.ethereum — Wallet Connection
-// ─────────────────────────────────────────────────────────────────────────────
-let walletAccount = localStorage.getItem('kipita_wallet') || null;
-let walletEthBalance = 0;
-
-async function toggleWallet() {
-  if (walletAccount) { disconnectWallet(); return; }
-  await connectWallet();
-}
-
-async function connectWallet() {
-  if (!window.ethereum) {
-    alert('MetaMask is not installed. Please install MetaMask to connect your wallet.\n\nhttps://metamask.io/');
-    return;
-  }
-  try {
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    if (!accounts.length) return;
-    walletAccount = accounts[0];
-    localStorage.setItem('kipita_wallet', walletAccount);
-    await fetchWalletBalance();
-    renderWalletUI();
-  } catch(e) {
-    if (e.code !== 4001) console.warn('Wallet connect error', e);
-  }
-}
-
-async function fetchWalletBalance() {
-  if (!walletAccount || !window.ethereum) return;
-  try {
-    const hexBalance = await window.ethereum.request({
-      method: 'eth_getBalance',
-      params: [walletAccount, 'latest']
-    });
-    walletEthBalance = parseInt(hexBalance, 16) / 1e18;
-    updateWalletBalanceUsd();
-  } catch(_) {}
-}
-
-function updateWalletBalanceUsd() {
-  const usd = walletEthBalance * ethPriceUsd;
-  document.getElementById('walletBalance').textContent = walletEthBalance.toFixed(4) + ' ETH';
-  document.getElementById('walletBalanceUsd').textContent = ethPriceUsd > 0
-    ? `≈ $${usd.toLocaleString(undefined, {maximumFractionDigits: 2})} USD`
-    : '';
-}
-
-function disconnectWallet() {
-  walletAccount = null;
-  walletEthBalance = 0;
-  localStorage.removeItem('kipita_wallet');
-  renderWalletUI();
-}
-
-function renderWalletUI() {
-  const btn = document.getElementById('walletNavBtn');
-  const card = document.getElementById('walletCard');
-  const prompt = document.getElementById('walletConnectPrompt');
-  if (walletAccount) {
-    btn.textContent = '✅ ' + walletAccount.slice(0,6) + '…' + walletAccount.slice(-4);
-    btn.className = 'wallet-btn connected';
-    card.style.display = 'block';
-    prompt.style.display = 'none';
-    document.getElementById('walletAddr').textContent = walletAccount;
-    updateWalletBalanceUsd();
-  } else {
-    btn.textContent = '🔗 Connect Wallet';
-    btn.className = 'wallet-btn';
-    card.style.display = 'none';
-    prompt.style.display = 'block';
-  }
-}
-
-function copyWalletAddr() {
-  if (!walletAccount) return;
-  navigator.clipboard.writeText(walletAccount).then(() => {
-    // Bug #3 fix: stable ID selector instead of fragile attribute selector
-    const btn = document.getElementById('copyAddrBtn');
-    if (!btn) return;
-    const orig = btn.textContent;
-    btn.textContent = '✅ Copied!';
-    setTimeout(() => { btn.textContent = orig; }, 2000);
-  }).catch(() => {});
-}
-
-// Restore wallet on page load
-if (walletAccount && window.ethereum) {
-  // Bug #2 fix: add .catch() so unhandled rejection doesn't surface
-  fetchWalletBalance().then(renderWalletUI).catch(() => renderWalletUI());
-} else if (walletAccount) {
-  walletAccount = null;
-  localStorage.removeItem('kipita_wallet');
-}
-renderWalletUI();
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Explore — Overpass API (OSM) + Nominatim geocoding
-// ─────────────────────────────────────────────────────────────────────────────
-let currentLat = null, currentLng = null, activeCatBtn = null, pendingPlaceForItin = null;
-
-const CAT_EMOJIS = {
-  restaurant:'🍜', hotel:'🏨', cafe:'☕', atm:'🏧', coworking:'💻',
-  attraction:'🎭', pharmacy:'💊', airport:'✈️', supermarket:'🛒', gym:'🏋️',
-  beach:'🏖️', transit:'🚉', fuel:'⛽', bar:'🍺', hospital:'🏥', library:'📚'
-};
-
-function selectCat(btn) {
-  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  activeCatBtn = btn;
-  if (currentLat !== null) searchByCoords(currentLat, currentLng);
-}
-
-function getActiveCat() {
-  const btn = document.querySelector('.cat-btn.active');
-  return btn ? { cat: btn.dataset.cat, tag: JSON.parse(btn.dataset.tag) } : null;
-}
-
-async function geocodeLocation(query) {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
-  const data = await fetch(url, { headers: { 'Accept-Language': 'en' } }).then(r => r.json());
-  if (!data.length) throw new Error('Location not found');
-  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name };
-}
-
-async function searchByCoords(lat, lng) {
-  const catInfo = getActiveCat();
-  if (!catInfo) return;
-  const { cat, tag } = catInfo;
-  const emoji = CAT_EMOJIS[cat] || '📍';
-  showPlacesLoading(emoji);
-
-  const R = 0.018; // ~2km bounding box
-  const south = lat - R, north = lat + R, west = lng - R * 1.5, east = lng + R * 1.5;
-  const [key, value] = Object.entries(tag)[0];
-
-  const query = `[out:json][timeout:20];(node["${key}"="${value}"](${south},${west},${north},${east});way["${key}"="${value}"](${south},${west},${north},${east}););out body 20;>;out skel qt;`;
-
-  try {
-    const resp = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST', body: 'data=' + encodeURIComponent(query)
-    });
-    const data = await resp.json();
-    renderPlaces(data.elements.filter(e => e.tags && (e.tags.name || e.type === 'node')), cat, emoji);
-  } catch(e) {
-    showPlacesError('Could not load places. Please try again or search a different area.');
-  }
-}
-
-function showPlacesLoading(emoji) {
-  document.getElementById('placesContainer').innerHTML =
-    `<div class="loading-spinner">${emoji} Loading places…</div>`;
-}
-
-function showPlacesError(msg) {
-  document.getElementById('placesContainer').innerHTML =
-    `<div class="error-msg">⚠️ ${msg}</div>`;
-}
-
-function renderPlaces(elements, cat, emoji) {
-  const container = document.getElementById('placesContainer');
-  const named = elements.filter(e => e.tags?.name).slice(0, 20);
-  if (!named.length) {
-    container.innerHTML = `<div class="loading-spinner">${emoji} No ${cat} found nearby. Try expanding your search area.</div>`;
-    return;
-  }
-  const grid = document.createElement('div');
-  grid.className = 'places-grid';
-  named.forEach(el => {
-    const name = el.tags.name || 'Unknown';
-    const addr = [el.tags['addr:street'], el.tags['addr:city']].filter(Boolean).join(', ') || el.tags['addr:full'] || '';
-    const phone = el.tags.phone || el.tags['contact:phone'] || '';
-    const website = el.tags.website || el.tags['contact:website'] || '';
-    const lat = el.lat || el.center?.lat;
-    const lng = el.lon || el.center?.lon;
-    const placeObj = { id: String(el.id), name, cat, emoji, addr, lat, lng, phone, website };
-    const saved = isPlaceInAnyTrip(placeObj.id);
-    const card = document.createElement('div');
-    card.className = 'place-card';
-    // Bug #1 fix: avoid serialising placeObj into an onclick attribute (double-stringify
-    // bug). Build the static HTML first, then attach the click handler via addEventListener
-    // so placeObj is captured by closure — no serialisation at all.
-    card.innerHTML = `
-      <div class="place-img-placeholder">${emoji}</div>
-      <div class="place-info">
-        <div class="place-name" title="${name}">${name}</div>
-        <div class="place-addr">${addr || 'Address not available'}</div>
-        <div class="place-meta">
-          <span class="place-tag">${emoji} ${cat}</span>
-          ${phone ? `<span class="place-tag">📞 ${phone}</span>` : ''}
-          ${website ? `<button class="place-website-btn" style="background:none;border:none;font-size:11px;color:var(--blue);cursor:pointer;padding:0;font-family:inherit">🌐 Website</button>` : ''}
-        </div>
-        <button class="add-itinerary-btn ${saved?'added':''}" data-id="${el.id}">
-          ${saved ? '✅ Saved' : '+ Add to Itinerary'}
-        </button>
-      </div>
-    `;
-    card.querySelector('.add-itinerary-btn').addEventListener('click', function() {
-      openItinModal(placeObj, this);
-    });
-    if (website) {
-      card.querySelector('.place-website-btn')?.addEventListener('click', () => {
-        openUrlInFrame(website, name, emoji);
-      });
-    }
-    grid.appendChild(card);
-  });
-  container.innerHTML = `<p style="font-size:13px;color:var(--text2);margin-bottom:16px">Showing ${named.length} places · OpenStreetMap data</p>`;
-  container.appendChild(grid);
-}
-
-function isPlaceInAnyTrip(placeId) {
-  const trips = loadTrips();
-  return trips.some(t => t.places.some(p => p.id === String(placeId)));
-}
-
-document.getElementById('searchBtn').addEventListener('click', async () => {
-  const q = document.getElementById('locationInput').value.trim();
-  if (!q) { showPlacesError('Please enter a city or address.'); return; }
-  document.getElementById('placesContainer').innerHTML = '<div class="loading-spinner">🌍 Geocoding location…</div>';
-  try {
-    const loc = await geocodeLocation(q);
-    currentLat = loc.lat; currentLng = loc.lng;
-    await searchByCoords(loc.lat, loc.lng);
-    fetchBtcCount(loc.lat, loc.lng);
-  } catch(e) {
-    showPlacesError('Location not found. Try a more specific city or address.');
-  }
-});
-
-document.getElementById('locationInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('searchBtn').click();
-});
-
-document.getElementById('geoBtn').addEventListener('click', () => {
-  if (!navigator.geolocation) { showPlacesError('Geolocation not supported.'); return; }
-  document.getElementById('placesContainer').innerHTML = '<div class="loading-spinner">📍 Detecting your location…</div>';
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      currentLat = pos.coords.latitude; currentLng = pos.coords.longitude;
-      document.getElementById('locationInput').value = `${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}`;
-      searchByCoords(currentLat, currentLng);
-      fetchBtcCount(currentLat, currentLng);
-      sosDetectCountry(currentLat, currentLng);
-    },
-    () => showPlacesError('⚠️ Location access denied. Enter a city manually.')
-  );
-});
-
-// Auto-detect on load
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      currentLat = pos.coords.latitude; currentLng = pos.coords.longitude;
-      fetchBtcCount(pos.coords.latitude, pos.coords.longitude);
-      sosDetectCountry(pos.coords.latitude, pos.coords.longitude);
-    },
-    () => fetchBtcCount(null, null)
-  );
-} else { fetchBtcCount(null, null); }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SOS — Emergency numbers by country
-// ─────────────────────────────────────────────────────────────────────────────
-const EMERGENCY = {
-  US:{police:'911',fire:'911',ambulance:'911',name:'United States'},
-  GB:{police:'999',fire:'999',ambulance:'999',name:'United Kingdom'},
-  AU:{police:'000',fire:'000',ambulance:'000',name:'Australia'},
-  CA:{police:'911',fire:'911',ambulance:'911',name:'Canada'},
-  JP:{police:'110',fire:'119',ambulance:'119',name:'Japan'},
-  DE:{police:'110',fire:'112',ambulance:'112',name:'Germany'},
-  FR:{police:'17',fire:'18',ambulance:'15',name:'France'},
-  IT:{police:'113',fire:'115',ambulance:'118',name:'Italy'},
-  ES:{police:'091',fire:'080',ambulance:'061',name:'Spain'},
-  MX:{police:'911',fire:'911',ambulance:'911',name:'Mexico'},
-  BR:{police:'190',fire:'193',ambulance:'192',name:'Brazil'},
-  IN:{police:'100',fire:'101',ambulance:'102',name:'India'},
-  CN:{police:'110',fire:'119',ambulance:'120',name:'China'},
-  TH:{police:'191',fire:'199',ambulance:'1669',name:'Thailand'},
-  SG:{police:'999',fire:'995',ambulance:'995',name:'Singapore'},
-  ZA:{police:'10111',fire:'10177',ambulance:'10177',name:'South Africa'},
-  KR:{police:'112',fire:'119',ambulance:'119',name:'South Korea'},
-  AR:{police:'101',fire:'100',ambulance:'107',name:'Argentina'},
-  NL:{police:'112',fire:'112',ambulance:'112',name:'Netherlands'},
-  PT:{police:'112',fire:'112',ambulance:'112',name:'Portugal'},
-  RU:{police:'102',fire:'101',ambulance:'103',name:'Russia'},
-  TR:{police:'155',fire:'110',ambulance:'112',name:'Turkey'},
-  ID:{police:'110',fire:'113',ambulance:'118',name:'Indonesia'},
-  PH:{police:'911',fire:'911',ambulance:'911',name:'Philippines'},
-  NG:{police:'199',fire:'199',ambulance:'199',name:'Nigeria'},
-  NZ:{police:'111',fire:'111',ambulance:'111',name:'New Zealand'},
-  MY:{police:'999',fire:'994',ambulance:'999',name:'Malaysia'},
-  AE:{police:'999',fire:'997',ambulance:'998',name:'UAE'},
-  SA:{police:'999',fire:'998',ambulance:'997',name:'Saudi Arabia'},
-  EG:{police:'122',fire:'180',ambulance:'123',name:'Egypt'},
-  DEFAULT:{police:'112',fire:'112',ambulance:'112',name:'International (EU/Global)'}
-};
-
-let detectedCountry = 'DEFAULT';
-
-async function sosDetectCountry(lat, lng) {
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
-    const data = await fetch(url, { headers: { 'Accept-Language': 'en' } }).then(r => r.json());
-    const cc = data.address?.country_code?.toUpperCase() || 'DEFAULT';
-    detectedCountry = EMERGENCY[cc] ? cc : 'DEFAULT';
-  } catch(_) { detectedCountry = 'DEFAULT'; }
-}
-
-function openSos() {
-  const em = EMERGENCY[detectedCountry] || EMERGENCY.DEFAULT;
-  document.getElementById('sosCountry').textContent = `📍 Detected country: ${em.name}`;
-  document.getElementById('sosPolice').textContent = em.police;
-  document.getElementById('sosFire').textContent = em.fire;
-  document.getElementById('sosAmbulance').textContent = em.ambulance;
-  document.getElementById('sosCallBtn').href = `tel:${em.ambulance}`;
-  openModal('sosModal');
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Itinerary — localStorage trip management
-// ─────────────────────────────────────────────────────────────────────────────
-const TRIPS_KEY = 'kipita_trips';
-
-function loadTrips() {
-  try { return JSON.parse(localStorage.getItem(TRIPS_KEY)) || []; } catch(_) { return []; }
-}
-
-function saveTrips(trips) {
-  localStorage.setItem(TRIPS_KEY, JSON.stringify(trips));
-}
-
-function renderTripsGrid() {
-  const trips = loadTrips();
-  const grid = document.getElementById('tripsGrid');
-  if (!trips.length) {
-    grid.innerHTML = '<div class="loading-spinner">No trips yet. Tap <strong>+ New Trip</strong> to get started.</div>';
-    return;
-  }
-  grid.innerHTML = '';
-  trips.forEach((trip, ti) => {
-    const card = document.createElement('div');
-    card.className = 'trip-card';
-    const placesHtml = trip.places.length
-      ? trip.places.map((p, pi) => `
-          <div class="trip-place-item">
-            <span class="trip-place-emoji">${p.emoji}</span>
-            <div class="trip-place-info">
-              <div class="trip-place-name">${p.name}</div>
-              <div class="trip-place-cat">${p.cat}${p.addr ? ' · ' + p.addr.slice(0,40) : ''}</div>
-            </div>
-            <button class="trip-place-remove" onclick="removeFromTrip(${ti},${pi})" title="Remove">×</button>
+        <div class="home-banner">
+          <div class="hb-text">
+            <h2 id="home-greeting">Good morning! 👋</h2>
+            <p id="home-sub">Where are you heading today?</p>
           </div>
-        `).join('')
-      : '<div class="empty-trip">No places yet. Search the Explore tab to add places.</div>';
-    card.innerHTML = `
-      <div class="trip-card-header">
-        <div><h4>${trip.name}</h4><div class="trip-meta-small">Created ${new Date(trip.created).toLocaleDateString()} · ${trip.places.length} place${trip.places.length !== 1 ? 's' : ''}</div></div>
-        <button class="trip-delete-btn" onclick="deleteTrip(${ti})" title="Delete trip">🗑</button>
+          <button class="hb-weather-card" onclick="App.openModal('advisory')">
+            <div class="hbw-main">
+              <span class="hbw-icon" id="hbw-icon">🌤️</span>
+              <div>
+                <div class="hbw-temp" id="hbw-temp">--°F</div>
+                <div class="hbw-desc" id="hbw-desc">Loading…</div>
+              </div>
+            </div>
+            <div class="hbw-loc" id="hbw-loc">📍 Detecting…</div>
+          </button>
+        </div>
+
+        <!-- Safety Card -->
+        <div class="card safety-card" onclick="App.openModal('advisory')">
+          <div class="sc-top">
+            <div class="sc-label"><span class="ms">shield</span> Travel Safety Level</div>
+            <span class="sc-badge" id="sc-badge" data-level="3">Moderate</span>
+          </div>
+          <div class="sc-track"><div class="sc-fill" id="sc-fill" style="width:75%"></div></div>
+          <p class="sc-hint">Tap for full advisory →</p>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="sec-row"><h3 class="sec-title">Quick Actions</h3></div>
+        <div class="qa-grid">
+          <button class="qa-item" onclick="App.switchTab('maps')">
+            <div class="qa-ico qa-map">🗺️</div><span>Map</span>
+          </button>
+          <button class="qa-item" onclick="App.switchTab('wallet')">
+            <div class="qa-ico qa-bank">🏦</div><span>Banking</span>
+          </button>
+          <button class="qa-item" onclick="App.openModal('translate')">
+            <div class="qa-ico qa-lang">🌐</div><span>Translate</span>
+          </button>
+          <button class="qa-item" onclick="App.openModal('perks')">
+            <div class="qa-ico qa-perks">🎁</div><span>Perks</span>
+          </button>
+          <button class="qa-item" onclick="App.switchTab('groups')">
+            <div class="qa-ico qa-grp">👥</div><span>Groups</span>
+          </button>
+          <button class="qa-item" onclick="App.openModal('travelers')">
+            <div class="qa-ico qa-near">🧭</div><span>Nearby</span>
+          </button>
+          <button class="qa-item" onclick="App.openModal('social')">
+            <div class="qa-ico qa-social">📸</div><span>Stories</span>
+          </button>
+          <button class="qa-item" onclick="App.openModal('advisory')">
+            <div class="qa-ico qa-adv">🛡️</div><span>Advisory</span>
+          </button>
+        </div>
+
+        <!-- Safety & Help -->
+        <div class="sec-row"><h3 class="sec-title">Safety &amp; Help</h3></div>
+        <div class="sh-grid">
+          <button class="sh-item sh-sos" onclick="App.openModal('sos')">
+            <span>🆘</span><span>Emergency SOS</span>
+          </button>
+          <button class="sh-item sh-adv" onclick="App.openModal('advisory')">
+            <span>🛡️</span><span>Travel Advisory</span>
+          </button>
+          <button class="sh-item sh-hosp" onclick="App.findNearby('hospital')">
+            <span>🏥</span><span>Find Hospital</span>
+          </button>
+          <button class="sh-item sh-emb" onclick="App.findNearby('embassy')">
+            <span>🏛️</span><span>Embassy</span>
+          </button>
+        </div>
+
+        <!-- Upcoming Trips -->
+        <div class="sec-row">
+          <h3 class="sec-title">Upcoming Trips</h3>
+          <button class="see-all" onclick="App.switchTab('trips')">See all</button>
+        </div>
+        <div id="home-trips"></div>
+
+        <div class="pb-nav"></div>
       </div>
-      <div class="trip-places-list">${placesHtml}</div>
-    `;
-    grid.appendChild(card);
-  });
-}
+    </section>
 
-function deleteTrip(index) {
-  // Bug #7 fix: bounds check before splice
-  const trips = loadTrips();
-  if (index < 0 || index >= trips.length) return;
-  if (!confirm('Delete this trip?')) return;
-  trips.splice(index, 1);
-  saveTrips(trips);
-  renderTripsGrid();
-}
+    <!-- ══════════════════ AI ══════════════════════ -->
+    <section id="screen-ai" class="screen">
+      <div class="ai-wrap">
+        <div class="ai-header">
+          <div class="ai-avatar-badge">✨</div>
+          <div>
+            <h3>Kipita AI</h3>
+            <p class="ai-sub" id="ai-sub">Powered by Gemini 2.0</p>
+          </div>
+        </div>
+        <div class="ai-quick-row">
+          <button class="aiq-btn" onclick="App.aiQuick('plan')">✈️ Plan a Trip</button>
+          <button class="aiq-btn" onclick="App.aiQuick('safety')">🛡️ Safety</button>
+          <button class="aiq-btn" onclick="App.aiQuick('advisories')">📋 Advisories</button>
+          <button class="aiq-btn" onclick="App.aiQuick('phrases')">🌐 Phrases</button>
+        </div>
+        <div class="chat-messages" id="chat-msgs">
+          <div class="msg msg-ai">
+            <div class="msg-bubble">Hi! I'm your AI travel companion powered by Gemini. I can help you plan trips, check travel safety, find places to visit, and more. What would you like to explore today?</div>
+          </div>
+        </div>
+        <div id="ai-add-trip" class="ai-add-trip hidden">
+          <span>✈️ Trip plan ready!</span>
+          <button onclick="App.addAiTrip()">Add to Trips</button>
+        </div>
+        <div class="chat-input-row">
+          <textarea id="chat-input" class="chat-textarea" placeholder="Ask me anything about travel…" rows="1"
+            onkeydown="App.chatKeydown(event)" oninput="App.chatResize(this)"></textarea>
+          <button class="chat-send" onclick="App.sendChat()">
+            <span class="ms">send</span>
+          </button>
+        </div>
+      </div>
+    </section>
 
-function removeFromTrip(tripIndex, placeIndex) {
-  // Bug #7 fix: bounds check before splice
-  const trips = loadTrips();
-  if (tripIndex < 0 || tripIndex >= trips.length) return;
-  if (placeIndex < 0 || placeIndex >= trips[tripIndex].places.length) return;
-  trips[tripIndex].places.splice(placeIndex, 1);
-  saveTrips(trips);
-  renderTripsGrid();
-  // Refresh place card buttons if visible
-  document.querySelectorAll('.add-itinerary-btn').forEach(btn => {
-    const pid = btn.dataset.id;
-    if (pid) {
-      const inTrip = isPlaceInAnyTrip(pid);
-      btn.textContent = inTrip ? '✅ Saved' : '+ Add to Itinerary';
-      btn.className = 'add-itinerary-btn' + (inTrip ? ' added' : '');
-    }
-  });
-}
+    <!-- ══════════════════ TRIPS ══════════════════ -->
+    <section id="screen-trips" class="screen">
+      <div class="scr-scroll">
+        <div class="trips-header">
+          <h2>My Trips</h2>
+          <button class="btn-primary-sm" onclick="App.openModal('plan-trip')">
+            <span class="ms">add</span> Plan Trip
+          </button>
+        </div>
+        <div class="tab-row">
+          <button class="tab-btn active" data-trip-tab="upcoming" onclick="App.tripTab('upcoming',this)">Upcoming</button>
+          <button class="tab-btn" data-trip-tab="past" onclick="App.tripTab('past',this)">Past</button>
+          <button class="tab-btn" data-trip-tab="cancelled" onclick="App.tripTab('cancelled',this)">Cancelled</button>
+        </div>
+        <div id="tlist-upcoming" class="trip-list"></div>
+        <div id="tlist-past" class="trip-list hidden"></div>
+        <div id="tlist-cancelled" class="trip-list hidden"></div>
+        <div class="pb-nav"></div>
+      </div>
+    </section>
 
-function promptNewTrip() {
-  const name = prompt('Enter trip name (e.g. "Tokyo 2026"):');
-  if (!name || !name.trim()) return;
-  const trips = loadTrips();
-  trips.push({ name: name.trim(), created: Date.now(), places: [] });
-  saveTrips(trips);
-  renderTripsGrid();
-}
+    <!-- ══════════════════ PLACES ══════════════════ -->
+    <section id="screen-places" class="screen">
+      <div class="scr-scroll">
+        <div class="search-row">
+          <div class="search-bar">
+            <span class="ms">search</span>
+            <input type="text" id="places-search" placeholder="Search destinations, places…"
+              oninput="App.filterDestinations(this.value)"/>
+          </div>
+          <button class="geo-btn" onclick="App.detectLocation()" title="Detect location">
+            <span class="ms">my_location</span>
+          </button>
+        </div>
+        <div class="tab-row">
+          <button class="tab-btn active" data-places-tab="dest" onclick="App.placesTab('dest',this)">🌍 Destinations</button>
+          <button class="tab-btn" data-places-tab="places" onclick="App.placesTab('places',this)">📍 Places</button>
+        </div>
+        <div id="tab-dest" class="places-tab-body">
+          <div class="sort-label-row">
+            <span class="sort-label" id="sort-label">Nomad Hotspots</span>
+            <span class="sort-info" id="sort-info"></span>
+          </div>
+          <div class="dest-grid" id="dest-grid"></div>
+        </div>
+        <div id="tab-places" class="places-tab-body hidden">
+          <div class="time-greeting" id="time-greeting">🍳 Good Morning</div>
+          <div class="cat-grid" id="cat-grid"></div>
+        </div>
+        <div class="pb-nav"></div>
+      </div>
+    </section>
 
-function openItinModal(placeOrJson, buttonEl) {
-  // Bug #1 fix: accepts either an object (from closure) or a JSON string (legacy).
-  // Bug #6 fix: wrapped in try-catch with type guard.
-  try {
-    const place = (typeof placeOrJson === 'string') ? JSON.parse(placeOrJson) : placeOrJson;
-    if (!place || typeof place !== 'object') throw new Error('Invalid place');
-    pendingPlaceForItin = { ...place };
-  } catch(e) {
-    console.warn('openItinModal: invalid place data', e);
-    return;
-  }
-  pendingPlaceForItin._buttonEl = buttonEl;
-  const trips = loadTrips();
-  const list = document.getElementById('modalTripList');
-  list.innerHTML = '';
-  if (!trips.length) {
-    list.innerHTML = '<p style="color:var(--text2);font-size:14px">No trips yet. Create one below.</p>';
-  } else {
-    trips.forEach((trip, i) => {
-      const alreadyIn = trip.places.some(p => p.id === pendingPlaceForItin.id);
-      const item = document.createElement('div');
-      item.className = 'trip-item' + (alreadyIn ? ' selected' : '');
-      item.innerHTML = `<div><div class="trip-name">${trip.name}</div><div class="trip-date">${trip.places.length} places</div></div>${alreadyIn ? '<span style="color:var(--green)">✅</span>' : ''}`;
-      if (!alreadyIn) item.onclick = () => addToTrip(i);
-      list.appendChild(item);
-    });
-  }
-  document.getElementById('newTripNameInput').value = '';
-  openModal('itinModal');
-}
+    <!-- ══════════════════ MAPS ══════════════════ -->
+    <section id="screen-maps" class="screen">
+      <div class="map-screen-wrap">
+        <div class="map-screen-search">
+          <span class="ms">search</span>
+          <input type="text" id="map-screen-input" placeholder="Search address or place…"
+            onkeydown="App.mapScreenSearchKey(event)"/>
+          <button onclick="App.mapScreenSearch()"><span class="ms">search</span></button>
+          <button onclick="App.detectLocation()" title="My location"><span class="ms">my_location</span></button>
+        </div>
+        <div class="map-pills" id="map-screen-pills">
+          <button class="mpill active" data-f="btc" onclick="App.mapScreenFilter('btc',this)">₿ BTC</button>
+          <button class="mpill" data-f="food" onclick="App.mapScreenFilter('food',this)">🍜 Food</button>
+          <button class="mpill" data-f="cafe" onclick="App.mapScreenFilter('cafe',this)">☕ Cafe</button>
+          <button class="mpill" data-f="shop" onclick="App.mapScreenFilter('shop',this)">🛍 Shops</button>
+          <button class="mpill" data-f="atm" onclick="App.mapScreenFilter('atm',this)">🏧 ATM</button>
+        </div>
+        <div id="leaflet-map-screen" class="leaflet-map-screen"></div>
+      </div>
+    </section>
 
-function addToTrip(tripIndex) {
-  if (!pendingPlaceForItin) return;
-  const trips = loadTrips();
-  const place = { ...pendingPlaceForItin };
-  delete place._buttonEl;
-  trips[tripIndex].places.push(place);
-  saveTrips(trips);
-  closeModal('itinModal');
-  renderTripsGrid();
-  if (pendingPlaceForItin._buttonEl) {
-    pendingPlaceForItin._buttonEl.textContent = '✅ Saved';
-    pendingPlaceForItin._buttonEl.className = 'add-itinerary-btn added';
-  }
-  pendingPlaceForItin = null;
-}
+    <!-- ══════════════════ WALLET ══════════════════ -->
+    <section id="screen-wallet" class="screen">
+      <div class="scr-scroll">
+        <div class="wallet-screen-hdr">
+          <h2>🌍 Markets</h2>
+        </div>
 
-function createAndAdd() {
-  const name = document.getElementById('newTripNameInput').value.trim();
-  if (!name) return;
-  const trips = loadTrips();
-  const place = { ...pendingPlaceForItin };
-  delete place._buttonEl;
-  trips.push({ name, created: Date.now(), places: [place] });
-  saveTrips(trips);
-  closeModal('itinModal');
-  renderTripsGrid();
-  if (pendingPlaceForItin._buttonEl) {
-    pendingPlaceForItin._buttonEl.textContent = '✅ Saved';
-    pendingPlaceForItin._buttonEl.className = 'add-itinerary-btn added';
-  }
-  pendingPlaceForItin = null;
-}
+        <!-- ── ABOVE FOLD: Currency Converter ── -->
+        <div class="currency-converter">
+          <div class="cvt-title">
+            <span class="ms cvt-icon">currency_exchange</span>
+            <span>Currency Converter</span>
+            <span class="live-badge"><span class="live-dot"></span>Live</span>
+          </div>
+          <div class="cvt-row">
+            <input type="number" id="cc-from-amt" class="cvt-input" value="1" oninput="App.convertCurrency()" min="0"/>
+            <select id="cc-from-cur" class="cvt-select" onchange="App.convertCurrency()">
+              <option value="USD">🇺🇸 USD</option>
+              <option value="EUR">🇪🇺 EUR</option>
+              <option value="GBP">🇬🇧 GBP</option>
+              <option value="JPY">🇯🇵 JPY</option>
+              <option value="CNY">🇨🇳 CNY</option>
+              <option value="CHF">🇨🇭 CHF</option>
+              <option value="THB">🇹🇭 THB</option>
+              <option value="IDR">🇮🇩 IDR</option>
+              <option value="BRL">🇧🇷 BRL</option>
+              <option value="AED">🇦🇪 AED</option>
+              <option value="SGD">🇸🇬 SGD</option>
+              <option value="BTC">₿ BTC</option>
+            </select>
+          </div>
+          <button class="cvt-swap" onclick="App.swapCurrency()" title="Swap currencies">
+            <span class="ms">swap_vert</span>
+          </button>
+          <div class="cvt-row">
+            <div class="cvt-output" id="cc-to-amt">—</div>
+            <select id="cc-to-cur" class="cvt-select" onchange="App.convertCurrency()">
+              <option value="EUR">🇪🇺 EUR</option>
+              <option value="USD">🇺🇸 USD</option>
+              <option value="GBP">🇬🇧 GBP</option>
+              <option value="JPY">🇯🇵 JPY</option>
+              <option value="CNY">🇨🇳 CNY</option>
+              <option value="CHF">🇨🇭 CHF</option>
+              <option value="THB">🇹🇭 THB</option>
+              <option value="IDR">🇮🇩 IDR</option>
+              <option value="BRL">🇧🇷 BRL</option>
+              <option value="AED">🇦🇪 AED</option>
+              <option value="SGD">🇸🇬 SGD</option>
+              <option value="BTC">₿ BTC</option>
+            </select>
+          </div>
+          <div class="cvt-rate" id="cc-rate-label">Loading exchange rates…</div>
+        </div>
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Languages — 15 languages × 20 phrases
-// ─────────────────────────────────────────────────────────────────────────────
-const PHRASES = {
-  English:{flag:'🇬🇧',phrases:[
-    {en:'Hello',local:'Hello',ph:'HEH-loh'},
-    {en:'Thank you',local:'Thank you',ph:'THANGK yoo'},
-    {en:'Please',local:'Please',ph:'pleez'},
-    {en:'Yes',local:'Yes',ph:'yes'},
-    {en:'No',local:'No',ph:'noh'},
-    {en:'Excuse me',local:'Excuse me',ph:'ex-KYOOZ mee'},
-    {en:"I don't understand",local:"I don't understand",ph:'I dohnt un-der-STAND'},
-    {en:'Do you speak English?',local:'Do you speak English?',ph:'doo yoo speek ING-glish'},
-    {en:'Where is the bathroom?',local:'Where is the bathroom?',ph:'wair iz thuh BATH-room'},
-    {en:'How much does this cost?',local:'How much does this cost?',ph:'how much duz this kawst'},
-    {en:'Can I have the menu please?',local:'Can I have the menu please?',ph:'kan I hav thuh MEN-yoo pleez'},
-    {en:'Water please',local:'Water please',ph:'WAW-ter pleez'},
-    {en:'Help!',local:'Help!',ph:'help'},
-    {en:'I need a doctor',local:'I need a doctor',ph:'I need uh DOK-ter'},
-    {en:'Call the police',local:'Call the police',ph:'kawl thuh puh-LEES'},
-    {en:'Where is the nearest hospital?',local:'Where is the nearest hospital?',ph:'wair iz thuh NEER-est HOS-pi-tul'},
-    {en:"I'm lost",local:"I'm lost",ph:'Im lawst'},
-    {en:'Can you help me?',local:'Can you help me?',ph:'kan yoo help mee'},
-    {en:'What time is it?',local:'What time is it?',ph:'wut tym iz it'},
-    {en:'Goodbye',local:'Goodbye',ph:'gud-BY'}
-  ]},
-  Spanish:{flag:'🇪🇸',phrases:[
-    {en:'Hello',local:'Hola',ph:'OH-lah'},
-    {en:'Thank you',local:'Gracias',ph:'GRAH-syahs'},
-    {en:'Please',local:'Por favor',ph:'por fah-VOR'},
-    {en:'Yes',local:'Sí',ph:'see'},
-    {en:'No',local:'No',ph:'noh'},
-    {en:'Excuse me',local:'Perdón',ph:'per-DON'},
-    {en:"I don't understand",local:'No entiendo',ph:'noh en-TYEN-doh'},
-    {en:'Do you speak English?',local:'¿Habla inglés?',ph:'AH-blah een-GLES'},
-    {en:'Where is the bathroom?',local:'¿Dónde está el baño?',ph:'DON-deh es-TAH el BAN-yo'},
-    {en:'How much does this cost?',local:'¿Cuánto cuesta?',ph:'KWAN-toh KWES-tah'},
-    {en:'Can I have the menu please?',local:'¿Me trae el menú?',ph:'meh TRAH-eh el meh-NOO'},
-    {en:'Water please',local:'Agua, por favor',ph:'AH-gwah por fah-VOR'},
-    {en:'Help!',local:'¡Ayuda!',ph:'ah-YOO-dah'},
-    {en:'I need a doctor',local:'Necesito un médico',ph:'neh-seh-SEE-toh oon MEH-dee-koh'},
-    {en:'Call the police',local:'Llame a la policía',ph:'YAH-meh ah lah poh-lee-SEE-ah'},
-    {en:'Where is the nearest hospital?',local:'¿Dónde está el hospital más cercano?',ph:'DON-deh es-TAH el os-pee-TAL mas ser-KAH-noh'},
-    {en:"I'm lost",local:'Estoy perdido/a',ph:'es-TOY per-DEE-doh'},
-    {en:'Can you help me?',local:'¿Puede ayudarme?',ph:'PWEH-deh ah-yoo-DAR-meh'},
-    {en:'What time is it?',local:'¿Qué hora es?',ph:'keh OH-rah es'},
-    {en:'Goodbye',local:'Adiós',ph:'ah-DYOS'}
-  ]},
-  French:{flag:'🇫🇷',phrases:[
-    {en:'Hello',local:'Bonjour',ph:'bon-ZHOOR'},
-    {en:'Thank you',local:'Merci',ph:'mer-SEE'},
-    {en:'Please',local:"S'il vous plaît",ph:'seel voo PLEH'},
-    {en:'Yes',local:'Oui',ph:'wee'},
-    {en:'No',local:'Non',ph:'nohn'},
-    {en:'Excuse me',local:'Excusez-moi',ph:'ex-koo-ZAY mwah'},
-    {en:"I don't understand",local:'Je ne comprends pas',ph:'zhuh nuh kom-PRAHN pah'},
-    {en:'Do you speak English?',local:'Parlez-vous anglais?',ph:'par-LAY voo ahn-GLEH'},
-    {en:'Where is the bathroom?',local:'Où sont les toilettes?',ph:'oo sohn lay twah-LET'},
-    {en:'How much does this cost?',local:'Combien ça coûte?',ph:'kom-BYAN sah KOOT'},
-    {en:'Can I have the menu please?',local:'Le menu, s\'il vous plaît',ph:'luh muh-NOO seel voo PLEH'},
-    {en:'Water please',local:'De l\'eau, s\'il vous plaît',ph:'duh LOH seel voo PLEH'},
-    {en:'Help!',local:'Au secours!',ph:'oh suh-KOOR'},
-    {en:'I need a doctor',local:"J'ai besoin d'un médecin",ph:'zhay buh-ZWAN dun may-DUH-san'},
-    {en:'Call the police',local:'Appelez la police',ph:'ah-puh-LAY lah poh-LEES'},
-    {en:'Where is the nearest hospital?',local:"Où est l'hôpital le plus proche?",ph:'oo eh loh-pee-TAL luh ploo PROSH'},
-    {en:"I'm lost",local:'Je suis perdu',ph:'zhuh swee per-DOO'},
-    {en:'Can you help me?',local:'Pouvez-vous m\'aider?',ph:'poo-VAY voo meh-DAY'},
-    {en:'What time is it?',local:'Quelle heure est-il?',ph:'kel ur eh-TEEL'},
-    {en:'Goodbye',local:'Au revoir',ph:'oh ruh-VWAHR'}
-  ]},
-  German:{flag:'🇩🇪',phrases:[
-    {en:'Hello',local:'Hallo',ph:'HA-loh'},
-    {en:'Thank you',local:'Danke',ph:'DAHN-kuh'},
-    {en:'Please',local:'Bitte',ph:'BIT-uh'},
-    {en:'Yes',local:'Ja',ph:'yah'},
-    {en:'No',local:'Nein',ph:'nine'},
-    {en:'Excuse me',local:'Entschuldigung',ph:'ent-SHOOL-dee-goong'},
-    {en:"I don't understand",local:'Ich verstehe nicht',ph:'ish fer-SHTEH-uh nisht'},
-    {en:'Do you speak English?',local:'Sprechen Sie Englisch?',ph:'SHPREH-khen zee ENG-lish'},
-    {en:'Where is the bathroom?',local:'Wo ist die Toilette?',ph:'voh ist dee toy-LET-uh'},
-    {en:'How much does this cost?',local:'Was kostet das?',ph:'vas KOS-tet dahs'},
-    {en:'Can I have the menu please?',local:'Die Speisekarte bitte',ph:'dee SHPY-zuh-kar-tuh BIT-uh'},
-    {en:'Water please',local:'Wasser bitte',ph:'VA-ser BIT-uh'},
-    {en:'Help!',local:'Hilfe!',ph:'HIL-fuh'},
-    {en:'I need a doctor',local:'Ich brauche einen Arzt',ph:'ish BROW-khuh EYE-nen artst'},
-    {en:'Call the police',local:'Rufen Sie die Polizei',ph:'ROO-fen zee dee po-lee-TSY'},
-    {en:'Where is the nearest hospital?',local:'Wo ist das nächste Krankenhaus?',ph:'voh ist dahs NEKS-tuh KRANK-en-hows'},
-    {en:"I'm lost",local:'Ich habe mich verlaufen',ph:'ish HA-buh mish fer-LOW-fen'},
-    {en:'Can you help me?',local:'Können Sie mir helfen?',ph:'KOE-nen zee meer HEL-fen'},
-    {en:'What time is it?',local:'Wie spät ist es?',ph:'vee shpayt ist es'},
-    {en:'Goodbye',local:'Auf Wiedersehen',ph:'owf VEE-der-zay-en'}
-  ]},
-  Japanese:{flag:'🇯🇵',phrases:[
-    {en:'Hello',local:'こんにちは',ph:'kon-ni-chi-WA'},
-    {en:'Thank you',local:'ありがとう',ph:'a-ri-ga-TO'},
-    {en:'Please',local:'お願いします',ph:'o-ne-GAI shi-mas'},
-    {en:'Yes',local:'はい',ph:'hai'},
-    {en:'No',local:'いいえ',ph:'ee-yeh'},
-    {en:'Excuse me',local:'すみません',ph:'su-mi-MA-sen'},
-    {en:"I don't understand",local:'わかりません',ph:'wa-ka-ri-MA-sen'},
-    {en:'Do you speak English?',local:'英語を話せますか？',ph:'EI-go o ha-na-SE-mas-ka'},
-    {en:'Where is the bathroom?',local:'トイレはどこですか？',ph:'TOI-re wa DO-ko des-ka'},
-    {en:'How much does this cost?',local:'いくらですか？',ph:'i-KU-ra des-ka'},
-    {en:'Can I have the menu please?',local:'メニューをください',ph:'me-NYU o ku-da-SAI'},
-    {en:'Water please',local:'お水をください',ph:'o-MI-zu o ku-da-SAI'},
-    {en:'Help!',local:'助けて！',ph:'ta-su-KE-te'},
-    {en:'I need a doctor',local:'医者が必要です',ph:'I-sha ga hi-tsu-YO des'},
-    {en:'Call the police',local:'警察を呼んでください',ph:'KEI-sa-tsu o YON-de ku-da-SAI'},
-    {en:'Where is the nearest hospital?',local:'最寄りの病院はどこですか？',ph:'MO-yo-ri no BYO-in wa DO-ko des-ka'},
-    {en:"I'm lost",local:'迷子になりました',ph:'MA-i-go ni na-ri-MA-shi-ta'},
-    {en:'Can you help me?',local:'助けていただけますか？',ph:'ta-su-ke-te i-ta-DA-ke-mas-ka'},
-    {en:'What time is it?',local:'今何時ですか？',ph:'i-MA nan-JI des-ka'},
-    {en:'Goodbye',local:'さようなら',ph:'sa-YO-na-ra'}
-  ]},
-  Mandarin:{flag:'🇨🇳',phrases:[
-    {en:'Hello',local:'你好',ph:'nǐ hǎo'},
-    {en:'Thank you',local:'谢谢',ph:'xiè xiè'},
-    {en:'Please',local:'请',ph:'qǐng'},
-    {en:'Yes',local:'是',ph:'shì'},
-    {en:'No',local:'不',ph:'bù'},
-    {en:'Excuse me',local:'对不起',ph:'duì bù qǐ'},
-    {en:"I don't understand",local:'我不明白',ph:'wǒ bù míng bái'},
-    {en:'Do you speak English?',local:'你会说英语吗？',ph:'nǐ huì shuō yīng yǔ ma'},
-    {en:'Where is the bathroom?',local:'洗手间在哪里？',ph:'xǐ shǒu jiān zài nǎ lǐ'},
-    {en:'How much does this cost?',local:'这多少钱？',ph:'zhè duō shǎo qián'},
-    {en:'Can I have the menu please?',local:'请给我菜单',ph:'qǐng gěi wǒ cài dān'},
-    {en:'Water please',local:'请来杯水',ph:'qǐng lái bēi shuǐ'},
-    {en:'Help!',local:'救命！',ph:'jiù mìng'},
-    {en:'I need a doctor',local:'我需要医生',ph:'wǒ xū yào yī shēng'},
-    {en:'Call the police',local:'请打警察电话',ph:'qǐng dǎ jǐng chá diàn huà'},
-    {en:'Where is the nearest hospital?',local:'最近的医院在哪里？',ph:'zuì jìn de yī yuàn zài nǎ lǐ'},
-    {en:"I'm lost",local:'我迷路了',ph:'wǒ mí lù le'},
-    {en:'Can you help me?',local:'你能帮我吗？',ph:'nǐ néng bāng wǒ ma'},
-    {en:'What time is it?',local:'现在几点？',ph:'xiàn zài jǐ diǎn'},
-    {en:'Goodbye',local:'再见',ph:'zài jiàn'}
-  ]},
-  Arabic:{flag:'🇸🇦',phrases:[
-    {en:'Hello',local:'مرحبا',ph:'mar-HA-ba'},
-    {en:'Thank you',local:'شكراً',ph:'SHUK-ran'},
-    {en:'Please',local:'من فضلك',ph:'min FAD-lak'},
-    {en:'Yes',local:'نعم',ph:'na-AM'},
-    {en:'No',local:'لا',ph:'lah'},
-    {en:'Excuse me',local:'عفواً',ph:'AF-wan'},
-    {en:"I don't understand",local:'لا أفهم',ph:'la AF-ham'},
-    {en:'Do you speak English?',local:'هل تتكلم الإنجليزية؟',ph:'hal ta-ta-KAL-am al-in-glee-ZEE-ya'},
-    {en:'Where is the bathroom?',local:'أين الحمام؟',ph:'AY-na al-ham-MAM'},
-    {en:'How much does this cost?',local:'بكم هذا؟',ph:'bi-KAM ha-ZA'},
-    {en:'Can I have the menu please?',local:'قائمة الطعام من فضلك',ph:'QA-i-ma at-ta-AM min FAD-lak'},
-    {en:'Water please',local:'ماء من فضلك',ph:'MA min FAD-lak'},
-    {en:'Help!',local:'النجدة!',ph:'an-NAJ-da'},
-    {en:'I need a doctor',local:'أحتاج طبيباً',ph:'ah-TA-j ta-BI-ban'},
-    {en:'Call the police',local:'اتصل بالشرطة',ph:'it-ta-SIL bish-shur-TA'},
-    {en:'Where is the nearest hospital?',local:'أين أقرب مستشفى؟',ph:'AY-na AQ-rab mus-TASH-fa'},
-    {en:"I'm lost",local:'أنا ضائع',ph:'A-na DA-i'},
-    {en:'Can you help me?',local:'هل يمكنك مساعدتي؟',ph:'hal yum-KIN-ak mu-SA-a-da-ti'},
-    {en:'What time is it?',local:'كم الساعة؟',ph:'kam as-SA-a'},
-    {en:'Goodbye',local:'مع السلامة',ph:'ma-as-sa-LA-ma'}
-  ]},
-  Portuguese:{flag:'🇧🇷',phrases:[
-    {en:'Hello',local:'Olá',ph:'oh-LAH'},
-    {en:'Thank you',local:'Obrigado/a',ph:'oh-bri-GAH-doo'},
-    {en:'Please',local:'Por favor',ph:'por fa-VOR'},
-    {en:'Yes',local:'Sim',ph:'seem'},
-    {en:'No',local:'Não',ph:'now'},
-    {en:'Excuse me',local:'Com licença',ph:'kom lee-SEN-sa'},
-    {en:"I don't understand",local:'Não entendo',ph:'now en-TEN-doo'},
-    {en:'Do you speak English?',local:'Fala inglês?',ph:'FAH-la een-GLESH'},
-    {en:'Where is the bathroom?',local:'Onde fica o banheiro?',ph:'ON-ji FEE-ka oh ban-YAY-roo'},
-    {en:'How much does this cost?',local:'Quanto custa?',ph:'KWAN-too KUS-ta'},
-    {en:'Can I have the menu please?',local:'O cardápio, por favor',ph:'oh kar-DAH-pyoo por fa-VOR'},
-    {en:'Water please',local:'Água, por favor',ph:'AH-gwa por fa-VOR'},
-    {en:'Help!',local:'Socorro!',ph:'so-KO-hoo'},
-    {en:'I need a doctor',local:'Preciso de um médico',ph:'pre-SEE-zoo di um MEH-di-koo'},
-    {en:'Call the police',local:'Chame a polícia',ph:'SHA-mi a po-LEE-sya'},
-    {en:'Where is the nearest hospital?',local:'Onde fica o hospital mais próximo?',ph:'ON-ji FEE-ka oh os-pi-TAL mais PRO-xi-moo'},
-    {en:"I'm lost",local:'Estou perdido/a',ph:'es-TOH per-JEE-doo'},
-    {en:'Can you help me?',local:'Pode me ajudar?',ph:'PO-ji mi a-zhoo-DAR'},
-    {en:'What time is it?',local:'Que horas são?',ph:'ki OH-ras sow'},
-    {en:'Goodbye',local:'Tchau',ph:'chow'}
-  ]},
-  Italian:{flag:'🇮🇹',phrases:[
-    {en:'Hello',local:'Ciao / Buongiorno',ph:'chow / bwon-JOR-no'},
-    {en:'Thank you',local:'Grazie',ph:'GRAT-syeh'},
-    {en:'Please',local:'Per favore',ph:'per fa-VO-reh'},
-    {en:'Yes',local:'Sì',ph:'see'},
-    {en:'No',local:'No',ph:'noh'},
-    {en:'Excuse me',local:'Scusi',ph:'SKOO-zee'},
-    {en:"I don't understand",local:'Non capisco',ph:'non ka-PEE-sko'},
-    {en:'Do you speak English?',local:'Parla inglese?',ph:'PAR-la een-GLEH-zeh'},
-    {en:'Where is the bathroom?',local:'Dove è il bagno?',ph:'DOH-veh eh eel BAN-yo'},
-    {en:'How much does this cost?',local:'Quanto costa?',ph:'KWAN-toh KOS-tah'},
-    {en:'Can I have the menu please?',local:'Il menù, per favore',ph:'eel meh-NOO per fa-VO-reh'},
-    {en:'Water please',local:'Acqua, per favore',ph:'AK-kwah per fa-VO-reh'},
-    {en:'Help!',local:'Aiuto!',ph:'ah-YOO-toh'},
-    {en:'I need a doctor',local:'Ho bisogno di un medico',ph:'oh bee-ZON-yo dee oon MEH-dee-ko'},
-    {en:'Call the police',local:'Chiami la polizia',ph:'KYA-mee la po-LEET-sya'},
-    {en:'Where is the nearest hospital?',local:"Dov'è l'ospedale più vicino?",ph:"doh-VEH los-peh-DAH-leh pyoo vee-CHEE-no"},
-    {en:"I'm lost",local:'Mi sono perso/a',ph:'mee SO-no PER-so'},
-    {en:'Can you help me?',local:'Può aiutarmi?',ph:'pwoh ah-yoo-TAR-mee'},
-    {en:'What time is it?',local:"Che ore sono?",ph:'keh OH-reh SO-no'},
-    {en:'Goodbye',local:'Arrivederci',ph:'ar-ree-veh-DER-chee'}
-  ]},
-  Russian:{flag:'🇷🇺',phrases:[
-    {en:'Hello',local:'Привет',ph:'pri-VYET'},
-    {en:'Thank you',local:'Спасибо',ph:'spa-SEE-ba'},
-    {en:'Please',local:'Пожалуйста',ph:'pa-ZHA-loo-sta'},
-    {en:'Yes',local:'Да',ph:'da'},
-    {en:'No',local:'Нет',ph:'nyet'},
-    {en:'Excuse me',local:'Извините',ph:'iz-vi-NEE-tye'},
-    {en:"I don't understand",local:'Я не понимаю',ph:'ya nye pa-ni-MA-yu'},
-    {en:'Do you speak English?',local:'Вы говорите по-английски?',ph:'vy ga-va-REE-tye pa ang-LEEY-ski'},
-    {en:'Where is the bathroom?',local:'Где туалет?',ph:'gde too-a-LYET'},
-    {en:'How much does this cost?',local:'Сколько это стоит?',ph:'SKOL-ka E-ta STO-it'},
-    {en:'Can I have the menu please?',local:'Меню, пожалуйста',ph:'me-NYOO pa-ZHA-loo-sta'},
-    {en:'Water please',local:'Воду, пожалуйста',ph:'VO-doo pa-ZHA-loo-sta'},
-    {en:'Help!',local:'Помогите!',ph:'pa-ma-GEE-tye'},
-    {en:'I need a doctor',local:'Мне нужен врач',ph:'mnye NOO-zhen vrach'},
-    {en:'Call the police',local:'Вызовите полицию',ph:'VY-za-vi-tye pa-LEE-tsi-yu'},
-    {en:'Where is the nearest hospital?',local:'Где ближайшая больница?',ph:'gde blee-ZHAY-sha-ya bol-NEE-tsa'},
-    {en:"I'm lost",local:'Я потерялся',ph:'ya pa-tye-RYAL-sya'},
-    {en:'Can you help me?',local:'Вы можете мне помочь?',ph:'vy MO-zhye-tye mnye pa-MOCH'},
-    {en:'What time is it?',local:'Который час?',ph:'ka-TO-ry chas'},
-    {en:'Goodbye',local:'До свидания',ph:'da svi-DA-ni-ya'}
-  ]},
-  Korean:{flag:'🇰🇷',phrases:[
-    {en:'Hello',local:'안녕하세요',ph:'an-nyeong-ha-SE-yo'},
-    {en:'Thank you',local:'감사합니다',ph:'gam-sa-HAM-ni-da'},
-    {en:'Please',local:'제발',ph:'je-BAL'},
-    {en:'Yes',local:'네',ph:'ne'},
-    {en:'No',local:'아니요',ph:'a-ni-YO'},
-    {en:'Excuse me',local:'실례합니다',ph:'sil-lye-HAM-ni-da'},
-    {en:"I don't understand",local:'모르겠어요',ph:'mo-roo-GEH-sseo-yo'},
-    {en:'Do you speak English?',local:'영어 하세요?',ph:'yeong-eo HA-se-yo'},
-    {en:'Where is the bathroom?',local:'화장실이 어디예요?',ph:'hwa-jang-SIL-ee eo-di-ye-YO'},
-    {en:'How much does this cost?',local:'얼마예요?',ph:'eol-MA-ye-yo'},
-    {en:'Can I have the menu please?',local:'메뉴 주세요',ph:'me-NYU ju-SE-yo'},
-    {en:'Water please',local:'물 주세요',ph:'mul ju-SE-yo'},
-    {en:'Help!',local:'도와주세요!',ph:'do-wa-ju-SE-yo'},
-    {en:'I need a doctor',local:'의사가 필요해요',ph:'ui-SA-ga pil-yo-HAE-yo'},
-    {en:'Call the police',local:'경찰을 불러주세요',ph:'gyeong-CHAL-eul bul-leo-ju-SE-yo'},
-    {en:'Where is the nearest hospital?',local:'가장 가까운 병원이 어디예요?',ph:'ga-jang ga-KKA-un byeong-WON-i eo-di-ye-YO'},
-    {en:"I'm lost",local:'길을 잃었어요',ph:'gil-eul il-HEOSS-eo-yo'},
-    {en:'Can you help me?',local:'도와주실 수 있어요?',ph:'do-wa-ju-SIL su iss-eo-YO'},
-    {en:'What time is it?',local:'지금 몇 시예요?',ph:'ji-geum myeot si-YE-yo'},
-    {en:'Goodbye',local:'안녕히 가세요',ph:'an-nyeong-hi GA-se-yo'}
-  ]},
-  Hindi:{flag:'🇮🇳',phrases:[
-    {en:'Hello',local:'नमस्ते',ph:'na-MAS-te'},
-    {en:'Thank you',local:'धन्यवाद',ph:'dhan-ya-VAAD'},
-    {en:'Please',local:'कृपया',ph:'KRIP-ya'},
-    {en:'Yes',local:'हाँ',ph:'haan'},
-    {en:'No',local:'नहीं',ph:'na-HEEN'},
-    {en:'Excuse me',local:'माफ़ कीजिए',ph:'maaf KEE-ji-ye'},
-    {en:"I don't understand",local:'मुझे समझ नहीं आया',ph:'mu-JHE sa-MAZH na-HEEN aa-YA'},
-    {en:'Do you speak English?',local:'क्या आप अंग्रेज़ी बोलते हैं?',ph:'kya aap ANG-re-zi bol-TE hain'},
-    {en:'Where is the bathroom?',local:'बाथरूम कहाँ है?',ph:'BATH-room ka-HAAN hai'},
-    {en:'How much does this cost?',local:'इसकी कीमत क्या है?',ph:'is-KI KEEM-at kya hai'},
-    {en:'Can I have the menu please?',local:'मेनू दीजिए',ph:'me-NOO DEE-ji-ye'},
-    {en:'Water please',local:'पानी दीजिए',ph:'PAA-ni DEE-ji-ye'},
-    {en:'Help!',local:'बचाओ!',ph:'ba-CHAO'},
-    {en:'I need a doctor',local:'मुझे डॉक्टर चाहिए',ph:'mu-JHE DOK-tar CHA-hi-ye'},
-    {en:'Call the police',local:'पुलिस को बुलाओ',ph:'pu-LIS ko bu-LAO'},
-    {en:'Where is the nearest hospital?',local:'नज़दीकी अस्पताल कहाँ है?',ph:'naz-DEE-ki as-pa-TAAL ka-HAAN hai'},
-    {en:"I'm lost",local:'मैं खो गया हूँ',ph:'main KHO ga-YA hoon'},
-    {en:'Can you help me?',local:'क्या आप मेरी मदद कर सकते हैं?',ph:'kya aap me-RI ma-DAD kar SAK-te hain'},
-    {en:'What time is it?',local:'कितने बजे हैं?',ph:'KIT-ne BA-je hain'},
-    {en:'Goodbye',local:'अलविदा',ph:'al-vi-DA'}
-  ]},
-  Thai:{flag:'🇹🇭',phrases:[
-    {en:'Hello',local:'สวัสดี',ph:'sa-WAT-dee'},
-    {en:'Thank you',local:'ขอบคุณ',ph:'KOP-khun'},
-    {en:'Please',local:'กรุณา',ph:'ga-roo-NA'},
-    {en:'Yes',local:'ใช่',ph:'chai'},
-    {en:'No',local:'ไม่',ph:'mai'},
-    {en:'Excuse me',local:'ขอโทษ',ph:'KOR-toht'},
-    {en:"I don't understand",local:'ไม่เข้าใจ',ph:'mai KOW-jai'},
-    {en:'Do you speak English?',local:'คุณพูดภาษาอังกฤษได้ไหม?',ph:'khun POOT pha-SA ANG-grit dai MAI'},
-    {en:'Where is the bathroom?',local:'ห้องน้ำอยู่ที่ไหน?',ph:'hong-NAM yoo tee NAI'},
-    {en:'How much does this cost?',local:'นี่ราคาเท่าไหร่?',ph:'nee RA-kha TAO-rai'},
-    {en:'Can I have the menu please?',local:'ขอเมนูหน่อยได้ไหม?',ph:'KOR me-NOO noi dai MAI'},
-    {en:'Water please',local:'ขอน้ำหน่อย',ph:'KOR nam NOI'},
-    {en:'Help!',local:'ช่วยด้วย!',ph:'CHUAY duay'},
-    {en:'I need a doctor',local:'ฉันต้องการหมอ',ph:'chan tong-GAHN MOR'},
-    {en:'Call the police',local:'โทรเรียกตำรวจ',ph:'TOH riak tam-RUAT'},
-    {en:'Where is the nearest hospital?',local:'โรงพยาบาลที่ใกล้ที่สุดอยู่ที่ไหน?',ph:'rong-pa-ya-BAAN tee glai tee soot yoo tee NAI'},
-    {en:"I'm lost",local:'ฉันหลงทาง',ph:'chan LONG tang'},
-    {en:'Can you help me?',local:'คุณช่วยฉันได้ไหม?',ph:'khun CHUAY chan dai MAI'},
-    {en:'What time is it?',local:'ตอนนี้กี่โมงแล้ว?',ph:'ton-NEE gee mong LAEW'},
-    {en:'Goodbye',local:'ลาก่อน',ph:'la-GON'}
-  ]},
-  Turkish:{flag:'🇹🇷',phrases:[
-    {en:'Hello',local:'Merhaba',ph:'mer-HA-ba'},
-    {en:'Thank you',local:'Teşekkür ederim',ph:'te-SHEK-kur e-DE-rim'},
-    {en:'Please',local:'Lütfen',ph:'LUET-fen'},
-    {en:'Yes',local:'Evet',ph:'e-VET'},
-    {en:'No',local:'Hayır',ph:'HA-yur'},
-    {en:'Excuse me',local:'Affedersiniz',ph:'af-fe-DER-si-niz'},
-    {en:"I don't understand",local:'Anlamıyorum',ph:'an-la-MU-yo-rum'},
-    {en:'Do you speak English?',local:'İngilizce biliyor musunuz?',ph:'in-gi-LIZ-je bi-LI-yor mu-su-NUZ'},
-    {en:'Where is the bathroom?',local:'Tuvalet nerede?',ph:'tu-va-LET ne-RE-de'},
-    {en:'How much does this cost?',local:'Bu ne kadar?',ph:'bu ne ka-DAR'},
-    {en:'Can I have the menu please?',local:'Menüyü alabilir miyim?',ph:'me-NUE-yue a-la-bi-LIR mi-YIM'},
-    {en:'Water please',local:'Su lütfen',ph:'su LUET-fen'},
-    {en:'Help!',local:'İmdat!',ph:'im-DAT'},
-    {en:'I need a doctor',local:'Doktora ihtiyacım var',ph:'dok-TO-ra ih-ti-YA-jum var'},
-    {en:'Call the police',local:'Polisi arayın',ph:'po-li-SI a-ra-YUN'},
-    {en:'Where is the nearest hospital?',local:'En yakın hastane nerede?',ph:'en ya-KUN has-TA-ne ne-RE-de'},
-    {en:"I'm lost",local:'Kayboldum',ph:'kai-BOL-dum'},
-    {en:'Can you help me?',local:'Bana yardım edebilir misiniz?',ph:'ba-NA yar-DUM e-de-bi-LIR mi-si-NIZ'},
-    {en:'What time is it?',local:'Saat kaç?',ph:'sa-AT kach'},
-    {en:'Goodbye',local:'Güle güle',ph:'gu-LE gu-LE'}
-  ]},
-  Dutch:{flag:'🇳🇱',phrases:[
-    {en:'Hello',local:'Hallo',ph:'HA-loh'},
-    {en:'Thank you',local:'Dank u wel',ph:'dank oo vel'},
-    {en:'Please',local:'Alstublieft',ph:'al-stu-BLEEFT'},
-    {en:'Yes',local:'Ja',ph:'yah'},
-    {en:'No',local:'Nee',ph:'nay'},
-    {en:'Excuse me',local:'Pardon',ph:'par-DON'},
-    {en:"I don't understand",local:'Ik begrijp het niet',ph:'ik be-GHRAYP het neet'},
-    {en:'Do you speak English?',local:'Spreekt u Engels?',ph:'spreykt oo ENG-els'},
-    {en:'Where is the bathroom?',local:'Waar is het toilet?',ph:'vahr is het twa-LET'},
-    {en:'How much does this cost?',local:'Hoeveel kost dit?',ph:'HOO-veyl kost dit'},
-    {en:'Can I have the menu please?',local:'De menukaart alstublieft',ph:'de meh-NUE-kahrt al-stu-BLEEFT'},
-    {en:'Water please',local:'Water alstublieft',ph:'VAH-ter al-stu-BLEEFT'},
-    {en:'Help!',local:'Help!',ph:'help'},
-    {en:'I need a doctor',local:'Ik heb een dokter nodig',ph:'ik heb en DOK-ter NO-dig'},
-    {en:'Call the police',local:'Bel de politie',ph:'bel de po-LEE-tsee'},
-    {en:'Where is the nearest hospital?',local:'Waar is het dichtstbijzijnde ziekenhuis?',ph:'vahr is het DIKHTS-bay-zayn-de ZEEK-en-hows'},
-    {en:"I'm lost",local:'Ik ben verdwaald',ph:'ik ben ver-VWALD'},
-    {en:'Can you help me?',local:'Kunt u mij helpen?',ph:'kunt oo may HEL-pen'},
-    {en:'What time is it?',local:'Hoe laat is het?',ph:'hoo laht is het'},
-    {en:'Goodbye',local:'Tot ziens',ph:'tot zeens'}
-  ]}
-};
+        <!-- ── BELOW FOLD: Live Market Prices ── -->
+        <div class="sec-row" style="margin-top:8px">
+          <h3 class="sec-title">Live Prices</h3>
+          <span class="live-badge"><span class="live-dot"></span>Live</span>
+        </div>
+        <div class="crypto-prices-grid" id="ws-prices-grid">
+          <div class="cpc"><div class="cpc-sym">🇪🇺 EUR</div><div class="cpc-price" id="ws-eur">—</div><div class="cpc-sub">vs USD</div></div>
+          <div class="cpc"><div class="cpc-sym">🇬🇧 GBP</div><div class="cpc-price" id="ws-gbp">—</div><div class="cpc-sub">vs USD</div></div>
+          <div class="cpc"><div class="cpc-sym">🇯🇵 JPY</div><div class="cpc-price" id="ws-jpy">—</div><div class="cpc-sub">per USD</div></div>
+          <div class="cpc"><div class="cpc-sym">🇨🇳 CNY</div><div class="cpc-price" id="ws-cny">—</div><div class="cpc-sub">per USD</div></div>
+          <div class="cpc"><div class="cpc-sym">🥇 Gold</div><div class="cpc-price" id="ws-xau">—</div><div class="cpc-sub">per troy oz</div></div>
+          <div class="cpc"><div class="cpc-sym">₿ BTC</div><div class="cpc-price" id="ws-btc">—</div><div class="cc-chg" id="ws-btc-chg">—</div></div>
+        </div>
 
-let currentLang = 'Japanese';
-const PHRASES_CACHE_KEY = 'kipita_phrases_v1';
+        <!-- BTC Merchants Map -->
+        <div class="sec-row" style="margin-top:8px">
+          <h3 class="sec-title">₿ Merchants Near You</h3>
+          <span class="btc-src-badge" id="btc-merchant-count">Locating…</span>
+        </div>
+        <div class="btc-src-row">
+          <span class="btc-src-pill btc-src-btcmap">● BTCMap</span>
+          <span class="btc-src-pill btc-src-comm">● Community</span>
+          <button class="see-all" onclick="App.detectLocation()"><span class="ms" style="font-size:14px;vertical-align:middle">my_location</span> Locate</button>
+        </div>
+        <div id="btc-wallet-map" class="btc-wallet-map"></div>
 
-function initLanguages() {
-  // Cache to localStorage
-  try { localStorage.setItem(PHRASES_CACHE_KEY, JSON.stringify(PHRASES)); } catch(_) {}
+        <div class="pb-nav"></div>
+      </div>
+    </section>
 
-  const selector = document.getElementById('langSelector');
-  selector.innerHTML = '';
-  Object.entries(PHRASES).forEach(([lang, data]) => {
-    const chip = document.createElement('button');
-    chip.className = 'lang-chip' + (lang === currentLang ? ' active' : '');
-    chip.textContent = `${data.flag} ${lang}`;
-    chip.onclick = () => {
-      document.querySelectorAll('.lang-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      currentLang = lang;
-      renderPhrases();
-    };
-    selector.appendChild(chip);
-  });
-  renderPhrases();
-}
+    <!-- ══════════════════ GROUPS ══════════════════ -->
+    <section id="screen-groups" class="screen">
 
-function renderPhrases() {
-  const filter = document.getElementById('phraseSearch').value.toLowerCase();
-  const data = PHRASES[currentLang];
-  if (!data) return;
-  const list = document.getElementById('phraseList');
-  const phrases = data.phrases.filter(p =>
-    !filter || p.en.toLowerCase().includes(filter) || p.local.toLowerCase().includes(filter)
-  );
-  list.innerHTML = phrases.map(p => `
-    <div class="phrase-card">
-      <div class="phrase-en">${p.en}</div>
-      <div class="phrase-local">${p.local}</div>
-      <div class="phrase-phonetic">🔉 ${p.ph}</div>
-    </div>
-  `).join('');
-}
+      <!-- List View -->
+      <div id="groups-list-view" class="groups-list-view">
+        <div class="trips-header">
+          <h2>Travel Groups</h2>
+          <button class="btn-primary-sm" onclick="App.promptCreateGroup()">
+            <span class="ms">add</span> New Group
+          </button>
+        </div>
+        <div class="scr-scroll">
+          <p class="groups-intro-text">Chat with your travel crew in real-time. Plan trips, share tips, coordinate meetups.</p>
+          <div id="groups-screen-list"></div>
+          <!-- Nearby travelers teaser -->
+          <div class="sec-row" style="margin-top:16px">
+            <h3 class="sec-title">Nearby Nomads</h3>
+            <button class="see-all" onclick="App.openModal('travelers')">See all</button>
+          </div>
+          <div id="nearby-teaser"></div>
+          <div class="pb-nav"></div>
+        </div>
+      </div>
 
-function downloadPhrases() {
-  const data = PHRASES[currentLang];
-  if (!data) return;
-  const lines = [`${currentLang} Travel Phrases — Kipita App\n${'='.repeat(40)}\n`];
-  data.phrases.forEach((p, i) => {
-    lines.push(`${i+1}. ${p.en}\n   ${p.local}\n   [${p.ph}]\n`);
-  });
-  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `kipita-phrases-${currentLang.toLowerCase()}.txt`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
+      <!-- Chat View (slides in) -->
+      <div id="groups-chat-view" class="groups-chat-view hidden">
+        <div class="gchat-header">
+          <button class="modal-back" onclick="App.closeGroupChat()">
+            <span class="ms">arrow_back</span>
+          </button>
+          <div class="gchat-header-info">
+            <div class="gchat-title" id="gchat-title">Group Chat</div>
+            <div class="gchat-members" id="gchat-members">0 members</div>
+          </div>
+          <button class="icon-btn" onclick="App.showGroupInfo()">
+            <span class="ms">more_vert</span>
+          </button>
+        </div>
+        <div class="gchat-messages" id="gchat-messages">
+          <div class="gchat-empty">
+            <span class="ms ms-xl">forum</span>
+            <p>Be the first to say hello! 👋</p>
+          </div>
+        </div>
+        <div class="gchat-input-row">
+          <textarea id="gchat-input" class="chat-textarea"
+            placeholder="Type a message…" rows="1"
+            onkeydown="App.groupChatKeydown(event)" oninput="App.chatResize(this)"></textarea>
+          <button class="chat-send" onclick="App.sendGroupMsg()">
+            <span class="ms">send</span>
+          </button>
+        </div>
+      </div>
 
-initLanguages();
+    </section>
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Modal helpers
-// ─────────────────────────────────────────────────────────────────────────────
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  </main>
 
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.remove('open');
-  });
-});
+  <!-- ── BOTTOM NAV (7 tabs) ── -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" data-tab="home" onclick="App.switchTab('home')">
+      <span class="ms nav-icon">home</span>
+      <span class="nav-lbl">Home</span>
+    </button>
+    <button class="nav-btn" data-tab="ai" onclick="App.switchTab('ai')">
+      <span class="ms nav-icon">auto_awesome</span>
+      <span class="nav-lbl">AI</span>
+    </button>
+    <button class="nav-btn" data-tab="trips" onclick="App.switchTab('trips')">
+      <span class="ms nav-icon">luggage</span>
+      <span class="nav-lbl">Trips</span>
+    </button>
+    <button class="nav-btn" data-tab="places" onclick="App.switchTab('places')">
+      <span class="ms nav-icon">place</span>
+      <span class="nav-lbl">Places</span>
+    </button>
+    <button class="nav-btn" data-tab="maps" onclick="App.switchTab('maps')">
+      <span class="ms nav-icon">map</span>
+      <span class="nav-lbl">Maps</span>
+    </button>
+    <button class="nav-btn" data-tab="wallet" onclick="App.switchTab('wallet')">
+      <span class="ms nav-icon">bar_chart</span>
+      <span class="nav-lbl">Markets</span>
+    </button>
+    <button class="nav-btn" data-tab="groups" onclick="App.switchTab('groups')">
+      <span class="ms nav-icon">group</span>
+      <span class="nav-lbl">Groups</span>
+    </button>
+  </nav>
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Travel Booking Iframe
-// ─────────────────────────────────────────────────────────────────────────────
-// To swap Expedia placeholder for a referral link, update only the data-url
-// attribute on the button element in HTML — no JS changes required.
+</div><!-- /#app -->
 
-let currentBookingUrl = '';
+<!-- ════════════════════════════════ MODAL BACKDROP ═════════ -->
+<div id="modal-backdrop" class="hidden" onclick="App.closeTopModal()"></div>
 
-/**
- * Opens any HTTPS URL inside the Kipita iframe viewer.
- * Accepts plain strings — used by place website buttons and any inline code.
- * All external links stay inside the application; the fallback link handles
- * sites that block iframing (X-Frame-Options / CSP frame-ancestors).
- */
-function openUrlInFrame(url, label, emoji) {
-  if (!url || !url.startsWith('https://')) return;
-  currentBookingUrl = url;
-  document.getElementById('iframeModalTitle').textContent = `${emoji || '🌐'} ${label || url}`;
-  document.getElementById('bookingIframe').src = url;
-  document.getElementById('iframeFallback').style.display = 'none';
-  document.getElementById('iframeFallbackLink').href = url;
-  document.getElementById('bookingIframeModal').classList.add('open');
-  trackAffiliate('perk_' + (label || url).toLowerCase().replace(/\W+/g, '_').slice(0, 30));
-}
+<!-- ════════════════════════════════ MODALS ═════════════════ -->
 
-function openBookingIframe(tileEl) {
-  const url = tileEl.dataset.url;
-  const label = tileEl.dataset.label || tileEl.querySelector('.tile-label,.aff-name')?.textContent || 'Booking';
-  const emoji = tileEl.dataset.emoji || tileEl.querySelector('.tile-emoji,.aff-emoji')?.textContent || '';
-
-  // Security: only allow HTTPS URLs
-  if (!url || !url.startsWith('https://')) return;
-  currentBookingUrl = url;
-
-  document.getElementById('iframeModalTitle').textContent = `${emoji} ${label}`;
-  document.getElementById('bookingIframe').src = url;
-  document.getElementById('iframeFallback').style.display = 'none';
-  document.getElementById('iframeFallbackLink').href = url;
-  document.getElementById('bookingIframeModal').classList.add('open');
-
-  trackAffiliate('booking_' + label.toLowerCase().replace(/\s+/g, '_'));
-}
-
-function closeBookingIframe() {
-  document.getElementById('bookingIframeModal').classList.remove('open');
-  // Blank the iframe to stop any media/loading
-  setTimeout(() => { document.getElementById('bookingIframe').src = 'about:blank'; }, 300);
-  currentBookingUrl = '';
-}
-
-// Show fallback if iframe load fails (e.g. X-Frame-Options block)
-document.getElementById('bookingIframe').addEventListener('load', function() {
-  try {
-    // If same-origin, we can check; cross-origin will just not error
-    const doc = this.contentDocument;
-    if (doc && doc.title === '') {
-      // Possibly blocked
-      document.getElementById('iframeFallback').style.display = 'flex';
-    }
-  } catch(_) {
-    // Cross-origin — assume loaded OK
-  }
-});
-
-// Bug #9 fix: Escape closes ANY open modal, not just the booking iframe
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape') return;
-  // Full-screen iframe modal (needs src cleanup)
-  if (document.getElementById('bookingIframeModal').classList.contains('open')) {
-    closeBookingIframe();
-    return;
-  }
-  // Overlay modals (SOS, itinerary)
-  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Affiliate Click Tracking
-// ─────────────────────────────────────────────────────────────────────────────
-// All click data stays local (localStorage only — no server calls).
-// Extend this function to POST to your analytics endpoint when ready.
-
-function trackAffiliate(partner) {
-  try {
-    const KEY = 'kipita_affiliate_clicks';
-    const store = JSON.parse(localStorage.getItem(KEY) || '{}');
-    store[partner] = (store[partner] || 0) + 1;
-    store._last = { partner, ts: new Date().toISOString() };
-    localStorage.setItem(KEY, JSON.stringify(store));
-  } catch(_) {}
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Init
-// ─────────────────────────────────────────────────────────────────────────────
-renderTripsGrid();
-</script>
-
-<!-- ── Mobile Bottom Navigation ── -->
-<style>
-  .mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:400;background:#fff;border-top:1px solid #e5e7eb;padding:0 0 env(safe-area-inset-bottom);box-shadow:0 -2px 16px rgba(0,0,0,.08)}
-  .mob-nav-inner{display:flex;height:58px}
-  .mob-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;cursor:pointer;font-family:inherit;transition:background .15s;-webkit-tap-highlight-color:transparent;text-decoration:none;color:#6b7280;padding:0}
-  .mob-tab:active{background:#f3f4f6}
-  .mob-tab.active{color:#FF5252}
-  .mob-tab .mt-icon{font-size:22px;line-height:1;transition:transform .15s}
-  .mob-tab.active .mt-icon{transform:scale(1.12)}
-  .mob-tab .mt-label{font-size:10px;font-weight:600;letter-spacing:.2px}
-  .pwa-banner{display:none;position:fixed;bottom:58px;left:12px;right:12px;z-index:500;background:var(--navy);color:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,.25);align-items:center;gap:12px}
-  .pwa-banner.show{display:flex}
-  .pwa-banner-text{flex:1;font-size:14px;font-weight:600}
-  .pwa-banner-sub{font-size:12px;color:#9ca3af;margin-top:2px}
-  .pwa-install-btn{background:var(--red);color:#fff;border:none;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
-  .pwa-dismiss{background:rgba(255,255,255,.1);color:#fff;border:none;padding:9px 12px;border-radius:10px;font-size:13px;cursor:pointer}
-  body.has-mob-nav{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
-  #sosBtn.has-mob-nav{bottom:calc(58px + env(safe-area-inset-bottom) + 16px)}
-  @media(max-width:767px){
-    .mob-nav{display:block}
-    body{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
-    #sosBtn{bottom:calc(58px + env(safe-area-inset-bottom) + 16px)}
-  }
-</style>
-
-<!-- PWA install banner -->
-<div class="pwa-banner" id="pwaBanner">
-  <div>
-    <div class="pwa-banner-text">📲 Add Kipita to Home Screen</div>
-    <div class="pwa-banner-sub">Install for offline access & faster loads</div>
+<!-- SOS -->
+<div id="modal-sos" class="modal sheet hidden">
+  <div class="sheet-handle"></div>
+  <div class="modal-hdr">
+    <h3>🆘 Emergency SOS</h3>
+    <button class="modal-x" onclick="App.closeModal('sos')"><span class="ms">close</span></button>
   </div>
-  <button class="pwa-install-btn" id="pwaInstallBtn">Install</button>
-  <button class="pwa-dismiss" id="pwaDismiss">✕</button>
+  <div class="modal-body">
+    <div class="sos-grid">
+      <a href="tel:911" class="sos-card sos-police"><span class="sos-em">👮</span><span>Police</span><span class="sos-num">911</span></a>
+      <a href="tel:911" class="sos-card sos-hosp"><span class="sos-em">🏥</span><span>Hospital</span><span class="sos-num">911</span></a>
+      <a href="tel:911" class="sos-card sos-fire"><span class="sos-em">🚒</span><span>Fire</span><span class="sos-num">911</span></a>
+    </div>
+    <div class="sos-alert-box">
+      <h4>📧 Alert Travel Group</h4>
+      <p>Sends your current location to all travel group members</p>
+      <button class="btn-primary-sm full" onclick="App.alertGroup()">Send Alert</button>
+    </div>
+    <div class="sos-tips">
+      <h4>Safety Tips</h4>
+      <ul>
+        <li>Share your location with trusted contacts</li>
+        <li>Keep emergency numbers saved offline</li>
+        <li>Know the local emergency number for your destination</li>
+      </ul>
+    </div>
+  </div>
 </div>
 
-<!-- Mobile bottom nav -->
-<nav class="mob-nav" role="navigation" aria-label="Main navigation">
-  <div class="mob-nav-inner">
-    <a class="mob-tab active" id="mnt-home" href="#" onclick="mobNav(event,'home')" aria-label="Home">
-      <span class="mt-icon">🏠</span>
-      <span class="mt-label">Home</span>
-    </a>
-    <a class="mob-tab" id="mnt-explore" href="#explore" onclick="mobNav(event,'explore')" aria-label="Explore">
-      <span class="mt-icon">🌍</span>
-      <span class="mt-label">Explore</span>
-    </a>
-    <a class="mob-tab" id="mnt-map" href="#btcmap" onclick="mobNav(event,'map')" aria-label="BTC Map">
-      <span class="mt-icon">₿</span>
-      <span class="mt-label">BTC Map</span>
-    </a>
-    <a class="mob-tab" id="mnt-trips" href="#itinerary" onclick="mobNav(event,'trips')" aria-label="My Trips">
-      <span class="mt-icon">🧳</span>
-      <span class="mt-label">Trips</span>
-    </a>
-    <a class="mob-tab" id="mnt-book" href="#booking" onclick="mobNav(event,'book')" aria-label="Book Travel">
-      <span class="mt-icon">✈️</span>
-      <span class="mt-label">Book</span>
-    </a>
+<!-- ADVISORY -->
+<div id="modal-advisory" class="modal fullscreen hidden">
+  <div class="modal-hdr sticky">
+    <button class="modal-back" onclick="App.closeModal('advisory')"><span class="ms">arrow_back</span></button>
+    <div>
+      <h3>Travel Advisory</h3>
+      <p class="modal-sub" id="adv-country-sub">Detecting location…</p>
+    </div>
+    <button onclick="App.refreshAdvisory()" class="icon-btn"><span class="ms">refresh</span></button>
   </div>
-</nav>
+  <div class="modal-body" id="adv-body">
+    <div class="adv-ai-card">
+      <div class="adv-ai-top">
+        <div class="adv-ai-badge">✨ AI Insight</div>
+        <span class="sc-badge" id="adv-level-badge" data-level="3">Moderate</span>
+      </div>
+      <p id="adv-ai-text">Analyzing safety conditions for your current location…</p>
+    </div>
+    <div class="adv-weather-card">
+      <span id="adv-wx-icon">🌤️</span>
+      <div>
+        <div class="adv-wx-temp" id="adv-wx-temp">--°F</div>
+        <div class="adv-wx-desc" id="adv-wx-desc">Loading weather…</div>
+      </div>
+    </div>
+    <div id="adv-sections"></div>
+  </div>
+</div>
 
-<script>
-// ── Mobile nav ──
-function mobNav(e, tab) {
-  document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('active'));
-  const el = document.getElementById('mnt-' + tab);
-  if (el) el.classList.add('active');
-}
+<!-- SETTINGS -->
+<div id="modal-settings" class="modal fullscreen hidden">
+  <div class="modal-hdr sticky">
+    <button class="modal-back" onclick="App.closeModal('settings')"><span class="ms">arrow_back</span></button>
+    <h3>Settings</h3><div></div>
+  </div>
+  <div class="modal-body">
+    <div class="settings-group">
+      <div class="sg-label">Account</div>
+      <button class="sg-item" onclick="App.openModal('profile')"><span class="ms">account_circle</span><span>Edit Profile</span><span class="ms sg-chev">chevron_right</span></button>
+      <button class="sg-item" onclick="App.openModal('advisory')"><span class="ms">shield</span><span>Travel Safety</span><span class="ms sg-chev">chevron_right</span></button>
+    </div>
+    <div class="settings-group">
+      <div class="sg-label">Partners</div>
+      <a href="https://btcmap.org" target="_blank" rel="noopener" class="sg-item"><span>₿</span><span>BTC Map</span><span class="ms sg-chev">open_in_new</span></a>
+      <button class="sg-item" onclick="App.openBrowser('https://www.booking.com','Booking.com')"><span>🏨</span><span>Hotels</span><span class="ms sg-chev">open_in_new</span></button>
+      <button class="sg-item" onclick="App.openBrowser('https://www.skyscanner.com','Skyscanner')"><span>✈️</span><span>Flights</span><span class="ms sg-chev">open_in_new</span></button>
+    </div>
+    <div class="settings-group">
+      <div class="sg-label">App</div>
+      <button class="sg-item" onclick="App.shareApp()"><span class="ms">share</span><span>Share Kipita</span><span class="ms sg-chev">chevron_right</span></button>
+    </div>
+    <div class="settings-group">
+      <div class="sg-label">Legal</div>
+      <button class="sg-item" onclick="App.openBrowser('#','Privacy Policy')"><span class="ms">privacy_tip</span><span>Privacy Policy</span><span class="ms sg-chev">chevron_right</span></button>
+      <button class="sg-item" onclick="App.openBrowser('#','Terms of Service')"><span class="ms">gavel</span><span>Terms of Service</span><span class="ms sg-chev">chevron_right</span></button>
+    </div>
+    <div class="settings-group">
+      <div class="sg-label">Danger Zone</div>
+      <button class="sg-item sg-danger" onclick="App.deleteAccount()"><span class="ms">delete_forever</span><span>Delete Account</span><span class="ms sg-chev">chevron_right</span></button>
+    </div>
+    <div class="settings-version">Kipita v2.0.0 · kipita.app</div>
+  </div>
+</div>
 
-// Highlight active tab on scroll
-const _sections = [
-  {id:'booking', tab:'book'},
-  {id:'itinerary', tab:'trips'},
-  {id:'btcmap', tab:'map'},
-  {id:'explore', tab:'explore'},
-];
-const _io = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (!entry.isIntersecting) return;
-    const match = _sections.find(s => s.id === entry.target.id);
-    if (match) {
-      document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('active'));
-      const el = document.getElementById('mnt-' + match.tab);
-      if (el) el.classList.add('active');
-    }
-  });
-}, {threshold: 0.4});
-_sections.forEach(s => { const el = document.getElementById(s.id); if (el) _io.observe(el); });
+<!-- PROFILE -->
+<div id="modal-profile" class="modal fullscreen hidden">
+  <div class="modal-hdr sticky">
+    <button class="modal-back" onclick="App.closeModal('profile')"><span class="ms">arrow_back</span></button>
+    <h3>Edit Profile</h3><div></div>
+  </div>
+  <div class="modal-body">
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar-lg" id="profile-avatar-display">
+        <span class="ms" style="font-size:64px">account_circle</span>
+      </div>
+      <button class="btn-outline-xs" onclick="document.getElementById('avatar-file').click()">Change Photo</button>
+      <input type="file" id="avatar-file" accept="image/*" class="hidden" onchange="App.onAvatarChange(this)"/>
+    </div>
+    <div class="form-group"><label>Display Name</label><input type="text" id="profile-name-input" placeholder="Your name"/></div>
+    <div class="form-group"><label>Email</label><input type="email" id="profile-email-input" placeholder="you@example.com"/></div>
+    <div class="form-group"><label>Bio</label><textarea id="profile-bio-input" placeholder="Nomad | Explorer | ₿ Advocate" rows="3"></textarea></div>
+    <button class="btn-primary full" onclick="App.saveProfile()">Save Profile</button>
+    <div class="profile-google-section">
+      <p class="or-divider">or</p>
+      <button class="btn-google full" onclick="App.signInWithGoogle()">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+    </div>
+  </div>
+</div>
 
-// ── PWA install prompt ──
-let _deferredInstall = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  _deferredInstall = e;
-  // Show banner after 3 s if not previously dismissed
-  if (!localStorage.getItem('pwa_dismissed')) {
-    setTimeout(() => document.getElementById('pwaBanner').classList.add('show'), 3000);
-  }
-});
-document.getElementById('pwaInstallBtn').addEventListener('click', () => {
-  document.getElementById('pwaBanner').classList.remove('show');
-  if (_deferredInstall) { _deferredInstall.prompt(); _deferredInstall = null; }
-});
-document.getElementById('pwaDismiss').addEventListener('click', () => {
-  document.getElementById('pwaBanner').classList.remove('show');
-  localStorage.setItem('pwa_dismissed', '1');
-});
-window.addEventListener('appinstalled', () => {
-  document.getElementById('pwaBanner').classList.remove('show');
-  _deferredInstall = null;
-});
-</script>
+<!-- TRANSLATE -->
+<div id="modal-translate" class="modal fullscreen hidden">
+  <div class="modal-hdr sticky">
+    <button class="modal-back" onclick="App.closeModal('translate')"><span class="ms">arrow_back</span></button>
+    <h3>Translate</h3><div></div>
+  </div>
+  <div class="modal-body">
+    <div class="lang-tabs" id="lang-tabs">
+      <button class="lang-tab active" data-lang="es" onclick="App.setLang('es',this)">🇪🇸 Spanish</button>
+      <button class="lang-tab" data-lang="fr" onclick="App.setLang('fr',this)">🇫🇷 French</button>
+      <button class="lang-tab" data-lang="th" onclick="App.setLang('th',this)">🇹🇭 Thai</button>
+      <button class="lang-tab" data-lang="ja" onclick="App.setLang('ja',this)">🇯🇵 Japanese</button>
+      <button class="lang-tab" data-lang="pt" onclick="App.setLang('pt',this)">🇧🇷 Portuguese</button>
+      <button class="lang-tab" data-lang="de" onclick="App.setLang('de',this)">🇩🇪 German</button>
+    </div>
+    <div class="search-bar" style="margin:12px 0">
+      <span class="ms">search</span>
+      <input type="text" id="phrase-search" placeholder="Search phrases…" oninput="App.filterPhrases(this.value)"/>
+    </div>
+    <div id="phrase-list"></div>
+  </div>
+</div>
+
+<!-- PERKS -->
+<div id="modal-perks" class="modal fullscreen hidden">
+  <div class="modal-hdr sticky">
+    <button class="modal-back" onclick="App.closeModal('perks')"><span class="ms">arrow_back</span></button>
+    <h3>Partner Perks</h3><div></div>
+  </div>
+  <div class="modal-body">
+    <p class="perks-intro">Exclusive discounts for Kipita nomads</p>
+    <div id="perks-list"></div>
+  </div>
+</div>
+
+<!-- NEARBY TRAVELERS -->
+<div id="modal-travelers" class="modal fullscreen hidden">
+  <div class="modal-hdr sticky">
+    <button class="modal-back" onclick="App.closeModal('travelers')"><span class="ms">arrow_back</span></button>
+    <h3>Nearby Travelers</h3><div></div>
+  </div>
+  <div class="modal-body">
+    <p class="travelers-intro">Connect with nomads near you</p>
+    <div id="travelers-list"></div>
+  </div>
+</div>
+
+<!-- SOCIAL -->
+<div id="modal-social" class="modal fullscreen hidden">
+  <div class="modal-hdr sticky">
+    <button class="modal-back" onclick="App.closeModal('social')"><span class="ms">arrow_back</span></button>
+    <h3>Travel Stories</h3><div></div>
+  </div>
+  <div class="modal-body" id="social-feed"></div>
+</div>
+
+<!-- PLAN TRIP -->
+<div id="modal-plan-trip" class="modal sheet hidden">
+  <div class="sheet-handle"></div>
+  <div class="modal-hdr">
+    <h3>Plan a Trip</h3>
+    <button class="modal-x" onclick="App.closeModal('plan-trip')"><span class="ms">close</span></button>
+  </div>
+  <div class="modal-body">
+    <div class="form-group"><label>Destination *</label><input type="text" id="pt-dest" placeholder="e.g. Tokyo, Japan"/></div>
+    <div class="form-row">
+      <div class="form-group"><label>Start Date</label><input type="date" id="pt-start"/></div>
+      <div class="form-group"><label>End Date</label><input type="date" id="pt-end"/></div>
+    </div>
+    <div class="form-group"><label>Notes</label><textarea id="pt-notes" placeholder="Add notes, activities, reminders…" rows="3"></textarea></div>
+    <div class="form-group"><label>Invite Members (emails)</label><input type="text" id="pt-invites" placeholder="friend@email.com, buddy@travel.com"/></div>
+    <button class="btn-primary full" onclick="App.createTrip()">Create Trip</button>
+  </div>
+</div>
+
+<!-- TRIP DETAIL -->
+<div id="modal-trip-detail" class="modal fullscreen hidden">
+  <div class="modal-hdr sticky">
+    <button class="modal-back" onclick="App.closeModal('trip-detail')"><span class="ms">arrow_back</span></button>
+    <h3 id="tdl-title">Trip</h3>
+    <button class="icon-btn" onclick="App.shareTrip()"><span class="ms">share</span></button>
+  </div>
+  <div class="modal-body" id="tdl-body"></div>
+</div>
+
+<!-- DESTINATION DETAIL -->
+<div id="modal-dest-detail" class="modal sheet hidden">
+  <div class="sheet-handle"></div>
+  <div class="modal-body" id="dest-detail-body"></div>
+</div>
+
+<!-- PLACES CATEGORY -->
+<div id="modal-places-cat" class="modal fullscreen hidden">
+  <div class="modal-hdr sticky">
+    <button class="modal-back" onclick="App.closeModal('places-cat')"><span class="ms">arrow_back</span></button>
+    <h3 id="pcat-title">Places</h3><div></div>
+  </div>
+  <div class="modal-body" id="pcat-body">
+    <div class="loading-state"><div class="spinner"></div><p>Finding places near you…</p></div>
+  </div>
+</div>
+
+<!-- IN-APP BROWSER (bottom sheet) -->
+<div id="modal-browser" class="modal browser-sheet hidden">
+  <div class="browser-handle"></div>
+  <div class="browser-hdr">
+    <button class="modal-back browser-close" onclick="App.closeModal('browser')">
+      <span class="ms">close</span>
+    </button>
+    <div class="browser-hdr-info">
+      <div class="browser-title-txt" id="browser-title">Loading…</div>
+      <div class="browser-url-bar" id="browser-url-bar"></div>
+    </div>
+    <button class="icon-btn browser-expand-btn" id="browser-expand-btn" onclick="App.toggleBrowserSize()" title="Expand">
+      <span class="ms">open_in_full</span>
+    </button>
+  </div>
+  <iframe id="browser-frame" class="browser-iframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+</div>
+
+<!-- SNACKBAR -->
+<div id="snackbar" class="snackbar hidden"></div>
+
+<!-- ══════════════════════════════════════════ SCRIPTS ═══════ -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+<script>if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js') }</script>
 </body>
 </html>

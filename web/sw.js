@@ -1,14 +1,16 @@
-// Kipita Service Worker v3 — offline-first caching
-const CACHE_NAME = 'kipita-v3';
-const PRECACHE = ['/', '/index.html', '/manifest.json'];
+// Kipita Service Worker v4
+const CACHE_NAME = 'kipita-v4';
+const PRECACHE = ['/', '/index.html', '/styles.css', '/app.js', '/manifest.json'];
 
 // Network-first API domains (always try live, fall back to cache)
 const NETWORK_FIRST = [
   'api.coingecko.com',
   'api.btcmap.org',
-  'overpass-api.de',
+  'api.open-meteo.com',
   'nominatim.openstreetmap.org',
-  'places.googleapis.com'
+  'places.googleapis.com',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com',
 ];
 
 self.addEventListener('install', e => {
