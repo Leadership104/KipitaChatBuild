@@ -167,11 +167,16 @@
 
         <!-- Ask Kipita AI -->
         <div class="home-ai-hero">
-          <button class="home-ai-btn" onclick="App.switchTab('ai')">
+          <div class="home-ai-hdr">
             <span class="home-ai-sparkle">✨</span>
             <span class="home-ai-label">Ask Kipita AI</span>
-            <span class="home-ai-sub">Plan trips · Safety · Translate · More</span>
-          </button>
+          </div>
+          <div class="home-ai-chips">
+            <button class="home-ai-chip" onclick="App.aiQuick('plan')">✈️ Plan my next trip</button>
+            <button class="home-ai-chip" onclick="App.aiQuick('btc')">₿ Find Bitcoin-friendly spots</button>
+            <button class="home-ai-chip" onclick="App.aiQuick('safety')">🛡️ Travel safety report</button>
+            <button class="home-ai-chip" onclick="App.aiQuick('nomadcities')">🏆 Best nomad cities 2026</button>
+          </div>
         </div>
 
         <!-- Upcoming Trips -->
@@ -241,34 +246,97 @@
       </div>
     </section>
 
-    <!-- ══════════════════ PLACES ══════════════════ -->
+    <!-- ══════════════════ EXPLORE ══════════════════ -->
     <section id="screen-places" class="screen">
-      <div class="scr-scroll">
-        <div class="search-row">
-          <div class="search-bar">
-            <span class="ms">search</span>
-            <input type="text" id="places-search" placeholder="Search destinations, places…"
-              oninput="App.filterDestinations(this.value)"/>
+      <!-- Sticky Explore Header -->
+      <div class="explore-header">
+        <div class="explore-hdr-top">
+          <div>
+            <h2 class="explore-title">Explore</h2>
+            <div class="explore-loc-row">
+              <span class="ms" style="font-size:13px;color:var(--red);vertical-align:middle">location_on</span>
+              <span id="explore-location-text" style="font-size:13px;color:var(--text2);font-weight:600">Detecting…</span>
+            </div>
           </div>
-          <button class="geo-btn" onclick="App.detectLocation()" title="Detect location">
-            <span class="ms">my_location</span>
+          <button class="explore-filter-btn" onclick="App.openExploreFilter()">
+            <span class="ms" style="font-size:16px;vertical-align:middle">tune</span> Filter
           </button>
         </div>
-        <div class="tab-row">
-          <button class="tab-btn active" data-places-tab="places" onclick="App.placesTab('places',this)">📍 Places</button>
-          <button class="tab-btn" data-places-tab="dest" onclick="App.placesTab('dest',this)">🌍 Destinations</button>
+        <div class="explore-search-wrap">
+          <div class="explore-search-bar">
+            <span class="ms" style="color:var(--text3);font-size:20px;flex-shrink:0">search</span>
+            <input type="text" id="explore-search" placeholder="City, state, country, address…"
+              oninput="App.filterDestinations(this.value)"/>
+            <button class="explore-geo-btn" onclick="App.detectLocation()" title="My location">
+              <span class="ms" style="font-size:18px">my_location</span>
+            </button>
+          </div>
         </div>
-        <div id="tab-places" class="places-tab-body">
+        <div class="explore-scope-pills" id="explore-scope-pills">
+          <button class="scope-pill" data-scope="local" onclick="App.setExploreScope('local',this)">📍 Local</button>
+          <button class="scope-pill active" data-scope="city" onclick="App.setExploreScope('city',this)">🏙️ City</button>
+          <button class="scope-pill" data-scope="county" onclick="App.setExploreScope('county',this)">🏞️ County</button>
+          <button class="scope-pill" data-scope="state" onclick="App.setExploreScope('state',this)">🏛️ State</button>
+          <button class="scope-pill" data-scope="national" onclick="App.setExploreScope('national',this)">🗺️ National</button>
+          <button class="scope-pill" data-scope="global" onclick="App.setExploreScope('global',this)">🌍 Global</button>
+        </div>
+        <div class="explore-tab-row">
+          <button class="etab active" data-places-tab="dest" onclick="App.placesTab('dest',this)">
+            🌍 Destinations
+          </button>
+          <button class="etab" data-places-tab="places" onclick="App.placesTab('places',this)">
+            📍 Places
+          </button>
+        </div>
+      </div>
+
+      <div class="scr-scroll explore-body">
+        <!-- DESTINATIONS TAB -->
+        <div id="tab-dest" class="places-tab-body">
+          <!-- Open Interactive Map card -->
+          <button class="explore-map-card" onclick="App.switchTab('maps')">
+            <div class="emc-left">
+              <div class="emc-icon-wrap">
+                <span class="ms" style="font-size:22px;color:#fff">grid_view</span>
+              </div>
+              <div>
+                <div class="emc-title">Open Interactive Map</div>
+                <div class="emc-sub">Google Places · BTC merchants · Nomad hubs</div>
+              </div>
+            </div>
+            <span class="ms" style="font-size:20px;color:rgba(255,255,255,.6)">chevron_right</span>
+          </button>
+
+          <!-- AI Explore card -->
+          <div class="ai-explore-card">
+            <div class="ai-explore-top">
+              <div class="ai-explore-title">✨ AI Explore</div>
+              <button class="ai-explore-scope-btn">🏙️ City</button>
+            </div>
+            <div class="ai-explore-chips">
+              <button class="ai-xchip" onclick="App.aiExplore('nomad')">⭐ Best for nomads</button>
+              <button class="ai-xchip" onclick="App.aiExplore('hotels')">🏨 Hotels</button>
+              <button class="ai-xchip" onclick="App.aiExplore('safety')">🛡️ Safety</button>
+              <button class="ai-xchip" onclick="App.aiExplore('cost')">💰 Cost of living</button>
+            </div>
+          </div>
+
+          <!-- Destination count + sort -->
+          <div class="dest-count-row">
+            <span class="dest-count-label" id="dest-count-label">8 destinations</span>
+            <span class="sort-info" id="sort-info"></span>
+          </div>
+
+          <!-- Enhanced destination cards -->
+          <div id="dest-grid"></div>
+        </div>
+
+        <!-- PLACES TAB -->
+        <div id="tab-places" class="places-tab-body hidden">
           <div class="time-greeting" id="time-greeting">🍳 Good Morning</div>
           <div class="cat-grid" id="cat-grid"></div>
         </div>
-        <div id="tab-dest" class="places-tab-body hidden">
-          <div class="sort-label-row">
-            <span class="sort-label" id="sort-label">Nomad Hotspots</span>
-            <span class="sort-info" id="sort-info"></span>
-          </div>
-          <div class="dest-grid" id="dest-grid"></div>
-        </div>
+
         <div class="pb-nav"></div>
       </div>
     </section>
@@ -276,19 +344,29 @@
     <!-- ══════════════════ MAPS ══════════════════ -->
     <section id="screen-maps" class="screen">
       <div class="map-screen-wrap">
+        <!-- Map action buttons -->
+        <div class="map-action-bar">
+          <button class="map-action-btn" onclick="App.switchTab('places')">
+            <span class="ms" style="font-size:16px">compress</span> Collapse
+          </button>
+          <button class="map-action-btn" onclick="App.snack('Offline maps coming soon!')">
+            <span class="ms" style="font-size:16px">cloud_download</span> Offline
+          </button>
+          <button class="map-action-btn" onclick="App.detectLocation()">
+            <span class="ms" style="font-size:16px">navigation</span> Navigate
+          </button>
+          <button class="map-icon-btn btc-ico" onclick="App.mapScreenFilter('btc',document.querySelector('[data-f=btc]'))">₿</button>
+          <button class="map-icon-btn shield-ico" onclick="App.openModal('advisory')">
+            <span class="ms" style="font-size:18px;color:#fff">shield</span>
+          </button>
+          <button class="map-icon-btn flag-ico" onclick="App.snack('Nomad hubs coming soon!')">🏴</button>
+        </div>
         <div class="map-screen-search">
           <span class="ms">search</span>
           <input type="text" id="map-screen-input" placeholder="Search address or place…"
             onkeydown="App.mapScreenSearchKey(event)"/>
           <button onclick="App.mapScreenSearch()"><span class="ms">search</span></button>
           <button onclick="App.detectLocation()" title="My location"><span class="ms">my_location</span></button>
-        </div>
-        <div class="map-pills" id="map-screen-pills">
-          <button class="mpill active" data-f="btc" onclick="App.mapScreenFilter('btc',this)">₿ BTC</button>
-          <button class="mpill" data-f="food" onclick="App.mapScreenFilter('food',this)">🍜 Food</button>
-          <button class="mpill" data-f="cafe" onclick="App.mapScreenFilter('cafe',this)">☕ Cafe</button>
-          <button class="mpill" data-f="shop" onclick="App.mapScreenFilter('shop',this)">🛍 Shops</button>
-          <button class="mpill" data-f="atm" onclick="App.mapScreenFilter('atm',this)">🏧 ATM</button>
         </div>
         <div class="btc-source-pills" id="btc-source-pills">
           <span class="bsp-label">Source:</span>
@@ -297,6 +375,26 @@
           <button class="bsp"        data-src="cashapp" onclick="App.setBtcSource('cashapp',this)">💚 Cash App</button>
         </div>
         <div id="leaflet-map-screen" class="leaflet-map-screen"></div>
+
+        <!-- Nearby Places Bottom Sheet -->
+        <div class="map-nearby-sheet">
+          <div class="map-nearby-handle"></div>
+          <div class="map-nearby-hdr">
+            <span class="map-nearby-title">Nearby Places</span>
+            <div class="map-nearby-pills" id="map-nearby-pills">
+              <button class="mnpill active" data-f="btc" onclick="App.mapScreenFilter('btc',this)">₿ BTC</button>
+              <button class="mnpill" data-f="food" onclick="App.mapScreenFilter('food',this)">🍜 Food</button>
+              <button class="mnpill" data-f="cafe" onclick="App.mapScreenFilter('cafe',this)">☕ Cafe</button>
+              <button class="mnpill" data-f="shop" onclick="App.mapScreenFilter('shop',this)">🛍 Shops</button>
+            </div>
+          </div>
+          <div class="map-nearby-list" id="map-nearby-list">
+            <div class="map-nearby-empty">
+              <span style="font-size:40px">₿</span>
+              <p>Loading nearby places…</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -304,7 +402,7 @@
     <section id="screen-wallet" class="screen">
       <div class="scr-scroll">
         <div class="wallet-screen-hdr">
-          <h2>🌍 Markets</h2>
+          <h2>💳 Wallet &amp; Markets</h2>
         </div>
 
         <!-- ── ABOVE FOLD: Currency Converter ── -->
@@ -442,35 +540,33 @@
 
   </main>
 
-  <!-- ── BOTTOM NAV (7 tabs) ── -->
+  <!-- ── BOTTOM NAV (6 tabs) ── -->
   <nav id="bottom-nav">
     <button class="nav-btn active" data-tab="home" onclick="App.switchTab('home')">
       <span class="ms nav-icon">home</span>
       <span class="nav-lbl">Home</span>
     </button>
-    <button class="nav-btn" data-tab="ai" onclick="App.switchTab('ai')">
-      <span class="ms nav-icon">auto_awesome</span>
+    <button class="nav-btn" data-tab="places" onclick="App.switchTab('places')">
+      <span class="ms nav-icon">travel_explore</span>
+      <span class="nav-lbl">Explore</span>
+    </button>
+    <button class="nav-btn nav-ai-btn" data-tab="ai" onclick="App.switchTab('ai')">
+      <div class="nav-ai-circle">
+        <span class="ms" style="font-size:26px;color:#fff;vertical-align:middle">auto_awesome</span>
+      </div>
       <span class="nav-lbl">AI</span>
     </button>
     <button class="nav-btn" data-tab="trips" onclick="App.switchTab('trips')">
-      <span class="ms nav-icon">luggage</span>
+      <span class="ms nav-icon">flight</span>
       <span class="nav-lbl">Trips</span>
     </button>
-    <button class="nav-btn" data-tab="places" onclick="App.switchTab('places')">
-      <span class="ms nav-icon">place</span>
-      <span class="nav-lbl">Places</span>
-    </button>
-    <button class="nav-btn" data-tab="maps" onclick="App.switchTab('maps')">
-      <span class="ms nav-icon">map</span>
-      <span class="nav-lbl">Maps</span>
-    </button>
     <button class="nav-btn" data-tab="wallet" onclick="App.switchTab('wallet')">
-      <span class="ms nav-icon">bar_chart</span>
-      <span class="nav-lbl">Markets</span>
+      <span class="ms nav-icon">account_balance_wallet</span>
+      <span class="nav-lbl">Wallet</span>
     </button>
     <button class="nav-btn" data-tab="groups" onclick="App.switchTab('groups')">
       <span class="ms nav-icon">group</span>
-      <span class="nav-lbl">Groups</span>
+      <span class="nav-lbl">Social</span>
     </button>
   </nav>
 

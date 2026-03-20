@@ -48,14 +48,14 @@ const App = (() => {
 
   /* ── DESTINATIONS DATA ─────────────────────────────────────── */
   const DESTINATIONS = [
-    { id: 'tokyo',     city: 'Tokyo',      country: 'Japan',     emoji: '🗼', lat: 35.6762, lng: 139.6503, rating: 4.9, pop: '14M+ nomads', wikiTitle: 'Tokyo',          desc: 'Ultra-modern city with ancient temples, perfect transit, and incredible food. Bitcoin-friendly with thousands of merchants.' },
-    { id: 'bangkok',   city: 'Bangkok',    country: 'Thailand',  emoji: '🛕', lat: 13.7563, lng: 100.5018, rating: 4.7, pop: '11M+ nomads', wikiTitle: 'Bangkok',        desc: 'Vibrant street food, temples, and a booming nomad scene. Low cost of living with fast fiber internet.' },
-    { id: 'bali',      city: 'Bali',       country: 'Indonesia', emoji: '🌴', lat: -8.3405, lng: 115.0919, rating: 4.8, pop: '8M+ nomads',  wikiTitle: 'Bali',           desc: 'Tropical paradise with rice terraces, temples, and a world-class digital nomad community in Canggu.' },
-    { id: 'lisbon',    city: 'Lisbon',     country: 'Portugal',  emoji: '🇵🇹', lat: 38.7169, lng: -9.1399, rating: 4.7, pop: '6M+ nomads',  wikiTitle: 'Lisbon',         desc: 'Sunny capital with pastel streets, great food, crypto-friendly culture, and NHR tax regime.' },
-    { id: 'barcelona', city: 'Barcelona',  country: 'Spain',     emoji: '🏖️', lat: 41.3851, lng: 2.1734,  rating: 4.8, pop: '7M+ nomads',  wikiTitle: 'Barcelona',      desc: "Architecture, beaches, and an incredible startup scene. One of Europe's top Bitcoin cities." },
-    { id: 'medellin',  city: 'Medellín',   country: 'Colombia',  emoji: '🌺', lat: 6.2476,  lng: -75.5658,rating: 4.6, pop: '5M+ nomads',  wikiTitle: 'Medellín',       desc: 'The city of eternal spring. Growing crypto scene, affordable living, and a welcoming local culture.' },
-    { id: 'dubai',     city: 'Dubai',      country: 'UAE',       emoji: '🏙️', lat: 25.2048, lng: 55.2708, rating: 4.7, pop: '9M+ nomads',  wikiTitle: 'Dubai',          desc: 'Tax-free hub with world-class infrastructure, crypto-friendly regulations, and 0% income tax.' },
-    { id: 'chiangmai', city: 'Chiang Mai', country: 'Thailand',  emoji: '🏔️', lat: 18.7883, lng: 98.9853, rating: 4.8, pop: '7M+ nomads',  wikiTitle: 'Chiang Mai',     desc: 'Ancient temples, cool mountains, fast internet, and the most affordable nomad lifestyle in Asia.' },
+    { id: 'chiangmai', city: 'Chiang Mai', country: 'Thailand',  emoji: '🏔️', lat: 18.7883, lng: 98.9853,  rating: 4.8, pop: '7M+ nomads',  wikiTitle: 'Chiang Mai',  speed: 52, safetyScore: 8.2, monthlyCost: 1200, weatherDesc: 'Warm & Sunny',     temp: 28, tags: ['Affordable', 'Digital Nomad'], popular: true,  desc: 'Ancient temples, cool mountains, fast internet, and the most affordable nomad lifestyle in Asia.' },
+    { id: 'lisbon',    city: 'Lisbon',     country: 'Portugal',  emoji: '🇵🇹', lat: 38.7169, lng: -9.1399,  rating: 4.7, pop: '6M+ nomads',  wikiTitle: 'Lisbon',      speed: 48, safetyScore: 8.7, monthlyCost: 1605, weatherDesc: 'Mild & Breezy',    temp: 18, tags: ['Bitcoin-Friendly', 'Tax Perks'], popular: true,  desc: 'Sunny capital with pastel streets, great food, crypto-friendly culture, and NHR tax regime.' },
+    { id: 'bali',      city: 'Bali',       country: 'Indonesia', emoji: '🌴', lat: -8.3405, lng: 115.0919, rating: 4.8, pop: '8M+ nomads',  wikiTitle: 'Bali',        speed: 38, safetyScore: 7.9, monthlyCost: 1400, weatherDesc: 'Tropical & Lush',  temp: 30, tags: ['Surf & Co-Work', 'Nomad Hub'],   popular: true,  desc: 'Tropical paradise with rice terraces, temples, and a world-class digital nomad community in Canggu.' },
+    { id: 'bangkok',   city: 'Bangkok',    country: 'Thailand',  emoji: '🛕', lat: 13.7563, lng: 100.5018, rating: 4.7, pop: '11M+ nomads', wikiTitle: 'Bangkok',     speed: 45, safetyScore: 7.5, monthlyCost: 1100, weatherDesc: 'Hot & Vibrant',   temp: 32, tags: ['Street Food', 'Nightlife'],      popular: true,  desc: 'Vibrant street food, temples, and a booming nomad scene. Low cost of living with fast fiber internet.' },
+    { id: 'tokyo',     city: 'Tokyo',      country: 'Japan',     emoji: '🗼', lat: 35.6762, lng: 139.6503, rating: 4.9, pop: '14M+ nomads', wikiTitle: 'Tokyo',       speed: 78, safetyScore: 9.4, monthlyCost: 2800, weatherDesc: 'Cool & Clear',    temp: 16, tags: ['BTC Friendly', 'Ultra-Modern'],  popular: false, desc: 'Ultra-modern city with ancient temples, perfect transit, and incredible food. Bitcoin-friendly with thousands of merchants.' },
+    { id: 'barcelona', city: 'Barcelona',  country: 'Spain',     emoji: '🏖️', lat: 41.3851, lng: 2.1734,   rating: 4.8, pop: '7M+ nomads',  wikiTitle: 'Barcelona',   speed: 55, safetyScore: 7.8, monthlyCost: 2200, weatherDesc: 'Sunny & Warm',   temp: 22, tags: ['Beach Life', 'Startup Hub'],      popular: false, desc: "Architecture, beaches, and an incredible startup scene. One of Europe's top Bitcoin cities." },
+    { id: 'medellin',  city: 'Medellín',   country: 'Colombia',  emoji: '🌺', lat: 6.2476,  lng: -75.5658, rating: 4.6, pop: '5M+ nomads',  wikiTitle: 'Medellín',    speed: 32, safetyScore: 6.8, monthlyCost:  900, weatherDesc: 'Spring All Year', temp: 22, tags: ['Budget Pick', 'Crypto Scene'],    popular: false, desc: 'The city of eternal spring. Growing crypto scene, affordable living, and a welcoming local culture.' },
+    { id: 'dubai',     city: 'Dubai',      country: 'UAE',       emoji: '🏙️', lat: 25.2048, lng: 55.2708,  rating: 4.7, pop: '9M+ nomads',  wikiTitle: 'Dubai',       speed: 62, safetyScore: 8.9, monthlyCost: 3200, weatherDesc: 'Sunny & Hot',    temp: 35, tags: ['Tax-Free', 'Luxury'],             popular: false, desc: 'Tax-free hub with world-class infrastructure, crypto-friendly regulations, and 0% income tax.' },
   ];
 
   /* ── PLACE CATEGORIES ──────────────────────────────────────── */
@@ -278,9 +278,15 @@ const App = (() => {
         const url = j.thumbnail?.source;
         if (url) {
           state.destPhotos[d.id] = url;
-          // Update any already-rendered card hero
-          const heroEl = document.querySelector(`.dest-hero[data-dest="${d.id}"]`);
-          if (heroEl) setDestHeroPhoto(heroEl, url, d.city);
+          // Update any already-rendered card hero (both old and new style)
+          const heroEl = document.querySelector(`.dest-hero[data-dest="${d.id}"], .edc-hero[data-dest="${d.id}"]`);
+          if (heroEl) {
+            heroEl.style.backgroundImage = `url('${url}')`;
+            heroEl.style.backgroundSize = 'cover';
+            heroEl.style.backgroundPosition = 'center';
+            const emojiEl = heroEl.querySelector('.edc-emoji');
+            if (emojiEl) emojiEl.style.display = 'none';
+          }
         }
       } catch {}
     }));
@@ -329,7 +335,7 @@ const App = (() => {
     document.querySelector(`.nav-btn[data-tab="${name}"]`).classList.add('active');
     closeProfileMenu();
 
-    if (name === 'places') renderCategories();
+    if (name === 'places') { initExploreScreen(); renderCategories(); }
     if (name === 'trips')  renderTrips();
     if (name === 'maps')   initMapScreen();
     if (name === 'wallet') initWalletMap();
@@ -420,6 +426,8 @@ const App = (() => {
       document.getElementById('location-text').textContent = name;
       document.getElementById('hbw-loc').textContent = '📍 ' + name;
       document.getElementById('adv-country-sub').textContent = name;
+      const explLoc = document.getElementById('explore-location-text');
+      if (explLoc) explLoc.textContent = name;
     } catch {
       document.getElementById('location-text').textContent = 'GPS Active';
     }
@@ -729,8 +737,10 @@ const App = (() => {
     DESTINATIONS.forEach(d => { d._dist = haversine(lat, lng, d.lat, d.lng) });
     DESTINATIONS.sort((a, b) => a._dist - b._dist);
     if (DESTINATIONS[0]._dist < 100) {
-      document.getElementById('sort-label').textContent = 'Sorted by distance';
-      document.getElementById('sort-info').textContent  = '📍 GPS active';
+      const sortLabel = document.getElementById('sort-label');
+      const sortInfo  = document.getElementById('sort-info');
+      if (sortLabel) sortLabel.textContent = 'Sorted by distance';
+      if (sortInfo)  sortInfo.textContent  = '📍 GPS active';
     }
     renderDestinations();
   }
@@ -741,28 +751,45 @@ const App = (() => {
     const list = filter
       ? DESTINATIONS.filter(d => d.city.toLowerCase().includes(filter) || d.country.toLowerCase().includes(filter))
       : DESTINATIONS;
-    grid.innerHTML = list.map(d => {
+    // Update count label
+    const countEl = document.getElementById('dest-count-label');
+    if (countEl) countEl.textContent = list.length + ' destination' + (list.length !== 1 ? 's' : '');
+    grid.innerHTML = list.map((d, idx) => {
       const saved  = state.savedPlaces.has(d.id);
       const isNear = d._dist && d._dist < 100;
       const photo  = state.destPhotos[d.id];
-      const photoTag = photo
-        ? `<img src="${photo}" alt="${d.city}" class="loaded" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">`
+      const rank   = idx + 1;
+      const photoStyle = photo
+        ? `background-image:url('${photo}');background-size:cover;background-position:center;`
         : '';
       return `
-        <div class="dest-card" onclick="App.openDestDetail('${d.id}')">
-          <div class="dest-hero" data-dest="${d.id}">
-            ${photoTag}
-            <span style="font-size:48px;position:relative;z-index:1;${photo?'text-shadow:0 2px 8px rgba(0,0,0,.6)':''}">${d.emoji}</span>
-            ${isNear ? '<span class="dest-near-badge">Near You ✦</span>' : ''}
-            <button class="dest-save-btn ${saved ? 'saved' : ''}"
-              onclick="event.stopPropagation();App.toggleSaved('${d.id}')">${saved ? '❤️' : '🤍'}</button>
+        <div class="explore-dest-card" onclick="App.openDestDetail('${d.id}')">
+          <div class="edc-hero" data-dest="${d.id}" style="${photoStyle}background-color:#1a1a2e;">
+            ${!photo ? `<span class="edc-emoji">${d.emoji}</span>` : ''}
+            <div class="edc-rank">#${rank}</div>
+            <div class="edc-speed">📶 ${d.speed || 50} Mbps</div>
+            ${d.popular ? '<div class="edc-popular">Popular</div>' : ''}
+            <div class="edc-safety"><span class="ms" style="font-size:12px;vertical-align:middle">shield</span> ${(d.safetyScore || d.rating * 2).toFixed(1)}</div>
+            <div class="edc-overlay">
+              <div class="edc-city">${d.city}</div>
+              <div class="edc-country-row">
+                <span class="edc-country">${d.country}</span>
+                ${d.popular ? '<span class="edc-pop-badge">Popular</span>' : ''}
+              </div>
+            </div>
           </div>
-          <div class="dest-info">
-            <div class="dest-city">${d.city}</div>
-            <div class="dest-country">${d.country}</div>
-            <div class="dest-meta">
-              <span class="dest-rating">⭐ ${d.rating}</span>
-              ${d._dist ? `<span style="font-size:12px;color:var(--text3)">${Math.round(d._dist).toLocaleString()} km</span>` : ''}
+          <div class="edc-info">
+            <div class="edc-meta-row">
+              <div class="edc-weather">
+                <span>${d.weatherDesc || 'Sunny'} · ${d.temp || 25}°C</span>
+                <div class="edc-tags">
+                  ${(d.tags || []).map(t => `<span class="edc-tag">${t}</span>`).join('')}
+                </div>
+              </div>
+              <div class="edc-cost">
+                <div class="edc-cost-amt">$${(d.monthlyCost || 1500).toLocaleString()}</div>
+                <div class="edc-cost-label">/ month</div>
+              </div>
             </div>
           </div>
         </div>`;
@@ -770,6 +797,44 @@ const App = (() => {
   }
 
   function filterDestinations(val) { renderDestinations(val.toLowerCase()); }
+
+  function setExploreScope(scope, btn) {
+    document.querySelectorAll('.scope-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    snack('Showing ' + scope + ' results');
+  }
+
+  function aiExplore(topic) {
+    const msgs = {
+      nomad:  'Which destinations are best for digital nomads?',
+      hotels: 'Find the best hotels in top nomad destinations',
+      safety: 'Safety ratings for the top travel destinations',
+      cost:   'Compare cost of living across nomad destinations',
+    };
+    switchTab('ai');
+    setTimeout(() => sendAiMessage(msgs[topic] || 'Tell me about travel destinations'), 200);
+  }
+
+  function openExploreFilter() {
+    snack('Filters coming soon!');
+  }
+
+  function initExploreScreen() {
+    // Sync location text in explore header
+    const el = document.getElementById('explore-location-text');
+    if (el) el.textContent = state.location.name || 'Detecting…';
+    // Default to Destinations tab
+    const destTab = document.getElementById('tab-dest');
+    const placesTab = document.getElementById('tab-places');
+    if (destTab && destTab.classList.contains('hidden')) {
+      destTab.classList.remove('hidden');
+      if (placesTab) placesTab.classList.add('hidden');
+      document.querySelectorAll('.etab').forEach(b => b.classList.remove('active'));
+      const destBtn = document.querySelector('.etab[data-places-tab="dest"]');
+      if (destBtn) destBtn.classList.add('active');
+    }
+    renderDestinations();
+  }
 
   function toggleSaved(id) {
     if (state.savedPlaces.has(id)) { state.savedPlaces.delete(id); snack('Removed from saved'); }
@@ -825,11 +890,12 @@ const App = (() => {
   /* ── PLACES CATEGORIES ──────────────────────────────────────── */
   function placesTab(tab, btn) {
     state.placesTab = tab;
-    document.querySelectorAll('.tab-btn[data-places-tab]').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('[data-places-tab]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-dest').classList.toggle('hidden', tab !== 'dest');
     document.getElementById('tab-places').classList.toggle('hidden', tab !== 'places');
     if (tab === 'places') renderCategories();
+    if (tab === 'dest') renderDestinations();
   }
 
   function renderCategories() {
@@ -871,22 +937,50 @@ const App = (() => {
       return;
     }
 
-    const demos = generateDemoPlaces(query, label, 8);
+    const demos = generateDemoPlaces(query, label, 6);
     body.innerHTML = `
       <div class="pcat-loc-bar"><span class="ms">location_on</span>${name || 'Current location'}</div>
-      ${demos.map(p => `
-        <div class="place-card" onclick="App.openBrowser('${gmapsUrl}','${label}')">
-          <div class="place-card-icon">${p.emoji}</div>
-          <div class="place-info">
-            <div class="place-name">${p.name}</div>
-            <div class="place-addr">${p.addr}</div>
-            <div class="place-meta">
-              <span class="place-rating">⭐ ${p.rating}</span>
-              <span class="place-dist">${p.dist} km</span>
-              <span class="place-cat-badge">${label}</span>
+      ${demos.map((p, i) => {
+        const isOpen = Math.random() > 0.3;
+        const reviews = Math.floor(20 + Math.random() * 200);
+        const price = ['$', '$$', '$$$'][Math.floor(Math.random() * 3)];
+        const distMi = (0.1 + Math.random() * 2).toFixed(2);
+        const addr = p.addr + ', CA 91354, United';
+        const tel = `tel:+1${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+        const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(p.name)}`;
+        return `
+        <div class="place-list-card">
+          <div class="plc-photo" style="background:linear-gradient(135deg,#${Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0')},#1a1a2e)">
+            <span style="font-size:28px">${p.emoji}</span>
+          </div>
+          <div class="plc-body">
+            <div class="plc-top-row">
+              <div>
+                <div class="plc-name">${p.name}</div>
+                <div class="plc-cat">${label}</div>
+              </div>
+              <span class="plc-status ${isOpen ? 'open' : 'closed'}">${isOpen ? 'OPEN' : 'CLOSED'}</span>
+            </div>
+            <div class="plc-meta">
+              <span class="plc-stars">⭐ ${p.rating}</span>
+              <span class="plc-reviews">(${reviews})</span>
+              <span class="plc-price">${price}</span>
+              <span class="plc-dist">${distMi}mi Away</span>
+            </div>
+            <div class="plc-addr">${addr}</div>
+            <div class="plc-actions">
+              <a href="${tel}" class="plc-action-btn plc-call">
+                <span class="ms" style="font-size:16px">call</span> CALL
+              </a>
+              <a href="${mapsUrl}" target="_blank" class="plc-action-btn plc-dir">
+                <span class="ms" style="font-size:16px">directions</span> DIRECTIONS
+              </a>
+              <button class="plc-action-btn plc-info" onclick="App.snack('${p.name} — ${label}')">
+                <span class="ms" style="font-size:16px">info</span> MORE INFO
+              </button>
             </div>
           </div>
-        </div>`).join('')}`;
+        </div>`}).join('')}`;
   }
 
   const placeNames = {
@@ -918,6 +1012,8 @@ const App = (() => {
       safety:      `What is the safety situation for ${state.location.name}?`,
       advisories:  'Show me current travel advisories',
       phrases:     'Give me useful travel phrases',
+      btc:         'Find Bitcoin-friendly spots and BTC merchants near me',
+      nomadcities: 'What are the best nomad cities in 2026?',
     };
     switchTab('ai');
     sendAiMessage(msgs[type] || '');
@@ -1031,6 +1127,47 @@ const App = (() => {
     // Show BTC source pills since BTC is default filter
     const srcPills = document.getElementById('btc-source-pills');
     if (srcPills) srcPills.classList.add('visible');
+    renderMapNearbyPlaces('btc');
+  }
+
+  function renderMapNearbyPlaces(filter) {
+    const sheet = document.getElementById('map-nearby-list');
+    if (!sheet) return;
+    const configs = {
+      btc:  { label: 'BTC Merchants', icon: '₿', items: ['Lightning Café', 'Crypto Market', 'BTC Corner Shop', 'Digital Bistro'], empty: 'No BTC merchants found nearby. Try searching a different location.' },
+      food: { label: 'Restaurants', icon: '🍜', items: ['Nomad Kitchen', 'Street Bites', 'The Wanderer Grill', 'Local Eats'], empty: 'No restaurants found nearby. Try searching a different location.' },
+      cafe: { label: 'Cafés', icon: '☕', items: ['Digital Nomad Café', 'Bean & Browse', 'The Grind', 'Pour Over Paradise'], empty: 'No cafés found nearby. Try searching a different location.' },
+      shop: { label: 'Shops', icon: '🛍️', items: [], empty: 'No shops found nearby. Try searching a different location.' },
+      atm:  { label: 'ATMs', icon: '🏧', items: ['City ATM', 'Airport Exchange', 'Central Bank ATM'], empty: 'No ATMs found nearby. Try searching a different location.' },
+    };
+    const cfg = configs[filter] || configs.btc;
+    if (!cfg.items.length) {
+      sheet.innerHTML = `
+        <div class="map-nearby-empty">
+          <span style="font-size:40px">${cfg.icon}</span>
+          <p>${cfg.empty}</p>
+        </div>`;
+      return;
+    }
+    const { lat, lng } = state.location;
+    sheet.innerHTML = cfg.items.map(name => {
+      const dist = (0.1 + Math.random() * 1.5).toFixed(1);
+      const rating = (4.0 + Math.random() * 1.0).toFixed(1);
+      const mlat = (lat || 0) + (Math.random() - 0.5) * 0.02;
+      const mlng = (lng || 0) + (Math.random() - 0.5) * 0.02;
+      const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(name)}`;
+      return `
+        <div class="map-nearby-item">
+          <div class="map-nearby-icon">${cfg.icon}</div>
+          <div class="map-nearby-info">
+            <div class="map-nearby-name">${name}</div>
+            <div class="map-nearby-meta">⭐ ${rating} · ${dist} mi away</div>
+          </div>
+          <button class="map-nearby-dir" onclick="App.openBrowser('${mapsUrl}','Directions')">
+            <span class="ms" style="font-size:18px">directions</span>
+          </button>
+        </div>`;
+    }).join('');
   }
 
   /* ── WALLET BTC MAP ──────────────────────────────────────────── */
@@ -1080,12 +1217,14 @@ const App = (() => {
 
   function mapScreenFilter(filter, btn) {
     state.mapScreenFilter = filter;
-    document.querySelectorAll('#map-screen-pills .mpill').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
+    document.querySelectorAll('#map-screen-pills .mpill, #map-nearby-pills .mnpill').forEach(p => p.classList.remove('active'));
+    // Sync both pill rows
+    document.querySelectorAll(`[data-f="${filter}"]`).forEach(p => p.classList.add('active'));
     // Show / hide BTC source sub-pills
     const srcPills = document.getElementById('btc-source-pills');
     if (srcPills) srcPills.classList.toggle('visible', filter === 'btc');
     renderMapScreenMarkers();
+    renderMapNearbyPlaces(filter);
     if (filter === 'btc') {
       if (state.btcMerchants.length === 0) fetchBTCMerchants();
       if (state.cashAppMerchants.length === 0) generateCashAppMerchants();
@@ -1809,9 +1948,10 @@ const App = (() => {
     // Trips
     tripTab, createTrip, openTripDetail, markTripComplete,
     cancelTrip, recreateTrip, shareTrip, shareTripCard,
-    // Places
+    // Places / Explore
     placesTab, filterDestinations, toggleSaved,
     openDestDetail, planTripTo, aiTripFor, openPlacesCat,
+    setExploreScope, aiExplore, openExploreFilter,
     // AI
     aiQuick, chatKeydown, chatResize, sendChat, addAiTrip,
     // Maps tab
