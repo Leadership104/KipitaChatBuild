@@ -11,7 +11,7 @@ const App = (() => {
   const state = {
     tab: 'home',
     tripTab: 'upcoming',
-    placesTab: 'dest',
+    placesTab: 'places',
     lang: 'es',
     modalStack: [],
     user: null,
@@ -25,9 +25,12 @@ const App = (() => {
     mapScreen: null,
     mapScreenMarkers: [],
     mapScreenFilter: 'btc',
+    btcSource: 'both',
     walletMap: null,
     walletMapMarkers: [],
     btcMerchants: [],
+    cashAppMerchants: [],
+    destPhotos: {},
     currentDest: null,
     currentTrip: null,
     currentPcat: null,
@@ -45,14 +48,14 @@ const App = (() => {
 
   /* ── DESTINATIONS DATA ─────────────────────────────────────── */
   const DESTINATIONS = [
-    { id: 'tokyo',     city: 'Tokyo',      country: 'Japan',     emoji: '🗼', lat: 35.6762, lng: 139.6503, rating: 4.9, pop: '14M+ nomads', desc: 'Ultra-modern city with ancient temples, perfect transit, and incredible food. Bitcoin-friendly with thousands of merchants.' },
-    { id: 'bangkok',   city: 'Bangkok',    country: 'Thailand',  emoji: '🛕', lat: 13.7563, lng: 100.5018, rating: 4.7, pop: '11M+ nomads', desc: 'Vibrant street food, temples, and a booming nomad scene. Low cost of living with fast fiber internet.' },
-    { id: 'bali',      city: 'Bali',       country: 'Indonesia', emoji: '🌴', lat: -8.3405, lng: 115.0919, rating: 4.8, pop: '8M+ nomads',  desc: 'Tropical paradise with rice terraces, temples, and a world-class digital nomad community in Canggu.' },
-    { id: 'lisbon',    city: 'Lisbon',     country: 'Portugal',  emoji: '🇵🇹', lat: 38.7169, lng: -9.1399, rating: 4.7, pop: '6M+ nomads',  desc: 'Sunny capital with pastel streets, great food, crypto-friendly culture, and NHR tax regime.' },
-    { id: 'barcelona', city: 'Barcelona',  country: 'Spain',     emoji: '🏖️', lat: 41.3851, lng: 2.1734,  rating: 4.8, pop: '7M+ nomads',  desc: "Architecture, beaches, and an incredible startup scene. One of Europe's top Bitcoin cities." },
-    { id: 'medellin',  city: 'Medellín',   country: 'Colombia',  emoji: '🌺', lat: 6.2476,  lng: -75.5658,rating: 4.6, pop: '5M+ nomads',  desc: 'The city of eternal spring. Growing crypto scene, affordable living, and a welcoming local culture.' },
-    { id: 'dubai',     city: 'Dubai',      country: 'UAE',       emoji: '🏙️', lat: 25.2048, lng: 55.2708, rating: 4.7, pop: '9M+ nomads',  desc: 'Tax-free hub with world-class infrastructure, crypto-friendly regulations, and 0% income tax.' },
-    { id: 'chiangmai', city: 'Chiang Mai', country: 'Thailand',  emoji: '🏔️', lat: 18.7883, lng: 98.9853, rating: 4.8, pop: '7M+ nomads',  desc: 'Ancient temples, cool mountains, fast internet, and the most affordable nomad lifestyle in Asia.' },
+    { id: 'tokyo',     city: 'Tokyo',      country: 'Japan',     emoji: '🗼', lat: 35.6762, lng: 139.6503, rating: 4.9, pop: '14M+ nomads', wikiTitle: 'Tokyo',          desc: 'Ultra-modern city with ancient temples, perfect transit, and incredible food. Bitcoin-friendly with thousands of merchants.' },
+    { id: 'bangkok',   city: 'Bangkok',    country: 'Thailand',  emoji: '🛕', lat: 13.7563, lng: 100.5018, rating: 4.7, pop: '11M+ nomads', wikiTitle: 'Bangkok',        desc: 'Vibrant street food, temples, and a booming nomad scene. Low cost of living with fast fiber internet.' },
+    { id: 'bali',      city: 'Bali',       country: 'Indonesia', emoji: '🌴', lat: -8.3405, lng: 115.0919, rating: 4.8, pop: '8M+ nomads',  wikiTitle: 'Bali',           desc: 'Tropical paradise with rice terraces, temples, and a world-class digital nomad community in Canggu.' },
+    { id: 'lisbon',    city: 'Lisbon',     country: 'Portugal',  emoji: '🇵🇹', lat: 38.7169, lng: -9.1399, rating: 4.7, pop: '6M+ nomads',  wikiTitle: 'Lisbon',         desc: 'Sunny capital with pastel streets, great food, crypto-friendly culture, and NHR tax regime.' },
+    { id: 'barcelona', city: 'Barcelona',  country: 'Spain',     emoji: '🏖️', lat: 41.3851, lng: 2.1734,  rating: 4.8, pop: '7M+ nomads',  wikiTitle: 'Barcelona',      desc: "Architecture, beaches, and an incredible startup scene. One of Europe's top Bitcoin cities." },
+    { id: 'medellin',  city: 'Medellín',   country: 'Colombia',  emoji: '🌺', lat: 6.2476,  lng: -75.5658,rating: 4.6, pop: '5M+ nomads',  wikiTitle: 'Medellín',       desc: 'The city of eternal spring. Growing crypto scene, affordable living, and a welcoming local culture.' },
+    { id: 'dubai',     city: 'Dubai',      country: 'UAE',       emoji: '🏙️', lat: 25.2048, lng: 55.2708, rating: 4.7, pop: '9M+ nomads',  wikiTitle: 'Dubai',          desc: 'Tax-free hub with world-class infrastructure, crypto-friendly regulations, and 0% income tax.' },
+    { id: 'chiangmai', city: 'Chiang Mai', country: 'Thailand',  emoji: '🏔️', lat: 18.7883, lng: 98.9853, rating: 4.8, pop: '7M+ nomads',  wikiTitle: 'Chiang Mai',     desc: 'Ancient temples, cool mountains, fast internet, and the most affordable nomad lifestyle in Asia.' },
   ];
 
   /* ── PLACE CATEGORIES ──────────────────────────────────────── */
@@ -258,7 +261,39 @@ const App = (() => {
     detectLocation();
     fetchCrypto();
     fetchFxRates();
+    fetchAllDestPhotos();
     setInterval(fetchCrypto, 60000);
+  }
+
+  /* ── DESTINATION PHOTOS (Wikipedia thumbnails) ──────────────── */
+  async function fetchAllDestPhotos() {
+    await Promise.all(DESTINATIONS.map(async d => {
+      if (state.destPhotos[d.id]) return;
+      try {
+        const r = await fetch(
+          `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(d.wikiTitle)}`,
+          { headers: { 'Api-User-Agent': 'Kipita/2.0 (travel app; contact@kipita.app)' } }
+        );
+        const j = await r.json();
+        const url = j.thumbnail?.source;
+        if (url) {
+          state.destPhotos[d.id] = url;
+          // Update any already-rendered card hero
+          const heroEl = document.querySelector(`.dest-hero[data-dest="${d.id}"]`);
+          if (heroEl) setDestHeroPhoto(heroEl, url, d.city);
+        }
+      } catch {}
+    }));
+    renderDestinations();
+  }
+
+  function setDestHeroPhoto(heroEl, url, alt) {
+    const img = document.createElement('img');
+    img.alt = alt;
+    img.src = url;
+    img.onload  = () => img.classList.add('loaded');
+    img.onerror = () => img.remove();
+    heroEl.prepend(img);
   }
 
   /* ── GREETING ───────────────────────────────────────────────── */
@@ -357,6 +392,7 @@ const App = (() => {
         sortDestsByDistance();
         // Re-fetch BTC merchants with location for bbox filtering
         fetchBTCMerchants();
+        generateCashAppMerchants();
         // Re-center maps if already open
         if (state.mapScreen) {
           state.mapScreen.setView([state.location.lat, state.location.lng], 13);
@@ -706,12 +742,17 @@ const App = (() => {
       ? DESTINATIONS.filter(d => d.city.toLowerCase().includes(filter) || d.country.toLowerCase().includes(filter))
       : DESTINATIONS;
     grid.innerHTML = list.map(d => {
-      const saved = state.savedPlaces.has(d.id);
+      const saved  = state.savedPlaces.has(d.id);
       const isNear = d._dist && d._dist < 100;
+      const photo  = state.destPhotos[d.id];
+      const photoTag = photo
+        ? `<img src="${photo}" alt="${d.city}" class="loaded" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">`
+        : '';
       return `
         <div class="dest-card" onclick="App.openDestDetail('${d.id}')">
-          <div class="dest-hero">
-            <span style="font-size:48px">${d.emoji}</span>
+          <div class="dest-hero" data-dest="${d.id}">
+            ${photoTag}
+            <span style="font-size:48px;position:relative;z-index:1;${photo?'text-shadow:0 2px 8px rgba(0,0,0,.6)':''}">${d.emoji}</span>
             ${isNear ? '<span class="dest-near-badge">Near You ✦</span>' : ''}
             <button class="dest-save-btn ${saved ? 'saved' : ''}"
               onclick="event.stopPropagation();App.toggleSaved('${d.id}')">${saved ? '❤️' : '🤍'}</button>
@@ -740,8 +781,12 @@ const App = (() => {
   function openDestDetail(id) {
     const d = DESTINATIONS.find(x => x.id === id); if (!d) return;
     state.currentDest = d;
+    const photo = state.destPhotos[d.id];
     document.getElementById('dest-detail-body').innerHTML = `
-      <div class="dd-hero" style="font-size:80px">${d.emoji}</div>
+      <div class="dd-hero" style="font-size:80px;position:relative;overflow:hidden;${photo?'background:linear-gradient(135deg,#1a1a2e,#16213e);':''}">
+        ${photo ? `<img src="${photo}" alt="${d.city}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.85;">` : ''}
+        <span style="position:relative;z-index:1;${photo?'text-shadow:0 4px 12px rgba(0,0,0,.7)':''}">${d.emoji}</span>
+      </div>
       <div class="dd-title">
         <div class="dd-city">${d.city}</div>
         <div class="dd-country">${d.country}</div>
@@ -982,6 +1027,10 @@ const App = (() => {
       }).addTo(state.mapScreen).bindPopup('You are here');
     }
     fetchBTCMerchants();
+    generateCashAppMerchants();
+    // Show BTC source pills since BTC is default filter
+    const srcPills = document.getElementById('btc-source-pills');
+    if (srcPills) srcPills.classList.add('visible');
   }
 
   /* ── WALLET BTC MAP ──────────────────────────────────────────── */
@@ -1017,14 +1066,15 @@ const App = (() => {
     if (!state.walletMap) return;
     state.btcMerchants.slice(0, 60).forEach(el => {
       const mlat = el.osm_json.lat, mlng = el.osm_json.lon;
-      const name = el.osm_json.tags?.name || 'BTC Merchant';
-      const m = L.marker([mlat, mlng], {
-        icon: L.divIcon({
-          html: '<div style="background:#F7931A;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.3)">₿</div>',
-          className: '', iconSize: [26,26], iconAnchor: [13,13],
-        })
-      }).addTo(state.walletMap).bindPopup(name);
-      state.walletMapMarkers.push(m);
+      const tags = el.osm_json.tags || {};
+      const name = tags.name || 'BTC Merchant';
+      const ti   = getPlaceTypeInfo(tags);
+      addLabeledMarker(
+        state.walletMap, mlat, mlng,
+        '₿', '#F7931A', name,
+        makePopupHtml(name, ti.emoji, ti.label, '₿ BTCMap', '#F7931A', mlat, mlng),
+        state.walletMapMarkers
+      );
     });
   }
 
@@ -1032,8 +1082,35 @@ const App = (() => {
     state.mapScreenFilter = filter;
     document.querySelectorAll('#map-screen-pills .mpill').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
+    // Show / hide BTC source sub-pills
+    const srcPills = document.getElementById('btc-source-pills');
+    if (srcPills) srcPills.classList.toggle('visible', filter === 'btc');
     renderMapScreenMarkers();
-    if (filter === 'btc' && state.btcMerchants.length === 0) fetchBTCMerchants();
+    if (filter === 'btc') {
+      if (state.btcMerchants.length === 0) fetchBTCMerchants();
+      if (state.cashAppMerchants.length === 0) generateCashAppMerchants();
+    }
+  }
+
+  function setBtcSource(src, btn) {
+    state.btcSource = src;
+    document.querySelectorAll('#btc-source-pills .bsp').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    renderMapScreenMarkers();
+  }
+
+  function generateCashAppMerchants() {
+    const { lat, lng } = state.location;
+    const baseLat = lat || 13.7563, baseLng = lng || 100.5018;
+    const names = ['Cash App Merchant','Local Shop','Street Market','Digital Café','Tech Store','Food Court','Book Store','BTC Bistro','Crypto Corner','Pay Market'];
+    state.cashAppMerchants = Array.from({ length: 12 }, (_, i) => ({
+      osm_json: {
+        lat: baseLat + (Math.random() - .5) * .06,
+        lon: baseLng + (Math.random() - .5) * .06,
+        tags: { name: names[i % names.length] + ' ' + (i + 1), payment: 'cashapp' },
+      },
+      source: 'cashapp',
+    }));
   }
 
   function mapScreenSearchKey(e) {
@@ -1097,6 +1174,69 @@ const App = (() => {
     if (state.walletMap) renderWalletMapMarkers();
   }
 
+  /* ── MARKER HELPERS ─────────────────────────────────────────── */
+  function getPlaceTypeInfo(tags) {
+    const amenity = (tags?.amenity || '').toLowerCase();
+    const shop    = (tags?.shop    || '').toLowerCase();
+    const tourism = (tags?.tourism || '').toLowerCase();
+    const cuisine = (tags?.cuisine || '').toLowerCase();
+    if (amenity === 'restaurant' || cuisine)          return { emoji:'🍽️', label:'Restaurant' };
+    if (amenity === 'cafe' || amenity === 'coffee_shop') return { emoji:'☕', label:'Café' };
+    if (amenity === 'fast_food')                      return { emoji:'🍔', label:'Fast Food' };
+    if (amenity === 'bar' || amenity === 'pub')       return { emoji:'🍺', label:'Bar' };
+    if (amenity === 'pharmacy')                       return { emoji:'💊', label:'Pharmacy' };
+    if (amenity === 'atm')                            return { emoji:'🏧', label:'ATM' };
+    if (shop === 'supermarket' || shop === 'convenience') return { emoji:'🛒', label:'Grocery' };
+    if (shop === 'electronics' || shop === 'computer') return { emoji:'📱', label:'Electronics' };
+    if (shop === 'clothes' || shop === 'fashion')     return { emoji:'👕', label:'Clothing' };
+    if (shop === 'bakery')                            return { emoji:'🥐', label:'Bakery' };
+    if (tourism === 'hotel' || tourism === 'hostel')  return { emoji:'🏨', label:'Hotel' };
+    if (shop)                                         return { emoji:'🛍️', label:'Shop' };
+    return { emoji:'₿', label:'BTC Merchant' };
+  }
+
+  function makeMarkerHtml(iconContent, bg, name) {
+    const shortName = name.length > 16 ? name.slice(0, 15) + '…' : name;
+    return `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.32))">
+        <div style="background:${bg};color:#fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;border:2px solid rgba(255,255,255,.7)">${iconContent}</div>
+        <div style="background:rgba(255,255,255,.96);color:#1a1a2e;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:8px;white-space:nowrap;line-height:1.4;max-width:88px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
+      </div>`;
+  }
+
+  function makePopupHtml(name, typeEmoji, typeLabel, sourceBadge, sourceBg, lat, lng) {
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    return `
+      <div style="min-width:190px;max-width:230px;font-family:'Montserrat',sans-serif">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="background:#f5f5f5;border-radius:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${typeEmoji}</div>
+          <div style="min-width:0">
+            <div style="font-size:13px;font-weight:700;color:#1a1a2e;line-height:1.35;word-break:break-word">${name}</div>
+            <div style="font-size:11px;color:#888;margin-top:2px">${typeLabel}</div>
+          </div>
+        </div>
+        <div style="margin-bottom:10px">
+          <span style="background:${sourceBg};color:#fff;padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700">${sourceBadge}</span>
+        </div>
+        <a href="${mapsUrl}" target="_blank" style="display:block;text-align:center;background:#DD3B49;color:#fff;padding:7px;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none">
+          📍 Open in Google Maps
+        </a>
+      </div>`;
+  }
+
+  function addLabeledMarker(map, mlat, mlng, iconContent, bg, name, popupHtml, collection) {
+    const m = L.marker([mlat, mlng], {
+      icon: L.divIcon({
+        html: makeMarkerHtml(iconContent, bg, name),
+        className: '',
+        iconSize: [90, 54],
+        iconAnchor: [45, 17],
+      })
+    }).addTo(map);
+    m.bindPopup(popupHtml, { maxWidth: 240, className: 'kip-popup' });
+    collection.push(m);
+  }
+
   function renderMapScreenMarkers() {
     state.mapScreenMarkers.forEach(m => m.remove());
     state.mapScreenMarkers = [];
@@ -1106,35 +1246,64 @@ const App = (() => {
     const { lat, lng } = state.location;
 
     if (filter === 'btc') {
-      state.btcMerchants.slice(0, 50).forEach(el => {
-        const mlat = el.osm_json.lat, mlng = el.osm_json.lon;
-        const name = el.osm_json.tags?.name || 'BTC Merchant';
-        const m = L.marker([mlat, mlng], {
-          icon: L.divIcon({
-            html: '<div style="background:#F7931A;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.3)">₿</div>',
-            className:'', iconSize:[28,28], iconAnchor:[14,14],
-          })
-        }).addTo(state.mapScreen).bindPopup(name);
-        state.mapScreenMarkers.push(m);
-      });
+      const src = state.btcSource;
+
+      // BTCMap merchants
+      if (src === 'btcmap' || src === 'both') {
+        state.btcMerchants.slice(0, 50).forEach(el => {
+          const mlat = el.osm_json.lat, mlng = el.osm_json.lon;
+          const tags = el.osm_json.tags || {};
+          const name = tags.name || 'BTC Merchant';
+          const ti   = getPlaceTypeInfo(tags);
+          addLabeledMarker(
+            state.mapScreen, mlat, mlng,
+            '₿', '#F7931A', name,
+            makePopupHtml(name, ti.emoji, ti.label, '₿ BTCMap', '#F7931A', mlat, mlng),
+            state.mapScreenMarkers
+          );
+        });
+      }
+
+      // Cash App merchants
+      if (src === 'cashapp' || src === 'both') {
+        if (state.cashAppMerchants.length === 0) generateCashAppMerchants();
+        state.cashAppMerchants.forEach(el => {
+          const mlat = el.osm_json.lat, mlng = el.osm_json.lon;
+          const tags = el.osm_json.tags || {};
+          const name = tags.name || 'Cash App Pay';
+          addLabeledMarker(
+            state.mapScreen, mlat, mlng,
+            '$', '#00D632', name,
+            makePopupHtml(name, '💚', 'Cash App Pay', '💚 Cash App', '#00A826', mlat, mlng),
+            state.mapScreenMarkers
+          );
+        });
+      }
     } else if (lat) {
       const cfgs = {
-        food: { emoji:'🍜', bg:'#E53E3E', count:6, label:'Restaurant' },
-        cafe: { emoji:'☕', bg:'#D69E2E', count:5, label:'Café' },
-        shop: { emoji:'🛍', bg:'#805AD5', count:4, label:'Shop' },
-        atm:  { emoji:'🏧', bg:'#38A169', count:4, label:'ATM' },
+        food: { ico:'🍜', bg:'#E53E3E', count:6, label:'Restaurant' },
+        cafe: { ico:'☕', bg:'#D69E2E', count:5, label:'Café' },
+        shop: { ico:'🛍', bg:'#805AD5', count:4, label:'Shop' },
+        atm:  { ico:'🏧', bg:'#38A169', count:4, label:'ATM' },
       };
-      const cfg = cfgs[filter] || cfgs.food;
+      const cfg  = cfgs[filter] || cfgs.food;
+      const demoNames = {
+        food: ['Nomad Kitchen','Street Bites','The Wanderer Grill','Local Eats','Spice Route','Fusion Corner'],
+        cafe: ['Digital Nomad Café','Bean & Browse','The Grind','Pour Over Paradise','Roast & Relax'],
+        shop: ['Nomad Market','Travel Essentials','The Gear Store','Local Boutique'],
+        atm:  ['City ATM','Airport Exchange','Central Bank ATM','24h Cash Point'],
+      };
+      const names = demoNames[filter] || demoNames.food;
       for (let i = 0; i < cfg.count; i++) {
-        const mlat = lat + (Math.random()-.5)*0.04;
-        const mlng = lng + (Math.random()-.5)*0.04;
-        const m = L.marker([mlat, mlng], {
-          icon: L.divIcon({
-            html: `<div style="background:${cfg.bg};color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.3)">${cfg.emoji}</div>`,
-            className:'', iconSize:[28,28], iconAnchor:[14,14],
-          })
-        }).addTo(state.mapScreen).bindPopup(`${cfg.emoji} ${cfg.label} ${i+1}`);
-        state.mapScreenMarkers.push(m);
+        const mlat = lat + (Math.random() - .5) * 0.04;
+        const mlng = lng + (Math.random() - .5) * 0.04;
+        const name = names[i % names.length];
+        addLabeledMarker(
+          state.mapScreen, mlat, mlng,
+          cfg.ico, cfg.bg, name,
+          makePopupHtml(name, cfg.ico, cfg.label, cfg.label, cfg.bg, mlat, mlng),
+          state.mapScreenMarkers
+        );
       }
     }
   }
@@ -1646,7 +1815,7 @@ const App = (() => {
     // AI
     aiQuick, chatKeydown, chatResize, sendChat, addAiTrip,
     // Maps tab
-    mapScreenFilter, mapScreenSearch, mapScreenSearchKey,
+    mapScreenFilter, mapScreenSearch, mapScreenSearchKey, setBtcSource,
     // Wallet map
     initWalletMap,
     // Currency converter

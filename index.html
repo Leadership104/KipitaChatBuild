@@ -90,78 +90,87 @@
 
     <!-- ══════════════════ HOME ══════════════════ -->
     <section id="screen-home" class="screen active">
+
+      <!-- Dark header (outside scroll) -->
+      <div class="home-dark-hdr">
+        <p class="home-greeting" id="home-greeting">Good morning ✈️</p>
+        <h1 class="home-title">Where to next?</h1>
+        <div class="home-search-bar">
+          <span class="ms">search</span>
+          <input type="text" placeholder="Search destinations, hotels, flights…"
+            onclick="App.switchTab('places')" readonly/>
+          <span class="ms">mic</span>
+        </div>
+        <button class="home-wx-mini" onclick="App.openModal('advisory')">
+          <span id="hbw-icon">🌤️</span>
+          <span id="hbw-temp">--°</span>
+          <span>·</span>
+          <span id="hbw-desc">Loading…</span>
+          <span>·</span>
+          <span id="hbw-loc">Detecting…</span>
+        </button>
+      </div>
+
       <div class="scr-scroll">
-
-        <div class="home-banner">
-          <div class="hb-text">
-            <h2 id="home-greeting">Good morning! 👋</h2>
-            <p id="home-sub">Where are you heading today?</p>
-          </div>
-          <button class="hb-weather-card" onclick="App.openModal('advisory')">
-            <div class="hbw-main">
-              <span class="hbw-icon" id="hbw-icon">🌤️</span>
-              <div>
-                <div class="hbw-temp" id="hbw-temp">--°F</div>
-                <div class="hbw-desc" id="hbw-desc">Loading…</div>
-              </div>
-            </div>
-            <div class="hbw-loc" id="hbw-loc">📍 Detecting…</div>
-          </button>
-        </div>
-
-        <!-- Safety Card -->
-        <div class="card safety-card" onclick="App.openModal('advisory')">
-          <div class="sc-top">
-            <div class="sc-label"><span class="ms">shield</span> Travel Safety Level</div>
-            <span class="sc-badge" id="sc-badge" data-level="3">Moderate</span>
-          </div>
+        <!-- Hidden compat elements for app.js -->
+        <span id="home-sub" class="hidden"></span>
+        <div class="card safety-card hidden" aria-hidden="true" style="display:none">
+          <span class="sc-badge" id="sc-badge" data-level="3">Moderate</span>
           <div class="sc-track"><div class="sc-fill" id="sc-fill" style="width:75%"></div></div>
-          <p class="sc-hint">Tap for full advisory →</p>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="sec-row"><h3 class="sec-title">Quick Actions</h3></div>
-        <div class="qa-grid">
-          <button class="qa-item" onclick="App.switchTab('maps')">
-            <div class="qa-ico qa-map">🗺️</div><span>Map</span>
+        <!-- Quick Tools 2×3 -->
+        <div class="sec-row"><h3 class="sec-title">Quick Tools</h3></div>
+        <div class="tools-grid">
+          <button class="tool-item" onclick="App.switchTab('wallet')">
+            <div class="tool-ico">💱</div><span>Currency</span>
           </button>
-          <button class="qa-item" onclick="App.switchTab('wallet')">
-            <div class="qa-ico qa-bank">🏦</div><span>Banking</span>
+          <button class="tool-item" onclick="App.switchTab('maps')">
+            <div class="tool-ico">🗺️</div><span>Maps</span>
           </button>
-          <button class="qa-item" onclick="App.openModal('translate')">
-            <div class="qa-ico qa-lang">🌐</div><span>Translate</span>
+          <button class="tool-item" onclick="App.openModal('translate')">
+            <div class="tool-ico">🌐</div><span>Translate</span>
           </button>
-          <button class="qa-item" onclick="App.openModal('perks')">
-            <div class="qa-ico qa-perks">🎁</div><span>Perks</span>
+          <button class="tool-item" onclick="App.openModal('perks')">
+            <div class="tool-ico">🏷️</div><span>Deals</span>
           </button>
-          <button class="qa-item" onclick="App.switchTab('groups')">
-            <div class="qa-ico qa-grp">👥</div><span>Groups</span>
+          <button class="tool-item" onclick="App.openModal('plan-trip')">
+            <div class="tool-ico">🧳</div><span>Packing List</span>
           </button>
-          <button class="qa-item" onclick="App.openModal('travelers')">
-            <div class="qa-ico qa-near">🧭</div><span>Nearby</span>
-          </button>
-          <button class="qa-item" onclick="App.openModal('social')">
-            <div class="qa-ico qa-social">📸</div><span>Stories</span>
-          </button>
-          <button class="qa-item" onclick="App.openModal('advisory')">
-            <div class="qa-ico qa-adv">🛡️</div><span>Advisory</span>
+          <button class="tool-item" onclick="App.openModal('advisory')">
+            <div class="tool-ico">🌤️</div><span>Weather</span>
           </button>
         </div>
 
-        <!-- Safety & Help -->
-        <div class="sec-row"><h3 class="sec-title">Safety &amp; Help</h3></div>
-        <div class="sh-grid">
-          <button class="sh-item sh-sos" onclick="App.openModal('sos')">
-            <span>🆘</span><span>Emergency SOS</span>
+        <!-- Book Transport 2×3 -->
+        <div class="sec-row"><h3 class="sec-title">Book Transport</h3></div>
+        <div class="tools-grid">
+          <button class="tool-item" onclick="App.openBrowser('https://www.skyscanner.com','Skyscanner – Flights')">
+            <div class="tool-ico">✈️</div><span>Flights</span>
           </button>
-          <button class="sh-item sh-adv" onclick="App.openModal('advisory')">
-            <span>🛡️</span><span>Travel Advisory</span>
+          <button class="tool-item" onclick="App.openBrowser('https://www.booking.com','Booking.com – Hotels')">
+            <div class="tool-ico">🏨</div><span>Hotels</span>
           </button>
-          <button class="sh-item sh-hosp" onclick="App.findNearby('hospital')">
-            <span>🏥</span><span>Find Hospital</span>
+          <button class="tool-item" onclick="App.openBrowser('https://www.rentalcars.com','Rental Cars')">
+            <div class="tool-ico">🚗</div><span>Car Rental</span>
           </button>
-          <button class="sh-item sh-emb" onclick="App.findNearby('embassy')">
-            <span>🏛️</span><span>Embassy</span>
+          <button class="tool-item" onclick="App.openBrowser('https://www.cruisecritic.com','Cruise')">
+            <div class="tool-ico">🚢</div><span>Cruise</span>
+          </button>
+          <button class="tool-item" onclick="App.openBrowser('https://uber.com','Uber')">
+            <div class="tool-ico">🚕</div><span>Uber</span>
+          </button>
+          <button class="tool-item" onclick="App.openBrowser('https://lyft.com','Lyft')">
+            <div class="tool-ico">🛻</div><span>Lyft</span>
+          </button>
+        </div>
+
+        <!-- Ask Kipita AI -->
+        <div class="home-ai-hero">
+          <button class="home-ai-btn" onclick="App.switchTab('ai')">
+            <span class="home-ai-sparkle">✨</span>
+            <span class="home-ai-label">Ask Kipita AI</span>
+            <span class="home-ai-sub">Plan trips · Safety · Translate · More</span>
           </button>
         </div>
 
@@ -246,19 +255,19 @@
           </button>
         </div>
         <div class="tab-row">
-          <button class="tab-btn active" data-places-tab="dest" onclick="App.placesTab('dest',this)">🌍 Destinations</button>
-          <button class="tab-btn" data-places-tab="places" onclick="App.placesTab('places',this)">📍 Places</button>
+          <button class="tab-btn active" data-places-tab="places" onclick="App.placesTab('places',this)">📍 Places</button>
+          <button class="tab-btn" data-places-tab="dest" onclick="App.placesTab('dest',this)">🌍 Destinations</button>
         </div>
-        <div id="tab-dest" class="places-tab-body">
+        <div id="tab-places" class="places-tab-body">
+          <div class="time-greeting" id="time-greeting">🍳 Good Morning</div>
+          <div class="cat-grid" id="cat-grid"></div>
+        </div>
+        <div id="tab-dest" class="places-tab-body hidden">
           <div class="sort-label-row">
             <span class="sort-label" id="sort-label">Nomad Hotspots</span>
             <span class="sort-info" id="sort-info"></span>
           </div>
           <div class="dest-grid" id="dest-grid"></div>
-        </div>
-        <div id="tab-places" class="places-tab-body hidden">
-          <div class="time-greeting" id="time-greeting">🍳 Good Morning</div>
-          <div class="cat-grid" id="cat-grid"></div>
         </div>
         <div class="pb-nav"></div>
       </div>
@@ -280,6 +289,12 @@
           <button class="mpill" data-f="cafe" onclick="App.mapScreenFilter('cafe',this)">☕ Cafe</button>
           <button class="mpill" data-f="shop" onclick="App.mapScreenFilter('shop',this)">🛍 Shops</button>
           <button class="mpill" data-f="atm" onclick="App.mapScreenFilter('atm',this)">🏧 ATM</button>
+        </div>
+        <div class="btc-source-pills" id="btc-source-pills">
+          <span class="bsp-label">Source:</span>
+          <button class="bsp active" data-src="both"    onclick="App.setBtcSource('both',this)">🌐 Both</button>
+          <button class="bsp"        data-src="btcmap"  onclick="App.setBtcSource('btcmap',this)">🗺 BTCMap</button>
+          <button class="bsp"        data-src="cashapp" onclick="App.setBtcSource('cashapp',this)">💚 Cash App</button>
         </div>
         <div id="leaflet-map-screen" class="leaflet-map-screen"></div>
       </div>
