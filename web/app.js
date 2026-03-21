@@ -300,7 +300,7 @@ const App = (() => {
           state.destPhotos[d.id] = url;
           applyDestPhoto(d.id, url);
         }
-      } catch {}
+      } catch(e) { console.warn('[Kipita] Photo fetch failed for', d.id, e?.message); }
     }));
     renderDestinations();
   }
@@ -530,10 +530,10 @@ const App = (() => {
       if (spot?.silver)   setEl('ws-xag', fmtUSD(spot.silver, 2) + ' / oz');
       if (spot?.platinum) setEl('ws-xpt', fmtUSD(spot.platinum, 2) + ' / oz');
     } catch {
-      // Fallback approximate prices
-      setEl('ws-xau', '~$3,050 / oz');
-      setEl('ws-xag', '~$33 / oz');
-      setEl('ws-xpt', '~$980 / oz');
+      // Fallback approximate prices (Mar 2026)
+      setEl('ws-xau', '~$3,100 / oz');
+      setEl('ws-xag', '~$34 / oz');
+      setEl('ws-xpt', '~$990 / oz');
     }
   }
 
@@ -988,6 +988,9 @@ const App = (() => {
     document.getElementById('tab-dest')?.classList.add('hidden');
     document.getElementById('tab-places')?.classList.remove('hidden');
     renderCategories();
+    // Ensure destination photos are loaded (retry if any are missing)
+    const missing = DESTINATIONS.some(d => !state.destPhotos[d.id]);
+    if (missing) fetchAllDestPhotos();
   }
 
   function toggleSaved(id) {
@@ -1099,13 +1102,13 @@ const App = (() => {
         const reviews = Math.floor(20 + Math.random() * 200);
         const price = ['$', '$$', '$$$'][Math.floor(Math.random() * 3)];
         const distMi = (0.1 + Math.random() * 2).toFixed(2);
-        const addr = p.addr + ', CA 91354, United';
-        const tel = `tel:+1${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+        const addr = p.addr;
+        const tel = `tel:+${Math.floor(10000000000 + Math.random() * 89999999999)}`;
         const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(p.name)}`;
         return `
         <div class="place-list-card">
-          <div class="plc-photo" style="background:linear-gradient(135deg,#${Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0')},#1a1a2e)">
-            <span style="font-size:28px">${p.emoji}</span>
+          <div class="plc-photo" style="${p.photo ? `background-image:url('${p.photo}');background-size:cover;background-position:center;` : 'background:linear-gradient(135deg,#1a1a2e,#16213e);'}">
+            ${!p.photo ? `<span style="font-size:28px">${p.emoji}</span>` : ''}
           </div>
           <div class="plc-body">
             <div class="plc-top-row">
@@ -1137,25 +1140,59 @@ const App = (() => {
         </div>`}).join('')}`;
   }
 
+  // Curated Wikimedia Commons category photos (stable, open-licensed)
+  const CATEGORY_PHOTOS = {
+    food:      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg/400px-Good_Food_Display_-_NCI_Visuals_Online.jpg',
+    cafe:      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/A_small_cup_of_coffee.JPG/400px-A_small_cup_of_coffee.JPG',
+    hotel:     'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Sdf-chicago.jpg/400px-Sdf-chicago.jpg',
+    transport: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/BTS_Skytrain_approaching_Ratchathewi_station.jpg/400px-BTS_Skytrain_approaching_Ratchathewi_station.jpg',
+    atm:       'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/BITCOIN-Geldautomat-Wien.jpg/400px-BITCOIN-Geldautomat-Wien.jpg',
+    shop:      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Above_Gotham.jpg/400px-Above_Gotham.jpg',
+    gym:       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Gym_at_Taliesin_West.jpg/400px-Gym_at_Taliesin_West.jpg',
+    hospital:  'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Kaplan_Medical_Center_edited.jpg/400px-Kaplan_Medical_Center_edited.jpg',
+    pharmacy:  'https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Pharmacy_-_the_interior.jpg/400px-Pharmacy_-_the_interior.jpg',
+    beach:     'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Kuta_beach_Bali.jpg/400px-Kuta_beach_Bali.jpg',
+    nightlife: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Bangkok_nightlife_-_Khao_San_Road.jpg/400px-Bangkok_nightlife_-_Khao_San_Road.jpg',
+    default:   'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/400px-No_image_available.svg.png',
+  };
+
   const placeNames = {
-    food:    ['Nomad Kitchen','Street Bites','The Wanderer Grill','Local Eats','Spice Route','Fusion Corner','Wok & Roll','Taste of Home'],
-    cafe:    ['Digital Nomad Café','Bean & Browse','The Grind','Pour Over Paradise','Roast & Relax','Brew Corner','Coffee Collective','Sip & Work'],
-    hotel:   ['Nomad Hostel','The Co-Living Hub','Modern Suites','Budget Inn','Artisan Rooms','City Stay','Backpacker Palace','Nomad Base'],
-    default: ['Place 1','Place 2','Place 3','Place 4','Place 5','Place 6','Place 7','Place 8'],
+    food:      ['Nomad Kitchen','Street Bites','The Wanderer Grill','Local Eats','Spice Route','Fusion Corner','Wok & Roll','Taste of Home'],
+    cafe:      ['Digital Nomad Café','Bean & Browse','The Grind','Pour Over Paradise','Roast & Relax','Brew Corner','Coffee Collective','Sip & Work'],
+    hotel:     ['Nomad Hostel','The Co-Living Hub','Modern Suites','Budget Inn','Artisan Rooms','City Stay','Backpacker Palace','Nomad Base'],
+    transport: ['City Metro','Express Bus','BTS Station','MRT Hub','Tuk-Tuk Stand','Grab Point','Ferry Dock','Airport Link'],
+    atm:       ['BTC ATM','Lightning ATM','Crypto Kiosk','Exchange Point','Bitcoin Corner','Crypto ATM','Digital Wallet Hub','Satoshi Exchange'],
+    shop:      ['Local Market','Nomad Shop','Night Bazaar','Weekend Market','Tech Store','Street Market','Digital Goods','Travel Gear'],
+    gym:       ['Nomad Gym','FitHub','Iron Zone','CrossFit Box','Yoga Studio','Sports Club','Urban Gym','Wellness Center'],
+    beach:     ['Sunset Beach','Chill Cove','Digital Nomad Beach','Surf Spot','Kite Beach','Hidden Bay','Reef Point','Ocean Club'],
+    nightlife: ['Rooftop Bar','Night Market','Jazz Lounge','Sky Bar','Night Club','Live Music Venue','Beer Garden','Cocktail Hub'],
+    default:   ['Place 1','Place 2','Place 3','Place 4','Place 5','Place 6','Place 7','Place 8'],
   };
   const streets = ['Main Street','Market Ave','Digital Lane','Nomad Road','BTC Boulevard','Satoshi St','Travel Way','Explorer Blvd'];
 
   function generateDemoPlaces(query, label, count) {
-    const cat = query.includes('restaurant') || query.includes('food') ? 'food'
-      : query.includes('cafe') ? 'cafe' : query.includes('hotel') ? 'hotel' : 'default';
-    const emojis = { food:'🍜', cafe:'☕', hotel:'🏨', default:'📍' };
-    const names  = placeNames[cat];
+    const cat = query.includes('restaurant') || query.includes('food') || query.includes('dining') ? 'food'
+      : query.includes('cafe') || query.includes('coffee') ? 'cafe'
+      : query.includes('hotel') || query.includes('hostel') || query.includes('accommodation') ? 'hotel'
+      : query.includes('transit') || query.includes('transport') || query.includes('bus') || query.includes('metro') ? 'transport'
+      : query.includes('bitcoin') || query.includes('atm') || query.includes('crypto') ? 'atm'
+      : query.includes('shopping') || query.includes('market') ? 'shop'
+      : query.includes('gym') || query.includes('fitness') ? 'gym'
+      : query.includes('beach') ? 'beach'
+      : query.includes('nightlife') || query.includes('bar') ? 'nightlife'
+      : 'default';
+    const emojis = { food:'🍜', cafe:'☕', hotel:'🏨', transport:'🚇', atm:'₿', shop:'🛍', gym:'💪', beach:'🏖️', nightlife:'🎵', default:'📍' };
+    const names  = placeNames[cat] || placeNames.default;
+    const photo  = CATEGORY_PHOTOS[cat] || CATEGORY_PHOTOS.default;
+    const { name: locName } = state.location;
+    const cityStreets = locName && locName !== 'Detecting…' ? streets.map(s => s + ', ' + locName.split(',')[0]) : streets;
     return Array.from({ length: count }, (_, i) => ({
       emoji: emojis[cat],
       name:  names[i % names.length],
-      addr:  `${Math.floor(Math.random()*200)+1} ${streets[i % streets.length]}`,
+      addr:  `${Math.floor(Math.random()*200)+1} ${cityStreets[i % cityStreets.length]}`,
       rating:(3.8 + Math.random() * 1.1).toFixed(1),
       dist:  (0.2 + Math.random() * 4).toFixed(1),
+      photo,
     }));
   }
 
@@ -1708,7 +1745,7 @@ const App = (() => {
       }
     } catch {
       // Fallback approximate rates (USD base)
-      state.fxRates = { USD:1, EUR:0.92, GBP:0.79, JPY:150.2, CNY:7.24, CHF:0.90, THB:35.6, IDR:15800, BRL:5.0, AED:3.67, SGD:1.34 };
+      state.fxRates = { USD:1, EUR:0.92, GBP:0.78, JPY:149.5, CNY:7.25, CHF:0.89, THB:34.5, IDR:16300, BRL:5.85, AED:3.67, SGD:1.35 };
       convertCurrency();
     }
   }

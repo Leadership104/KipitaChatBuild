@@ -1,9 +1,36 @@
 # Kipita Web App — Changelog & Launch Notes
 
-**Last updated:** 2026-03-20
-**Live at:** http://localhost:3000
+**Last updated:** 2026-03-21
+**Live at:** http://localhost:3000 · http://localhost:3001
+**Production:** https://leadership104.github.io/KipitaChatBuild/
 
 ---
+
+## Latest Changes (2026-03-21)
+
+### Explore Photos — Real Images on All Category Cards
+- **Place category result cards** now show real Wikimedia Commons photos (open-licensed) per category instead of random color gradients
+- 12 category types mapped to curated photos: Food, Café, Hotel, Transit, BTC ATM, Shopping, Gym, Beach, Nightlife, Hospital, Pharmacy
+- `CATEGORY_PHOTOS` map added — stable Wikimedia Commons thumbnail URLs, no API key required
+- `generateDemoPlaces` now returns a `photo` property; address now uses actual detected location city name instead of hardcoded "CA 91354"
+- Phone numbers now generated as valid 11-digit international format
+
+### Destination Photos — Retry on Explore Tab Open
+- `initExploreScreen` now checks if any destination photos are missing and re-triggers `fetchAllDestPhotos()` if so
+- Ensures photos load even if Wikipedia API was slow on initial app load
+- Added `console.warn` on photo fetch failure for production debugging
+
+### API / Go-Live Audit
+- All 14 external API endpoints verified: Wikimedia, ip-api, Nominatim, Open-Meteo, CoinGecko, metals.live, BTCMap, Overpass, open.er-api — all HTTPS, no localhost, no API keys required
+- **Confirmed working without keys**: CoinGecko (free tier), Open-Meteo (free), Nominatim (free), BTCMap (free), Overpass (free), Wikimedia (CORS enabled with `origin=*`)
+- Fallback FX rates updated to Mar 2026 values
+- Fallback metals prices updated to Mar 2026 values (Gold ~$3,100, Silver ~$34, Platinum ~$990)
+- No hardcoded localhost or dev-only URLs — all production-ready
+
+### Reviews Layout Fix
+- `groups-list-view` and `reviews-view` changed to `flex:1` (was `height:100%`) — prevents bottom content being clipped by subtab-row height
+- Desktop: `social-subtab-row` positioned absolutely at top; screen gets `padding-top:47px` to preserve side-by-side groups layout
+- `server2.js` added for running parallel test server on port 3001
 
 ## Latest Changes (2026-03-20)
 
