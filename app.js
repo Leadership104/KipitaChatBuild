@@ -37,6 +37,11 @@ const App = (() => {
     currentGroup: null,
     btcPrice: null,
     fxRates: {},
+    socialTab: 'groups',
+    reviewFilter: 'all',
+    reviewSort: 'recent',
+    reviewStars: 0,
+    nomadScores: { wifi: 0, budget: 0, vibe: 0 },
   };
 
   /* ── LOCAL STORAGE ─────────────────────────────────────────── */
@@ -147,6 +152,19 @@ const App = (() => {
     { icon: '📶', title: 'Airalo eSIM',  desc: '5% off any eSIM data plan worldwide. Stay connected anywhere.',                 code: 'KIPITA5',    expiry: 'Jun 2026', url: 'https://www.airalo.com/?utm_source=kipita&utm_medium=app&utm_campaign=KIPITA5' },
     { icon: '🏋️', title: 'ClassPass',   desc: 'First month free — access gyms, yoga and fitness globally.',                    code: 'KIPITAFIT',  expiry: 'Ongoing',  url: 'https://classpass.com/?utm_source=kipita&utm_medium=app&utm_campaign=KIPITAFIT' },
     { icon: '🔐', title: 'NordVPN',      desc: '2-year plan at 70% off. Secure your connection on public WiFi.',                code: 'KIPITAVPN',  expiry: 'Dec 2026', url: 'https://nordvpn.com/?utm_source=kipita&utm_medium=app&utm_campaign=KIPITAVPN' },
+  ];
+
+  /* ── DEMO REVIEWS ───────────────────────────────────────────── */
+  const DEMO_REVIEWS = [
+    { id:'r1', author:'Alex M.',   flag:'🇺🇸', dest:'Bangkok',    emoji:'🛕', rating:5, wifi:5, budget:5, vibe:4, text:"Bangkok is unreal for nomads. Lightning-fast fiber at every cafe, street food for $2, and you can pay BTC at loads of spots. Lived here 4 months — zero regrets.", ts: Date.now() - 86400000*2 },
+    { id:'r2', author:'Sara K.',   flag:'🇬🇧', dest:'Bali',       emoji:'🌴', rating:4, wifi:3, budget:4, vibe:5, text:"Canggu has the best nomad community on earth. The vibe is incredible, co-working spaces everywhere. WiFi can be patchy outside the main hubs though.", ts: Date.now() - 86400000*5 },
+    { id:'r3', author:'Marco B.',  flag:'🇮🇹', dest:'Lisbon',     emoji:'🇵🇹', rating:5, wifi:4, budget:3, vibe:5, text:"Europe's best city for nomads right now. NHR tax regime, incredible food, great tech scene and Bitcoin is huge here. Getting pricier but still worth it.", ts: Date.now() - 86400000*8 },
+    { id:'r4', author:'Yuki T.',   flag:'🇯🇵', dest:'Tokyo',      emoji:'🗼', rating:5, wifi:5, budget:2, vibe:5, text:"Tokyo is the most organised city in the world. Thousands of BTC merchants, insane food, 100% safe. Expensive but you get what you pay for.", ts: Date.now() - 86400000*12 },
+    { id:'r5', author:'Priya N.',  flag:'🇮🇳', dest:'Chiang Mai', emoji:'🏔️', rating:5, wifi:5, budget:5, vibe:4, text:"$800/month comfortable lifestyle. Best Internet cafes in the world, temples everywhere, mountains for weekend trips. The OG nomad capital for a reason.", ts: Date.now() - 86400000*15 },
+    { id:'r6', author:'Leo C.',    flag:'🇨🇦', dest:'Medellín',   emoji:'🌺', rating:4, wifi:4, budget:5, vibe:5, text:"Spring weather all year, incredible food, and a booming crypto scene. Some safety awareness needed but the nomad community is super welcoming.", ts: Date.now() - 86400000*20 },
+    { id:'r7', author:'Nina V.',   flag:'🇩🇪', dest:'Dubai',      emoji:'🏙️', rating:4, wifi:5, budget:1, vibe:3, text:"World-class infrastructure and 0% tax but it's very expensive. Best for high earners. The crypto regulations are progressive and banking is seamless.", ts: Date.now() - 86400000*25 },
+    { id:'r8', author:'James O.',  flag:'🇦🇺', dest:'Bangkok',    emoji:'🛕', rating:4, wifi:4, budget:5, vibe:4, text:"Sukhumvit area is great for co-working. Plenty of Bitcoin ATMs and merchants. Visa runs are a bit annoying but otherwise a perfect base.", ts: Date.now() - 86400000*30 },
+    { id:'r9', author:'Mei L.',    flag:'🇸🇬', dest:'Bali',       emoji:'🌴', rating:5, wifi:4, budget:4, vibe:5, text:"Ubud is magical for deep work — rice terrace views from the cafe, great yoga community, and everyone's working on something interesting. Highly recommend.", ts: Date.now() - 86400000*35 },
   ];
 
   /* ── AI RESPONSES ──────────────────────────────────────────── */
@@ -343,7 +361,7 @@ const App = (() => {
     if (name === 'trips')  renderTrips();
     if (name === 'maps')   initMapScreen();
     if (name === 'wallet') initWalletMap();
-    if (name === 'groups') { renderGroupsScreen(); renderNearbyTeaser(); }
+    if (name === 'groups') { renderGroupsScreen(); renderNearbyTeaser(); if (state.socialTab === 'reviews') renderReviewsTab(); }
   }
 
   /* ── PROFILE MENU ───────────────────────────────────────────── */
@@ -1872,6 +1890,165 @@ const App = (() => {
     navigator.clipboard.writeText(code).then(() => snack(`Code "${code}" copied!`));
   }
 
+  /* ── REVIEWS ─────────────────────────────────────────────────── */
+  function switchSocialTab(tab, btn) {
+    state.socialTab = tab;
+    document.querySelectorAll('.sst-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const gv = document.getElementById('groups-list-view');
+    const rv = document.getElementById('reviews-view');
+    if (tab === 'reviews') {
+      gv.classList.add('hidden'); rv.classList.remove('hidden');
+      renderReviewsTab();
+    } else {
+      rv.classList.add('hidden'); gv.classList.remove('hidden');
+      renderGroupsScreen(); renderNearbyTeaser();
+    }
+  }
+
+  function allReviews() {
+    const saved = LS.get('reviews') || [];
+    return [...DEMO_REVIEWS, ...saved];
+  }
+
+  function renderReviewsTab() {
+    const all = allReviews();
+    let list = state.reviewFilter === 'all' ? all : all.filter(r => r.dest === state.reviewFilter);
+    list = state.reviewSort === 'top'
+      ? [...list].sort((a,b) => b.rating - a.rating)
+      : [...list].sort((a,b) => b.ts - a.ts);
+
+    const label = document.getElementById('rev-count-label');
+    if (label) label.textContent = `${list.length} review${list.length !== 1 ? 's' : ''}${state.reviewFilter !== 'all' ? ' in ' + state.reviewFilter : ''}`;
+
+    const el = document.getElementById('reviews-list');
+    if (!el) return;
+    if (!list.length) {
+      el.innerHTML = `<div class="empty-card" style="margin:24px 16px">
+        <span class="ms ms-xl">rate_review</span>
+        <p>No reviews yet for this destination.</p>
+        <button class="btn-primary-sm" onclick="App.openWriteReview()">Be the first!</button>
+      </div>`;
+      return;
+    }
+    el.innerHTML = list.map(r => {
+      const stars = renderStars(r.rating);
+      const ago = timeAgo(r.ts);
+      const photo = state.destPhotos[DESTINATIONS.find(d => d.city === r.dest)?.id || ''];
+      return `
+      <div class="review-card motion-card">
+        ${photo ? `<div class="rev-dest-hero" style="background-image:url('${photo}')">
+          <div class="rev-dest-overlay"><span class="rev-dest-name">${r.emoji} ${r.dest}</span></div>
+        </div>` : `<div class="rev-dest-chip">${r.emoji} ${r.dest}</div>`}
+        <div class="rev-body">
+          <div class="rev-top">
+            <div class="rev-avatar">${r.flag}</div>
+            <div class="rev-meta">
+              <div class="rev-author">${escHtml(r.author)}</div>
+              <div class="rev-ago">${ago}</div>
+            </div>
+            <div class="rev-stars">${stars}</div>
+          </div>
+          <p class="rev-text">${escHtml(r.text)}</p>
+          <div class="rev-scores">
+            <div class="rev-score-chip">📶 WiFi ${renderMiniStars(r.wifi)}</div>
+            <div class="rev-score-chip">💸 Budget ${renderMiniStars(r.budget)}</div>
+            <div class="rev-score-chip">✨ Vibe ${renderMiniStars(r.vibe)}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('') + '<div class="pb-nav"></div>';
+  }
+
+  function renderStars(n) {
+    return Array.from({length:5},(_,i) =>
+      `<span style="color:${i<n?'#F7931A':'#ddd'};font-size:18px">★</span>`).join('');
+  }
+
+  function renderMiniStars(n) {
+    return Array.from({length:5},(_,i) =>
+      `<span style="color:${i<n?'#F7931A':'#ddd'};font-size:11px">★</span>`).join('');
+  }
+
+  function timeAgo(ts) {
+    const diff = Date.now() - ts;
+    const days = Math.floor(diff / 86400000);
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 30)  return `${days}d ago`;
+    const months = Math.floor(days / 30);
+    return months === 1 ? '1 month ago' : `${months} months ago`;
+  }
+
+  function filterReviews(dest, btn) {
+    state.reviewFilter = dest;
+    document.querySelectorAll('.rfpill').forEach(p => p.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderReviewsTab();
+  }
+
+  function sortReviews(sort, btn) {
+    state.reviewSort = sort;
+    document.querySelectorAll('.rev-sort-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderReviewsTab();
+  }
+
+  function openWriteReview() {
+    state.reviewStars = 0;
+    state.nomadScores = { wifi:0, budget:0, vibe:0 };
+    ['wr-dest','wr-text'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+    updateStarUI('wr-stars', 0);
+    ['wifi','budget','vibe'].forEach(c => updateStarUI('wrs-'+c, 0, 'wrs'));
+    openModal('write-review');
+  }
+
+  function setReviewStar(n) {
+    state.reviewStars = n;
+    updateStarUI('wr-stars', n);
+  }
+
+  function setNomadScore(cat, n) {
+    state.nomadScores[cat] = n;
+    updateStarUI('wrs-'+cat, n, 'wrs');
+  }
+
+  function updateStarUI(containerId, val, cls='wr-star') {
+    const el = document.getElementById(containerId); if (!el) return;
+    el.querySelectorAll('.'+cls).forEach(s => {
+      s.textContent = +s.dataset.v <= val ? '★' : '☆';
+      s.style.color = +s.dataset.v <= val ? '#F7931A' : '#bbb';
+    });
+  }
+
+  function submitReview() {
+    const dest = document.getElementById('wr-dest')?.value?.replace(/\s[^\s]+$/, '').trim();
+    const text = document.getElementById('wr-text')?.value?.trim();
+    if (!dest)              { snack('Please select a destination'); return; }
+    if (!state.reviewStars) { snack('Please rate your experience'); return; }
+    if (!text || text.length < 10) { snack('Write at least 10 characters'); return; }
+    const u = state.user;
+    const review = {
+      id: 'r' + Date.now(),
+      author: u?.name || 'You',
+      flag: '🌍',
+      dest,
+      emoji: DESTINATIONS.find(d => d.city === dest)?.emoji || '📍',
+      rating: state.reviewStars,
+      wifi:   state.nomadScores.wifi   || 3,
+      budget: state.nomadScores.budget || 3,
+      vibe:   state.nomadScores.vibe   || 3,
+      text,
+      ts: Date.now(),
+    };
+    const saved = LS.get('reviews') || [];
+    saved.unshift(review);
+    LS.set('reviews', saved);
+    closeModal('write-review');
+    switchSocialTab('reviews', document.querySelector('.sst-btn[data-sst="reviews"]'));
+    snack('Review posted! Thanks for sharing ⭐');
+  }
+
   /* ── GROUPS SCREEN ───────────────────────────────────────────── */
   function renderGroupsScreen() {
     const el = document.getElementById('groups-screen-list'); if (!el) return;
@@ -1933,6 +2110,8 @@ const App = (() => {
     const chatView = document.getElementById('groups-chat-view');
     chatView.classList.remove('hidden');
     requestAnimationFrame(() => chatView.classList.add('open'));
+    const stRow = document.getElementById('social-subtab-row');
+    if (stRow) stRow.classList.add('hidden');
 
     setTimeout(() => {
       const msgsEl = document.getElementById('gchat-messages');
@@ -1968,6 +2147,8 @@ const App = (() => {
     chatView.classList.remove('open');
     setTimeout(() => chatView.classList.add('hidden'), 300);
     state.currentGroup = null;
+    const stRow = document.getElementById('social-subtab-row');
+    if (stRow) stRow.classList.remove('hidden');
   }
 
   function sendGroupMsg() {
@@ -2198,6 +2379,9 @@ const App = (() => {
     // Groups
     promptCreateGroup, openGroupChat, closeGroupChat,
     sendGroupMsg, groupChatKeydown, showGroupInfo,
+    // Reviews
+    switchSocialTab, filterReviews, sortReviews,
+    openWriteReview, setReviewStar, setNomadScore, submitReview,
     // Misc
     alertGroup, openBrowser, shareApp,
     signInWithGoogle, signOut, deleteAccount,

@@ -450,6 +450,16 @@
     <!-- ══════════════════ GROUPS ══════════════════ -->
     <section id="screen-groups" class="screen">
 
+      <!-- Social sub-tabs -->
+      <div class="social-subtab-row" id="social-subtab-row">
+        <button class="sst-btn active" data-sst="groups" onclick="App.switchSocialTab('groups',this)">
+          <span class="ms" style="font-size:17px;vertical-align:-3px">group</span> Groups
+        </button>
+        <button class="sst-btn" data-sst="reviews" onclick="App.switchSocialTab('reviews',this)">
+          <span class="ms" style="font-size:17px;vertical-align:-3px">star</span> Reviews
+        </button>
+      </div>
+
       <!-- List View -->
       <div id="groups-list-view" class="groups-list-view">
         <div class="trips-header">
@@ -469,6 +479,37 @@
           <div id="nearby-teaser"></div>
           <div class="pb-nav"></div>
         </div>
+      </div>
+
+      <!-- Reviews View -->
+      <div id="reviews-view" class="reviews-view hidden">
+        <div class="rev-header-bar">
+          <div>
+            <h2 style="margin:0;font-size:20px">Nomad Reviews</h2>
+            <p style="margin:2px 0 0;font-size:12px;color:var(--text3)" id="rev-count-label">Loading reviews…</p>
+          </div>
+          <button class="btn-primary-sm" onclick="App.openWriteReview()">
+            <span class="ms">rate_review</span> Write
+          </button>
+        </div>
+        <!-- Destination filter pills -->
+        <div class="rev-filter-pills" id="rev-filter-pills">
+          <button class="rfpill active" data-dest="all" onclick="App.filterReviews('all',this)">All</button>
+          <button class="rfpill" data-dest="Bangkok" onclick="App.filterReviews('Bangkok',this)">Bangkok</button>
+          <button class="rfpill" data-dest="Bali" onclick="App.filterReviews('Bali',this)">Bali</button>
+          <button class="rfpill" data-dest="Lisbon" onclick="App.filterReviews('Lisbon',this)">Lisbon</button>
+          <button class="rfpill" data-dest="Chiang Mai" onclick="App.filterReviews('Chiang Mai',this)">Chiang Mai</button>
+          <button class="rfpill" data-dest="Tokyo" onclick="App.filterReviews('Tokyo',this)">Tokyo</button>
+          <button class="rfpill" data-dest="Medellín" onclick="App.filterReviews('Medellín',this)">Medellín</button>
+          <button class="rfpill" data-dest="Dubai" onclick="App.filterReviews('Dubai',this)">Dubai</button>
+        </div>
+        <!-- Sort row -->
+        <div class="rev-sort-row">
+          <span style="font-size:12px;color:var(--text3)">Sort:</span>
+          <button class="rev-sort-btn active" onclick="App.sortReviews('recent',this)">Most Recent</button>
+          <button class="rev-sort-btn" onclick="App.sortReviews('top',this)">Top Rated</button>
+        </div>
+        <div id="reviews-list" class="scr-scroll"></div>
       </div>
 
       <!-- Chat View (slides in) -->
@@ -795,6 +836,77 @@
     </button>
   </div>
   <iframe id="browser-frame" class="browser-iframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+</div>
+
+<!-- WRITE REVIEW -->
+<div id="modal-write-review" class="modal sheet hidden">
+  <div class="sheet-handle"></div>
+  <div class="modal-hdr">
+    <h3>Write a Review</h3>
+    <button class="modal-x" onclick="App.closeModal('write-review')"><span class="ms">close</span></button>
+  </div>
+  <div class="modal-body">
+    <!-- Destination -->
+    <label class="wr-label">Destination</label>
+    <select id="wr-dest" class="wr-select">
+      <option value="">Select a destination…</option>
+      <option value="Bangkok 🛕">Bangkok 🛕</option>
+      <option value="Bali 🌴">Bali 🌴</option>
+      <option value="Lisbon 🇵🇹">Lisbon 🇵🇹</option>
+      <option value="Chiang Mai 🏔️">Chiang Mai 🏔️</option>
+      <option value="Tokyo 🗼">Tokyo 🗼</option>
+      <option value="Barcelona 🏖️">Barcelona 🏖️</option>
+      <option value="Medellín 🌺">Medellín 🌺</option>
+      <option value="Dubai 🏙️">Dubai 🏙️</option>
+    </select>
+    <!-- Overall star rating -->
+    <label class="wr-label">Overall Rating</label>
+    <div class="wr-stars" id="wr-stars">
+      <span class="wr-star" data-v="1" onclick="App.setReviewStar(1)">☆</span>
+      <span class="wr-star" data-v="2" onclick="App.setReviewStar(2)">☆</span>
+      <span class="wr-star" data-v="3" onclick="App.setReviewStar(3)">☆</span>
+      <span class="wr-star" data-v="4" onclick="App.setReviewStar(4)">☆</span>
+      <span class="wr-star" data-v="5" onclick="App.setReviewStar(5)">☆</span>
+    </div>
+    <!-- Nomad scores -->
+    <label class="wr-label">Nomad Scores</label>
+    <div class="wr-scores">
+      <div class="wr-score-row">
+        <span>📶 WiFi</span>
+        <div class="wr-score-stars" id="wrs-wifi" data-cat="wifi">
+          <span class="wrs" data-v="1" onclick="App.setNomadScore('wifi',1)">☆</span>
+          <span class="wrs" data-v="2" onclick="App.setNomadScore('wifi',2)">☆</span>
+          <span class="wrs" data-v="3" onclick="App.setNomadScore('wifi',3)">☆</span>
+          <span class="wrs" data-v="4" onclick="App.setNomadScore('wifi',4)">☆</span>
+          <span class="wrs" data-v="5" onclick="App.setNomadScore('wifi',5)">☆</span>
+        </div>
+      </div>
+      <div class="wr-score-row">
+        <span>💸 Budget</span>
+        <div class="wr-score-stars" id="wrs-budget" data-cat="budget">
+          <span class="wrs" data-v="1" onclick="App.setNomadScore('budget',1)">☆</span>
+          <span class="wrs" data-v="2" onclick="App.setNomadScore('budget',2)">☆</span>
+          <span class="wrs" data-v="3" onclick="App.setNomadScore('budget',3)">☆</span>
+          <span class="wrs" data-v="4" onclick="App.setNomadScore('budget',4)">☆</span>
+          <span class="wrs" data-v="5" onclick="App.setNomadScore('budget',5)">☆</span>
+        </div>
+      </div>
+      <div class="wr-score-row">
+        <span>✨ Vibe</span>
+        <div class="wr-score-stars" id="wrs-vibe" data-cat="vibe">
+          <span class="wrs" data-v="1" onclick="App.setNomadScore('vibe',1)">☆</span>
+          <span class="wrs" data-v="2" onclick="App.setNomadScore('vibe',2)">☆</span>
+          <span class="wrs" data-v="3" onclick="App.setNomadScore('vibe',3)">☆</span>
+          <span class="wrs" data-v="4" onclick="App.setNomadScore('vibe',4)">☆</span>
+          <span class="wrs" data-v="5" onclick="App.setNomadScore('vibe',5)">☆</span>
+        </div>
+      </div>
+    </div>
+    <!-- Review text -->
+    <label class="wr-label">Your Review</label>
+    <textarea id="wr-text" class="wr-textarea" placeholder="Share your experience as a digital nomad…" rows="4"></textarea>
+    <button class="btn-primary full" style="margin-top:16px" onclick="App.submitReview()">Post Review</button>
+  </div>
 </div>
 
 <!-- SNACKBAR -->
