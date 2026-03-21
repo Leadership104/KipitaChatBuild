@@ -1803,3 +1803,62 @@ ul      { list-style:none; padding:0 }
   .ai-quick-grid { grid-template-columns: repeat(4, 1fr); }
   .ai-prompt-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ═══════════════════════════ DESKTOP SIDEBAR BRAND ═══════════ */
+.desktop-brand { display: none }
+
+@media (min-width: 768px) {
+  .desktop-brand {
+    display: block;
+    padding: 18px 16px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
+  .db-logo {
+    font-size: 22px; font-weight: 800; letter-spacing: -0.8px;
+    color: var(--text); line-height: 1;
+  }
+  .db-logo span { color: var(--red) }
+  .db-tag {
+    font-size: 10px; color: var(--text3); margin-top: 4px; font-weight: 500;
+  }
+}
+
+/* ══════════════════════════ MOBILE TOUCH POLISH ══════════════ */
+@media (max-width: 767px) {
+  /* Prevent 300ms tap delay & iOS callout on interactive elements */
+  button, .nav-btn, .place-card, .trip-card, .group-row,
+  .dest-card, .tool-item, .qa-btn, .perk-card, .review-card,
+  .traveler-card, .phrase-card, .mnpill, .filter-pill {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body { -webkit-touch-callout: none; }
+
+  /* Ensure bottom-nav safe area on notched phones */
+  #bottom-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 8px);
+  }
+
+  /* Tighter card padding on small screens */
+  .home-section { padding: 14px 14px 0; }
+}
+
+/* ══════════════════════════ DESKTOP CONTENT MAX-WIDTH ════════ */
+@media (min-width: 1200px) {
+  .screen > .home-dark-hdr,
+  .screen > .wallet-dark-hdr,
+  .screen > .screen-body,
+  .screen > .trips-header,
+  .screen > .trip-list,
+  .screen > .places-tab-body,
+  .screen > .ai-screen-inner,
+  .screen > .wallet-screen-hdr,
+  .screen > .map-overlay-top {
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+}
