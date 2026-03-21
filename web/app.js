@@ -699,11 +699,8 @@ const App = (() => {
   }
 
   function aiPlanFromTrips() {
-    switchTab('ai');
-    setTimeout(() => {
-      const input = document.getElementById('chat-input');
-      if (input) { input.value = 'Plan a trip for me'; input.focus(); }
-    }, 300);
+    openPlanTrip();
+    setTimeout(() => document.getElementById('pt-chat-input')?.focus(), 420);
   }
 
   function tripCardHTML(t, mini) {
@@ -850,50 +847,7 @@ const App = (() => {
     }, 600);
   }
 
-  async function aiPlanTripForm() {
-    const aiInput   = document.getElementById('pt-ai-input');
-    const destInput = document.getElementById('pt-dest');
-    const prompt    = (aiInput?.value || destInput?.value || '').trim();
-    if (!prompt) { snack('✨ Tell AI where you want to go'); aiInput?.focus(); return; }
-
-    const resultEl = document.getElementById('pt-ai-result');
-    resultEl.innerHTML = `<div class="pt-ai-loading"><div class="spinner-sm"></div>✨ Planning your trip…</div>`;
-    resultEl.classList.remove('hidden');
-
-    // Extract clean destination
-    const dest = prompt
-      .replace(/plan|a|my|trip|to|travel|for|in|visit|itinerary|i want to go|\?/gi, ' ')
-      .replace(/\s+/g, ' ').trim() || prompt;
-    const destClean = dest.split(',')[0].trim().replace(/\b\w/g, c => c.toUpperCase()) +
-      (dest.includes(',') ? ', ' + dest.split(',').slice(1).join(',').trim() : '');
-    if (destInput) destInput.value = destClean;
-
-    // Fetch photo immediately
-    const photo = destPhotoForCity(destClean) || await fetchDestPhoto(destClean.split(',')[0].trim());
-    showPlanTripPhoto(photo);
-
-    // Default dates: 14 days out, 7-day trip
-    const start = new Date(Date.now() + 14 * 86400000);
-    const end   = new Date(Date.now() + 21 * 86400000);
-    document.getElementById('pt-start').value = start.toISOString().slice(0, 10);
-    document.getElementById('pt-end').value   = end.toISOString().slice(0, 10);
-
-    setTimeout(() => {
-      const fullResponse = AI_RESPONSES.plan(destClean);
-      const noteLines = fullResponse
-        .split('\n')
-        .filter(l => l.match(/^(Day|\*|•|-|\d)/) && l.trim().length > 2)
-        .slice(0, 6)
-        .map(l => l.replace(/\*\*/g, '').trim())
-        .join('\n');
-      document.getElementById('pt-notes').value = noteLines ||
-        `AI-planned trip to ${destClean}. Open the AI tab for a full itinerary.`;
-
-      state.aiLastTrip = { dest: destClean, days: 7 };
-      resultEl.innerHTML = `<div class="pt-ai-success">✅ Form filled — review and tap Create Trip!</div>`;
-      setTimeout(() => resultEl.classList.add('hidden'), 3000);
-    }, 1200);
-  }
+  function aiPlanTripForm() { /* replaced by inline pt chat */ }
 
   function markTripComplete(id) {
     const trip = state.trips.find(t => t.id === id);
@@ -2379,7 +2333,108 @@ const App = (() => {
 
   function openPlanTrip() {
     if (!state.user) { snack('Sign in to plan & save trips ✈️'); openModal('profile'); return; }
+    // Reset chat panel to fresh state
+    const msgs = document.getElementById('pt-chat-msgs');
+    if (msgs) msgs.innerHTML = `<div class="msg msg-ai"><div class="msg-bubble">Hi! I'm your AI trip planner ✈️<br>Where would you like to go? Tell me the destination, how many days, and what kind of trip you're looking for.</div></div>`;
+    document.getElementById('pt-trip-confirm')?.classList.add('hidden');
+    state.ptChatPlan = null;
+    // Default: show chat panel
+    const wrap = document.getElementById('pt-slide-wrap');
+    if (wrap) wrap.classList.remove('mode-form');
+    const title = document.getElementById('pt-hdr-title');
+    if (title) title.textContent = 'Plan with AI';
+    const toggle = document.getElementById('pt-mode-toggle');
+    if (toggle) { toggle.textContent = '✏️ Manual'; toggle.onclick = App.ptShowForm; }
+    document.getElementById('pt-back-btn')?.classList.add('hidden');
     openModal('plan-trip');
+  }
+
+  /* ── PLAN-TRIP INLINE AI CHAT ───────────────────────────────── */
+  function ptKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ptSend(); }
+  }
+
+  function ptSend() {
+    const input = document.getElementById('pt-chat-input');
+    const msg = (input?.value || '').trim(); if (!msg) return;
+    input.value = ''; input.style.height = 'auto';
+    ptSendAiMsg(msg);
+  }
+
+  function ptSendAiMsg(msg) {
+    const container = document.getElementById('pt-chat-msgs');
+    if (!container) return;
+    container.insertAdjacentHTML('beforeend',
+      `<div class="msg msg-usr"><div class="msg-bubble">${escHtml(msg)}</div></div>`);
+    container.insertAdjacentHTML('beforeend', `
+      <div class="msg msg-ai msg-typing" id="pt-typing">
+        <div class="msg-bubble">
+          <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+        </div>
+      </div>`);
+    container.scrollTop = container.scrollHeight;
+
+    setTimeout(() => {
+      document.getElementById('pt-typing')?.remove();
+      const response = getAiResponse(msg);
+      container.insertAdjacentHTML('beforeend',
+        `<div class="msg msg-ai"><div class="msg-bubble">${markdownToHtml(response)}</div></div>`);
+      container.scrollTop = container.scrollHeight;
+
+      // Detect trip intent → show "Add to My Trips" CTA
+      const m = msg.toLowerCase();
+      if (m.match(/\b(go|trip|travel|visit|plan|days?|weeks?|itinerary|fly|explore)\b/)) {
+        const daysMatch = msg.match(/(\d+)\s*(?:days?|nights?)/i);
+        const days = daysMatch ? parseInt(daysMatch[1]) : 7;
+        const dest = msg
+          .replace(/plan|a|my|trip|to|travel|for|in|visit|itinerary|how|do|i|get|there|days?|weeks?|nights?|fly|explore|\d+|\?/gi, ' ')
+          .replace(/\s+/g, ' ').trim();
+        state.ptChatPlan = { dest: dest.replace(/\b\w/g, c => c.toUpperCase()) || 'New Destination', days };
+        document.getElementById('pt-trip-confirm')?.classList.remove('hidden');
+      }
+    }, 1000 + Math.random() * 700);
+  }
+
+  function ptShowChat() {
+    const wrap = document.getElementById('pt-slide-wrap');
+    wrap?.classList.remove('mode-form');
+    const title = document.getElementById('pt-hdr-title');
+    if (title) title.textContent = 'Plan with AI';
+    const toggle = document.getElementById('pt-mode-toggle');
+    if (toggle) { toggle.textContent = '✏️ Manual'; toggle.onclick = App.ptShowForm; }
+    document.getElementById('pt-back-btn')?.classList.add('hidden');
+  }
+
+  function ptShowForm() {
+    const wrap = document.getElementById('pt-slide-wrap');
+    wrap?.classList.add('mode-form');
+    const title = document.getElementById('pt-hdr-title');
+    if (title) title.textContent = 'Trip Details';
+    const toggle = document.getElementById('pt-mode-toggle');
+    if (toggle) { toggle.textContent = '✨ AI'; toggle.onclick = App.ptShowChat; }
+    document.getElementById('pt-back-btn')?.classList.remove('hidden');
+    // Pre-fill form from last AI plan
+    if (state.ptChatPlan) {
+      const { dest, days } = state.ptChatPlan;
+      document.getElementById('pt-dest').value = dest;
+      const s = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+      const e = new Date(Date.now() + (14 + days) * 86400000).toISOString().slice(0, 10);
+      document.getElementById('pt-start').value = s;
+      document.getElementById('pt-end').value   = e;
+      onDestInput(dest);
+    }
+  }
+
+  function ptConfirmTrip() {
+    if (!state.ptChatPlan) return;
+    const { dest, days } = state.ptChatPlan;
+    document.getElementById('pt-dest').value  = dest;
+    const s = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+    const e = new Date(Date.now() + (14 + days) * 86400000).toISOString().slice(0, 10);
+    document.getElementById('pt-start').value = s;
+    document.getElementById('pt-end').value   = e;
+    document.getElementById('pt-notes').value = `AI-planned trip to ${dest}. See AI tab for full itinerary.`;
+    createTrip();
   }
 
   function openGroupChat(groupId) {
@@ -2710,6 +2765,7 @@ const App = (() => {
     sendGroupMsg, groupChatKeydown, showGroupInfo, sayHiToTraveler,
     // Trips (auth-gated)
     openPlanTrip, openPackingList, togglePackItem,
+    ptKeydown, ptSend, ptShowChat, ptShowForm, ptConfirmTrip,
     // Wallet
     openWalletTab,
     // Reviews

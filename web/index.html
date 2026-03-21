@@ -263,14 +263,6 @@
             </button>
           </div>
         </div>
-        <div class="explore-scope-pills" id="explore-scope-pills">
-          <button class="scope-pill" data-scope="local" onclick="App.setExploreScope('local',this)">📍 Local</button>
-          <button class="scope-pill active" data-scope="city" onclick="App.setExploreScope('city',this)">🏙️ City</button>
-          <button class="scope-pill" data-scope="county" onclick="App.setExploreScope('county',this)">🏞️ County</button>
-          <button class="scope-pill" data-scope="state" onclick="App.setExploreScope('state',this)">🏛️ State</button>
-          <button class="scope-pill" data-scope="national" onclick="App.setExploreScope('national',this)">🗺️ National</button>
-          <button class="scope-pill" data-scope="global" onclick="App.setExploreScope('global',this)">🌍 Global</button>
-        </div>
       </div>
 
       <div class="scr-scroll explore-body">
@@ -770,30 +762,50 @@
 <div id="modal-plan-trip" class="modal sheet hidden">
   <div class="sheet-handle"></div>
   <div class="modal-hdr">
-    <h3>Plan a Trip</h3>
+    <button id="pt-back-btn" class="modal-back hidden" onclick="App.ptShowChat()" title="Back to AI">
+      <span class="ms">arrow_back</span>
+    </button>
+    <h3 id="pt-hdr-title">Plan with AI</h3>
+    <button id="pt-mode-toggle" class="pt-mode-pill" onclick="App.ptShowForm()">✏️ Manual</button>
     <button class="modal-x" onclick="App.closeModal('plan-trip')"><span class="ms">close</span></button>
   </div>
-  <div class="modal-body">
-    <!-- Destination photo hero -->
-    <div id="pt-photo-hero" class="pt-photo-hero hidden"></div>
 
-    <!-- AI Quick-Plan bar -->
-    <div class="pt-ai-bar">
-      <span class="ms" style="color:var(--red);font-size:22px;flex-shrink:0">auto_awesome</span>
-      <input type="text" id="pt-ai-input" placeholder="Describe your trip… AI fills the form"/>
-      <button class="pt-ai-go" onclick="App.aiPlanTripForm()">Plan</button>
-    </div>
-    <div id="pt-ai-result" class="pt-ai-result hidden"></div>
-    <div class="pt-divider">— or fill manually —</div>
+  <!-- Sliding two-panel wrapper -->
+  <div class="pt-slide-wrap" id="pt-slide-wrap">
 
-    <div class="form-group"><label>Destination *</label><input type="text" id="pt-dest" placeholder="e.g. Tokyo, Japan" oninput="App.onDestInput(this.value)"/></div>
-    <div class="form-row">
-      <div class="form-group"><label>Start Date</label><input type="date" id="pt-start"/></div>
-      <div class="form-group"><label>End Date</label><input type="date" id="pt-end"/></div>
+    <!-- PANEL A: AI Chat -->
+    <div class="pt-panel" id="pt-panel-chat">
+      <div class="pt-chat-msgs" id="pt-chat-msgs">
+        <div class="msg msg-ai">
+          <div class="msg-bubble">Hi! I'm your AI trip planner ✈️<br>Where would you like to go? Tell me the destination, how many days, and what kind of trip you're looking for.</div>
+        </div>
+      </div>
+      <div class="pt-trip-confirm hidden" id="pt-trip-confirm">
+        <button class="btn-primary full" onclick="App.ptConfirmTrip()">✈️ Add to My Trips</button>
+        <button class="pt-edit-btn" onclick="App.ptShowForm()">✏️ Edit Details Manually</button>
+      </div>
+      <div class="chat-input-row pt-input-row">
+        <textarea id="pt-chat-input" class="chat-textarea" placeholder="e.g. 7 days in Tokyo, Japan…" rows="1"
+          onkeydown="App.ptKeydown(event)" oninput="App.chatResize(this)"></textarea>
+        <button class="chat-send" onclick="App.ptSend()"><span class="ms">send</span></button>
+      </div>
     </div>
-    <div class="form-group"><label>Notes</label><textarea id="pt-notes" placeholder="Add notes, activities, reminders…" rows="3"></textarea></div>
-    <div class="form-group"><label>Invite Members (emails)</label><input type="text" id="pt-invites" placeholder="friend@email.com, buddy@travel.com"/></div>
-    <button class="btn-primary full" onclick="App.createTrip()">Create Trip</button>
+
+    <!-- PANEL B: Manual Form -->
+    <div class="pt-panel" id="pt-panel-form">
+      <div class="pt-form-inner">
+        <div id="pt-photo-hero" class="pt-photo-hero hidden"></div>
+        <div class="form-group"><label>Destination *</label><input type="text" id="pt-dest" placeholder="e.g. Tokyo, Japan" oninput="App.onDestInput(this.value)"/></div>
+        <div class="form-row">
+          <div class="form-group"><label>Start Date</label><input type="date" id="pt-start"/></div>
+          <div class="form-group"><label>End Date</label><input type="date" id="pt-end"/></div>
+        </div>
+        <div class="form-group"><label>Notes</label><textarea id="pt-notes" placeholder="Add notes, activities, reminders…" rows="3"></textarea></div>
+        <div class="form-group"><label>Invite Members (emails)</label><input type="text" id="pt-invites" placeholder="friend@email.com, buddy@travel.com"/></div>
+        <button class="btn-primary full" onclick="App.createTrip()">Create Trip</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
