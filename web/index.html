@@ -178,16 +178,19 @@
       <div class="ai-wrap">
         <div class="ai-header">
           <div class="ai-avatar-badge">✨</div>
-          <div>
+          <div style="flex:1">
             <h3>Kipita AI</h3>
             <p class="ai-sub" id="ai-sub">Powered by Gemini 2.0</p>
           </div>
+          <button class="ai-clear-btn" onclick="App.clearAiChat()" title="New conversation">
+            <span class="ms" style="font-size:18px">refresh</span>
+          </button>
         </div>
         <div class="ai-quick-row">
           <button class="aiq-btn" onclick="App.aiQuick('plan')">✈️ Plan a Trip</button>
           <button class="aiq-btn" onclick="App.aiQuick('safety')">🛡️ Safety</button>
-          <button class="aiq-btn" onclick="App.aiQuick('advisories')">📋 Advisories</button>
-          <button class="aiq-btn" onclick="App.aiQuick('phrases')">🌐 Phrases</button>
+          <button class="aiq-btn" onclick="App.aiQuick('nomadcities')">🏆 Top Cities</button>
+          <button class="aiq-btn" onclick="App.aiQuick('btc')">₿ BTC Travel</button>
         </div>
         <div class="chat-messages" id="chat-msgs">
           <div class="msg msg-ai">

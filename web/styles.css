@@ -2116,3 +2116,50 @@ ul      { list-style:none; padding:0 }
   }
   #modal-plan-trip.open { transform: translateX(-50%) translateY(0) }
 }
+
+/* ── AI SUGGESTION CHIPS ──────────────────────────────────────── */
+.ai-suggestions {
+  display: flex;
+  gap: 8px;
+  padding: 6px 16px 12px;
+  flex-wrap: wrap;
+  overflow-x: auto;
+}
+.ai-suggestions::-webkit-scrollbar { display: none }
+.ai-sugg-chip {
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--text2);
+  transition: background .18s, color .18s, border-color .18s;
+  flex-shrink: 0;
+}
+.ai-sugg-chip:hover, .ai-sugg-chip:active {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red);
+}
+
+/* ── NEW MESSAGE SLIDE-IN ─────────────────────────────────────── */
+@keyframes msgSlideIn {
+  from { opacity: 0; transform: translateY(10px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+.msg.msg-new {
+  animation: msgSlideIn 0.25s ease-out forwards;
+}
+
+/* ── AI CLEAR BUTTON ─────────────────────────────────────────── */
+.ai-clear-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--text3);
+  transition: background .18s, color .18s;
+  flex-shrink: 0;
+}
+.ai-clear-btn:hover { background: var(--card-bg); color: var(--text1) }
+.ai-header { align-items: center }

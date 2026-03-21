@@ -22,6 +22,10 @@ const App = (() => {
     savedPlaces: new Set(),
     groups: [],
     aiLastTrip: null,
+    aiHistory: [],
+    ptHistory: [],
+    ptChatData: {},
+    ptChatPlan: null,
     mapScreen: null,
     mapScreenMarkers: [],
     mapScreenFilter: 'btc',
@@ -1253,6 +1257,15 @@ const App = (() => {
     sendAiMessage(msgs[type] || '');
   }
 
+  function clearAiChat() {
+    state.aiHistory = [];
+    state.aiLastTrip = null;
+    const msgs = document.getElementById('chat-msgs');
+    if (msgs) msgs.innerHTML = `<div class="msg msg-ai"><div class="msg-bubble">Chat cleared! I'm ready to help. 🌍 Ask me anything — trip planning, safety, best nomad cities, visa info, BTC travel, and more.</div></div>`;
+    document.getElementById('ai-add-trip')?.classList.add('hidden');
+    document.getElementById('ai-sub').textContent = 'Powered by Gemini 2.0';
+  }
+
   function chatKeydown(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
   }
@@ -1271,6 +1284,10 @@ const App = (() => {
 
   function sendAiMessage(msg) {
     const container = document.getElementById('chat-msgs');
+    // Remove any existing suggestion chips before new message
+    container.querySelector('.ai-suggestions')?.remove();
+    state.aiHistory.push({ role: 'user', text: msg });
+
     container.insertAdjacentHTML('beforeend', `<div class="msg msg-usr"><div class="msg-bubble">${escHtml(msg)}</div></div>`);
     container.insertAdjacentHTML('beforeend', `
       <div class="msg msg-ai msg-typing" id="typing-ind">
@@ -1281,20 +1298,31 @@ const App = (() => {
     container.scrollTop = container.scrollHeight;
     document.getElementById('ai-sub').textContent = 'Thinking…';
 
+    const delay = 800 + Math.min(msg.length * 8, 800);
     setTimeout(() => {
       document.getElementById('typing-ind')?.remove();
       const response = getAiResponse(msg);
-      container.insertAdjacentHTML('beforeend', `<div class="msg msg-ai"><div class="msg-bubble">${markdownToHtml(response)}</div></div>`);
+      state.aiHistory.push({ role: 'ai', text: response });
+      // Keep history to last 20 messages
+      if (state.aiHistory.length > 20) state.aiHistory = state.aiHistory.slice(-20);
+
+      const bubble = document.createElement('div');
+      bubble.className = 'msg msg-ai msg-new';
+      bubble.innerHTML = `<div class="msg-bubble">${markdownToHtml(response)}</div>`;
+      container.appendChild(bubble);
       container.scrollTop = container.scrollHeight;
       document.getElementById('ai-sub').textContent = 'Powered by Gemini 2.0';
 
-      const m2 = msg.toLowerCase();
-      if (m2.includes('plan') || m2.includes('trip') || m2.includes('travel') || m2.includes('visit') || m2.includes('itinerary') || m2.includes('go to')) {
-        const dest = msg.replace(/plan|a|my|trip|to|travel|for|in|visit|itinerary|how|do|i|get|there|\?/gi,'').trim() || 'New Destination';
-        state.aiLastTrip = { dest: dest || 'New Destination', days: 5 };
-        document.getElementById('ai-add-trip').classList.remove('hidden');
+      // Show "Add to Trips" if trip plan detected
+      if (/\b(plan|trip|travel|visit|itinerary|go to)\b/.test(msg.toLowerCase())) {
+        const dest = extractDestFromMsg(msg) || 'New Destination';
+        if (!state.aiLastTrip) state.aiLastTrip = { dest, days: parseInt(msg.match(/(\d+)\s*days?/i)?.[1] || 7) };
+        document.getElementById('ai-add-trip')?.classList.remove('hidden');
       }
-    }, 1400 + Math.random() * 800);
+
+      // Render follow-up suggestion chips
+      renderAiSuggestions(container, msg, response);
+    }, delay);
   }
 
   /* ── AI CONTEXT BUILDER ─────────────────────────────────────── */
@@ -1315,65 +1343,233 @@ const App = (() => {
     return lines.join('\n');
   }
 
-  function getAiResponse(msg) {
-    const m   = msg.toLowerCase();
-    const ctx = buildAiContext();
-    const upcoming = state.trips.filter(t => t.status === 'upcoming');
+  /* ── DESTINATION EXTRACT HELPER ────────────────────────────── */
+  function extractDestFromMsg(msg) {
+    const known = DESTINATIONS.find(d => msg.toLowerCase().includes(d.city.toLowerCase()));
+    if (known) return `${known.city}, ${known.country}`;
+    const cleaned = msg.replace(/plan|a|my|trip|to|travel|for|in|visit|itinerary|i want|go to|take me to|tell me about|what about|how is|\?/gi,' ').replace(/\s+/g,' ').trim();
+    return cleaned.length > 2 ? cleaned.replace(/\b\w/g, c => c.toUpperCase()) : null;
+  }
 
-    // If user asks about one of their planned destinations
-    for (const trip of upcoming) {
-      const tripCity = trip.dest.split(',')[0].toLowerCase();
-      if (m.includes(tripCity)) {
-        return `✈️ **Your ${trip.dest} Trip**\n\n` +
-          `You're heading to **${trip.dest}** from **${formatDate(trip.start)}** to **${formatDate(trip.end)}**.\n\n` +
-          AI_RESPONSES.plan(trip.dest);
+  function getAiResponse(msg) {
+    const m        = msg.toLowerCase();
+    const upcoming = state.trips.filter(t => t.status === 'upcoming');
+    const lastAiMsg = state.aiHistory.filter(h => h.role === 'ai').slice(-1)[0]?.text || '';
+
+    // ── FOLLOW-UP DETECTION ──────────────────────────────────────
+    const isFollowUp = /\b(more|details|tell me more|what else|expand|elaborate|and\?*$|also|continue)\b/.test(m);
+    if (isFollowUp && lastAiMsg) {
+      const dest = extractDestFromMsg(lastAiMsg) || state.location.name;
+      return `Here's more on **${dest}**:\n\n${AI_RESPONSES.plan(dest)}`;
+    }
+
+    // ── KNOWN DESTINATION LOOKUP ─────────────────────────────────
+    const knownDest = DESTINATIONS.find(d =>
+      m.includes(d.city.toLowerCase()) || m.includes(d.country.toLowerCase())
+    );
+
+    // Destination info query (about/info/stats/like/describe)
+    if (knownDest && /\b(about|info|tell|what|like|describe|nomad|stats|overview|how is|worth)\b/.test(m) && !/\b(plan|trip|visit|go|travel|itinerary)\b/.test(m)) {
+      const d = knownDest;
+      const safeLabel = d.safetyScore >= 8.5 ? '✅ Very Safe' : d.safetyScore >= 7.5 ? '✅ Safe' : d.safetyScore >= 6.5 ? '⚠️ Moderate' : '⚠️ Use Caution';
+      return `🌍 **${d.city}, ${d.country}** ${d.emoji}\n\n${d.desc}\n\n**Nomad Stats:**\n• ⭐ Rating: ${d.rating}/5\n• 📶 Avg WiFi: ${d.speed} Mbps\n• 💰 Monthly cost: ~$${d.monthlyCost.toLocaleString()}\n• 🛡️ Safety: ${d.safetyScore}/10 — ${safeLabel}\n• 🌡️ ${d.weatherDesc}, ${d.temp}°C avg\n• 👥 ${d.pop} visit/yr\n\n**Tags:** ${d.tags.join(' · ')}\n\n*Ask me to plan a trip to ${d.city}, or compare it with another city!*`;
+    }
+
+    // ── CITY COMPARISON ──────────────────────────────────────────
+    if (/\b(compare|vs|versus|better|between|or)\b/.test(m)) {
+      const pair = DESTINATIONS.filter(d => m.includes(d.city.toLowerCase()));
+      if (pair.length >= 2) {
+        const [a, b] = pair;
+        const cheaper = a.monthlyCost < b.monthlyCost ? a.city : b.city;
+        const faster  = a.speed > b.speed ? a.city : b.city;
+        const safer   = a.safetyScore > b.safetyScore ? a.city : b.city;
+        return `⚖️ **${a.city} vs ${b.city}**\n\n**${a.city} ${a.emoji}**\n• 💰 $${a.monthlyCost.toLocaleString()}/mo · 📶 ${a.speed} Mbps · 🛡️ ${a.safetyScore}/10 · ⭐ ${a.rating}\n• ${a.weatherDesc}, ${a.temp}°C · ${a.tags.join(', ')}\n\n**${b.city} ${b.emoji}**\n• 💰 $${b.monthlyCost.toLocaleString()}/mo · 📶 ${b.speed} Mbps · 🛡️ ${b.safetyScore}/10 · ⭐ ${b.rating}\n• ${b.weatherDesc}, ${b.temp}°C · ${b.tags.join(', ')}\n\n**Verdict:** ${cheaper} is cheaper · ${faster} has faster WiFi · ${safer} is safer.\n\n*Want me to plan a trip to either city?*`;
       }
     }
 
-    // Context-aware "my trips" query
-    if (m.includes('my trip') || m.includes('my itinerary') || m.includes('my plan')) {
-      if (!upcoming.length) return `📅 You don't have any upcoming trips yet! Tap **Plan a Trip** or tell me where you want to go and I'll plan it.`;
-      return `📅 **Your Upcoming Trips**\n\n${upcoming.map((t,i) =>
-        `${i+1}. **${t.dest}** — ${formatDate(t.start)} to ${formatDate(t.end)}${t.notes ? '\n   *' + t.notes.slice(0,80) + '…*' : ''}`
-      ).join('\n\n')}\n\nWant me to plan the itinerary for any of these?`;
+    // ── BEST / TOP NOMAD CITIES ───────────────────────────────────
+    if (/\b(best|top|greatest|ranked|recommend|which city|where should|nomad cities?)\b/.test(m) && !/\b(plan|trip)\b/.test(m)) {
+      const sorted = [...DESTINATIONS].sort((a, b) => b.rating - a.rating).slice(0, 5);
+      return `🏆 **Top Nomad Destinations 2026**\n\n${sorted.map((d, i) => `${i+1}. **${d.city}, ${d.country}** ${d.emoji}\n   ⭐ ${d.rating} · 💰 $${d.monthlyCost.toLocaleString()}/mo · 📶 ${d.speed} Mbps · ${d.tags[0]}`).join('\n\n')}\n\n*Ask me about any city for a full breakdown, or say "compare Bangkok vs Bali"!*`;
     }
 
-    // Location-aware "what should I do" / "recommend"
-    if (m.includes('recommend') || m.includes('what to do') || m.includes('near me') || m.includes('nearby')) {
-      const loc = state.location.name && state.location.name !== 'Detecting…' ? state.location.name : 'your current area';
-      return `📍 **Recommendations Near ${loc}**\n\n• Open the **Maps** tab → filter by Food, Café, or BTC to see live places\n• Use **Places** tab to find restaurants, gyms, pharmacies\n• Current weather: ${state.weather.emoji} ${state.weather.temp !== '--' ? state.weather.temp+'°' : 'loading…'}\n\nWant me to plan a trip from here?`;
+    // ── BUDGET / AFFORDABLE ───────────────────────────────────────
+    if (/\b(cheap|budget|affordable|cheapest|low cost|inexpensive)\b/.test(m)) {
+      const sorted = [...DESTINATIONS].sort((a, b) => a.monthlyCost - b.monthlyCost).slice(0, 4);
+      return `💰 **Most Affordable Nomad Cities**\n\n${sorted.map((d, i) => `${i+1}. **${d.city}** — ~$${d.monthlyCost.toLocaleString()}/mo ${d.emoji}\n   ${d.weatherDesc} · ${d.tags.join(' · ')}`).join('\n\n')}\n\n*All figures are mid-range lifestyle estimates. Prices vary by neighborhood.*`;
     }
 
-    if (m.includes('weather')) {
+    // ── WIFI / INTERNET SPEED ─────────────────────────────────────
+    if (/\b(wifi|wi-fi|internet|mbps|speed|bandwidth|remote work|cowork)\b/.test(m)) {
+      const sorted = [...DESTINATIONS].sort((a, b) => b.speed - a.speed).slice(0, 4);
+      return `📶 **Best WiFi for Remote Work**\n\n${sorted.map((d, i) => `${i+1}. **${d.city}** — ${d.speed} Mbps avg ${d.emoji}\n   💰 $${d.monthlyCost.toLocaleString()}/mo · ⭐ ${d.rating} · ${d.tags[0]}`).join('\n\n')}\n\n*Speeds measured across coworking spaces and cafes.*`;
+    }
+
+    // ── MY TRIPS ──────────────────────────────────────────────────
+    if (/\b(my trip|my itinerary|my plan|my travels)\b/.test(m)) {
+      if (!upcoming.length) return `📅 You don't have any upcoming trips yet!\n\nTap **Plan a Trip** or tell me where you want to go — I'll build a full itinerary instantly.`;
+      return `📅 **Your Upcoming Trips**\n\n${upcoming.map((t, i) =>
+        `${i + 1}. **${t.dest}** — ${formatDate(t.start)} → ${formatDate(t.end)}${t.notes ? '\n   *' + t.notes.slice(0, 80) + '…*' : ''}`
+      ).join('\n\n')}\n\nWant me to build a day-by-day itinerary for any of these?`;
+    }
+
+    // ── TRIPS ABOUT KNOWN DESTINATIONS ───────────────────────────
+    for (const trip of upcoming) {
+      const tripCity = trip.dest.split(',')[0].toLowerCase();
+      if (m.includes(tripCity)) {
+        return `✈️ **Your ${trip.dest} Trip**\n\nYou're heading to **${trip.dest}** from **${formatDate(trip.start)}** to **${formatDate(trip.end)}**.\n\n${AI_RESPONSES.plan(trip.dest)}`;
+      }
+    }
+
+    // ── NEARBY / WHAT TO DO ───────────────────────────────────────
+    if (/\b(near me|nearby|around here|what to do|things to do|local|in my area)\b/.test(m)) {
+      const loc = state.location.name && state.location.name !== 'Detecting…' ? state.location.name : 'your area';
+      const wx = state.weather.temp !== '--' ? `\n• Current weather: ${state.weather.emoji} ${state.weather.temp}° — ${state.weather.desc}` : '';
+      return `📍 **Recommendations Near ${loc}**\n\n• 🗺️ **Maps tab** — filter by Food, Café, BTC, or Shops for live locations${wx}\n• 🔍 **Places tab** — restaurants, gyms, pharmacies, ATMs nearby\n• ₿ **BTC tab** — find Bitcoin-accepting merchants on the map\n\nWant me to plan a trip from here?`;
+    }
+
+    // ── WEATHER ───────────────────────────────────────────────────
+    if (/\b(weather|temperature|rain|forecast|climate|hot|cold)\b/.test(m)) {
       const loc = state.location.name || 'your location';
-      return state.weather.temp !== '--'
-        ? `🌤️ **Live Weather for ${loc}**\n\n${state.weather.emoji} **${state.weather.temp}°** — ${state.weather.desc}\n\nBest for travel: clear skies expected for the next few days. Pack light layers.`
-        : `Weather data loading… Make sure location access is enabled for live weather.`;
+      if (state.weather.temp !== '--') {
+        return `🌤️ **Live Weather — ${loc}**\n\n${state.weather.emoji} **${state.weather.temp}°F** — ${state.weather.desc}\n\nFor your destination's climate, check the **Explore** tab — each city card shows average temperature and weather description.`;
+      }
+      return `Weather is loading… Enable location access for live conditions. You can also check destination climates in the **Explore** tab.`;
     }
 
-    if ((m.includes('plan') || m.includes('go to') || m.includes('visit')) &&
-        (m.includes('trip') || m.includes('travel') || m.includes('itinerary') || m.includes('days'))) {
-      const dest = msg.replace(/plan|a|my|trip|to|travel|for|in|visit|itinerary|how|do|i|\?/gi,'').trim();
-      return AI_RESPONSES.plan(dest || state.location.name);
+    // ── TRIP PLANNING ─────────────────────────────────────────────
+    if (/\b(plan|go to|visit|travel|itinerary|days?|weeks?)\b/.test(m)) {
+      const dest = knownDest
+        ? `${knownDest.city}, ${knownDest.country}`
+        : (extractDestFromMsg(msg) || state.location.name);
+      state.aiLastTrip = { dest, days: parseInt(msg.match(/(\d+)\s*days?/i)?.[1] || 7) };
+      document.getElementById('ai-add-trip')?.classList.remove('hidden');
+      const costNote = knownDest ? `\n\n💰 **Estimated cost:** ~$${Math.round(knownDest.monthlyCost / 30 * (state.aiLastTrip.days)).toLocaleString()} for ${state.aiLastTrip.days} days` : '';
+      return AI_RESPONSES.plan(dest) + costNote;
     }
-    if (m.includes('safe') || m.includes('danger') || m.includes('risk') || m.includes('crime'))
-      return AI_RESPONSES.safety(state.location.name);
-    if (m.includes('advisor') || m.includes('warning') || m.includes('alert') || m.includes('entry'))
+
+    // ── SAFETY ────────────────────────────────────────────────────
+    if (/\b(safe|safety|danger|dangerous|risk|crime|secure)\b/.test(m)) {
+      if (knownDest) {
+        const d = knownDest;
+        const level = d.safetyScore >= 8.5 ? 'VERY SAFE ✅' : d.safetyScore >= 7.5 ? 'SAFE ✅' : '⚠️ MODERATE';
+        return `🛡️ **Safety: ${d.city}, ${d.country}**\n\n**Score: ${d.safetyScore}/10 — ${level}**\n\n${AI_RESPONSES.safety(d.city)}`;
+      }
+      const sorted = [...DESTINATIONS].sort((a, b) => b.safetyScore - a.safetyScore).slice(0, 4);
+      return `🛡️ **Safest Nomad Destinations**\n\n${sorted.map((d, i) => `${i + 1}. **${d.city}** — ${d.safetyScore}/10 ${d.emoji}`).join('\n')}\n\n${AI_RESPONSES.safety(state.location.name)}`;
+    }
+
+    // ── ADVISORIES ────────────────────────────────────────────────
+    if (/\b(advisor|warning|alert|entry|restriction|banned|border)\b/.test(m))
       return AI_RESPONSES.advisories();
-    if (m.includes('phrase') || m.includes('language') || m.includes('speak') || m.includes('translate'))
+
+    // ── PHRASES ───────────────────────────────────────────────────
+    if (/\b(phrase|language|speak|translate|hello|thank you|local language)\b/.test(m))
       return AI_RESPONSES.phrases();
-    if (m.includes('gold') || m.includes('silver') || m.includes('metal') || m.includes('price')) {
-      const goldEl = document.getElementById('ws-xau');
-      const btcEl  = document.getElementById('ws-btc');
-      return `🥇 **Live Commodity & Crypto Prices**\n\n• Gold: ${goldEl?.textContent || 'loading…'}\n• BTC: ${btcEl?.textContent || 'loading…'}\n\nCheck the **Wallet** tab for live ETH, SOL, silver, platinum + currency converter.`;
+
+    // ── PRICES / METALS ───────────────────────────────────────────
+    if (/\b(gold|silver|platinum|metal|commodity)\b/.test(m)) {
+      const gold = document.getElementById('ws-xau')?.textContent || 'loading…';
+      const btc  = document.getElementById('ws-btc')?.textContent  || 'loading…';
+      return `🥇 **Live Commodity & Crypto Prices**\n\n• Gold (XAU): ${gold}\n• BTC: ${btc}\n\nOpen the **Wallet** tab for ETH, SOL, silver, platinum + live currency converter.`;
     }
-    if (m.includes('bitcoin') || m.includes('btc') || m.includes('crypto'))
-      return `₿ **Bitcoin Travel Tips**\n\nKipita makes Bitcoin travel easy:\n\n• **Maps** tab — thousands of live BTC merchants via BTCMap\n• **Wallet** tab — live BTC price: ${state.btcPrice ? '$'+state.btcPrice.toLocaleString() : 'loading…'}\n• **Places** tab → ATM/BTC — find Bitcoin ATMs near you\n• Most BTC-friendly: El Salvador 🇸🇻, Portugal 🇵🇹, Japan 🇯🇵, UAE 🇦🇪`;
-    if (m.includes('visa') || m.includes('passport') || m.includes('requirement'))
-      return '🛂 **Visa & Entry Requirements**\n\nEntry requirements vary:\n\n• Thailand: 30–60 days visa on arrival\n• Indonesia (Bali): 30 days extendable\n• Portugal (Schengen): 90/180 days\n• UAE: 30–90 days on arrival\n• Japan: 90 days (most Western passports)\n\n**Always verify** on your country\'s official embassy site before booking.';
-    if (m.includes('currency') || m.includes('exchange') || m.includes('convert'))
-      return `💱 **Currency & Exchange**\n\nLive rates are in your **Wallet** tab.\n\n${ctx.includes('BTC') ? `BTC is at ${state.btcPrice ? '$'+state.btcPrice.toLocaleString() : 'loading'}. ` : ''}Use the converter to calculate any currency pair instantly.`;
+
+    // ── BTC / CRYPTO ──────────────────────────────────────────────
+    if (/\b(bitcoin|btc|lightning|crypto|satoshi|sats|web3)\b/.test(m)) {
+      const price = state.btcPrice ? `$${state.btcPrice.toLocaleString()}` : 'loading…';
+      return `₿ **Bitcoin Travel with Kipita**\n\nLive BTC price: **${price}**\n\n• 🗺️ **Maps tab** — thousands of BTC merchants via BTCMap\n• 🏧 **Places → BTC ATM** — find Bitcoin ATMs near you\n• 💳 **Wallet tab** — live BTC, ETH, SOL prices + converter\n• 🌍 **Most BTC-friendly:** El Salvador 🇸🇻, Portugal 🇵🇹, Japan 🇯🇵, UAE 🇦🇪, Switzerland 🇨🇭`;
+    }
+
+    // ── VISA / PASSPORT ───────────────────────────────────────────
+    if (/\b(visa|passport|entry|immigration|overstay|digital nomad visa)\b/.test(m)) {
+      if (knownDest) {
+        const visaInfo = {
+          Thailand:  '🇹🇭 30–60 days visa on arrival · Thailand LTR Visa available (10 yrs)',
+          Portugal:  '🇵🇹 90/180 Schengen days · D8 Digital Nomad Visa available',
+          Indonesia: '🇮🇩 30 days VOA extendable · B211A visa for nomads',
+          Japan:     '🇯🇵 90 days (most Western passports) · No nomad visa yet',
+          Spain:     '🇪🇸 90/180 Schengen · Digital Nomad Visa available',
+          Colombia:  '🇨🇴 90 days on arrival · Extendable to 180',
+          UAE:       '🇦🇪 30–90 days on arrival · Freelance/remote work permit available',
+        };
+        const info = visaInfo[knownDest.country] || `Entry requirements for **${knownDest.country}** vary by passport. Check your government's travel portal.`;
+        return `🛂 **Visa Info — ${knownDest.city}, ${knownDest.country}**\n\n${info}\n\n**Always verify** current requirements on your country's official embassy site before booking.`;
+      }
+      return '🛂 **Visa & Entry Requirements**\n\n• 🇹🇭 Thailand: 30–60 days VOA · LTR Visa available\n• 🇮🇩 Indonesia (Bali): 30 days extendable\n• 🇵🇹 Portugal (Schengen): 90/180 days · D8 nomad visa\n• 🇦🇪 UAE: 30–90 days on arrival\n• 🇯🇵 Japan: 90 days (most Western passports)\n• 🇨🇴 Colombia: 90 days on arrival\n\n**Always verify** on your government\'s official travel advisory site.';
+    }
+
+    // ── CURRENCY / FX ─────────────────────────────────────────────
+    if (/\b(currency|exchange|convert|forex|rate|usd|eur|gbp|thb|idr|jpy)\b/.test(m)) {
+      const btcLine = state.btcPrice ? `BTC is at **$${state.btcPrice.toLocaleString()}** right now. ` : '';
+      return `💱 **Live Currency & Exchange**\n\n${btcLine}Open the **Wallet** tab for real-time rates on 150+ currencies + a built-in converter.\n\nFor destination-specific costs:\n${DESTINATIONS.slice(0, 4).map(d => `• ${d.city}: ~$${d.monthlyCost.toLocaleString()}/mo`).join('\n')}`;
+    }
+
+    // ── PACKING ───────────────────────────────────────────────────
+    if (/\b(pack|packing|what to bring|luggage|bag|carry on)\b/.test(m)) {
+      return `🎒 **Nomad Packing Essentials**\n\n**Documents:**\n• Passport + digital copies\n• Travel insurance\n• Visa docs if required\n\n**Tech:**\n• Laptop + travel adapter\n• Phone + eSIM (try Airalo for data)\n• Portable battery\n\n**Money:**\n• Cards with no foreign fees\n• Small BTC wallet for Lightning payments\n• Cash for arrival\n\n**Health:**\n• 1 month of any prescriptions\n• Basic first aid kit\n\n💡 Open the **Packing List** in your trip details for a full interactive checklist!`;
+    }
+
     return AI_RESPONSES.default(msg.slice(0, 50));
+  }
+
+  /* ── AI SUGGESTIONS ─────────────────────────────────────────── */
+  function getSuggestions(msg, response) {
+    const r = response.toLowerCase();
+    const knownDest = DESTINATIONS.find(d => msg.toLowerCase().includes(d.city.toLowerCase()));
+    const destName  = knownDest ? knownDest.city : (state.location.name || 'here');
+    if (r.includes('day 1') || r.includes('day 2') || r.includes('itinerary'))
+      return [
+        { text: `🛡️ Is ${destName} safe?`,       msg: `Is ${destName} safe?` },
+        { text: `💰 Cost breakdown`,              msg: `How much does ${destName} cost per month?` },
+        { text: `₿ BTC spots`,                   msg: `Bitcoin merchants in ${destName}` },
+      ];
+    if (r.includes('safety score') || r.includes('safety:') || r.includes('safest'))
+      return [
+        { text: `✈️ Plan trip`,   msg: `Plan a trip to ${destName}` },
+        { text: `🛂 Visa info`,   msg: `Visa requirements for ${destName}` },
+        { text: `📋 Advisories`, msg: `Show current travel advisories` },
+      ];
+    if (r.includes('monthly cost') || r.includes('affordable') || r.includes('/mo'))
+      return [
+        { text: `📶 Best WiFi cities`,  msg: `Which cities have the fastest internet?` },
+        { text: `🏆 Top nomad cities`, msg: `Best nomad cities 2026` },
+        { text: `✈️ Plan budget trip`, msg: `Plan an affordable trip` },
+      ];
+    if (r.includes('mbps') || r.includes('wifi') || r.includes('cowork'))
+      return [
+        { text: `💰 Cheapest cities`,  msg: `Most affordable nomad cities` },
+        { text: `✈️ Plan a trip`,      msg: `Plan a trip to ${destName}` },
+        { text: `🛡️ Safest cities`,   msg: `Which nomad cities are safest?` },
+      ];
+    if (r.includes('vs') || r.includes('verdict'))
+      return [
+        { text: `✈️ Plan ${destName} trip`, msg: `Plan a trip to ${destName}` },
+        { text: `🏆 Top 5 cities`,          msg: `Best nomad cities 2026` },
+        { text: `💰 Budget breakdown`,      msg: `Affordable nomad destinations` },
+      ];
+    return [
+      { text: `✈️ Plan a trip`,        msg: `Plan a 7-day trip to ${destName}` },
+      { text: `🏆 Best nomad cities`, msg: `Best nomad cities 2026` },
+      { text: `₿ BTC travel tips`,    msg: `Bitcoin travel tips` },
+    ];
+  }
+
+  function renderAiSuggestions(container, msg, response) {
+    const existing = container.querySelector('.ai-suggestions');
+    if (existing) existing.remove();
+    const suggs = getSuggestions(msg, response);
+    const div = document.createElement('div');
+    div.className = 'ai-suggestions';
+    div.innerHTML = suggs.map(s =>
+      `<button class="ai-sugg-chip" onclick="App._suggClick(this,'${escHtml(s.msg)}')">${s.text}</button>`
+    ).join('');
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function _suggClick(btn, msg) {
+    btn.closest('.ai-suggestions')?.remove();
+    sendAiMessage(msg);
   }
 
   function addAiTrip() {
@@ -2338,6 +2534,8 @@ const App = (() => {
     if (msgs) msgs.innerHTML = `<div class="msg msg-ai"><div class="msg-bubble">Hi! I'm your AI trip planner ✈️<br>Where would you like to go? Tell me the destination, how many days, and what kind of trip you're looking for.</div></div>`;
     document.getElementById('pt-trip-confirm')?.classList.add('hidden');
     state.ptChatPlan = null;
+    state.ptChatData = {};
+    state.ptHistory  = [];
     // Default: show chat panel
     const wrap = document.getElementById('pt-slide-wrap');
     if (wrap) wrap.classList.remove('mode-form');
@@ -2361,9 +2559,81 @@ const App = (() => {
     ptSendAiMsg(msg);
   }
 
+  /* ── PT MULTI-TURN PLANNER LOGIC ───────────────────────────── */
+  function getPtResponse(msg) {
+    const m    = msg.toLowerCase();
+    const data = state.ptChatData || {};
+
+    // Detect destination from message
+    const knownDest = DESTINATIONS.find(d =>
+      m.includes(d.city.toLowerCase()) || m.includes(d.country.toLowerCase())
+    );
+    const rawDest = knownDest
+      ? `${knownDest.city}, ${knownDest.country}`
+      : (() => {
+          const c = msg.replace(/plan|a|my|trip|to|travel|for|in|visit|go|take me|want to|days?|weeks?|\d+|\?/gi,' ').replace(/\s+/g,' ').trim();
+          return c.length > 2 ? c.replace(/\b\w/g, ch => ch.toUpperCase()) : null;
+        })();
+
+    // Detect duration
+    const daysMatch = msg.match(/(\d+)\s*(?:days?|nights?)/i) || msg.match(/(\d+)\s*weeks?/i);
+    const rawDays = daysMatch
+      ? (m.includes('week') ? parseInt(daysMatch[1]) * 7 : parseInt(daysMatch[1]))
+      : null;
+
+    // Detect style keywords
+    const style = m.includes('luxury') ? 'luxury' : m.includes('budget') ? 'budget' : m.includes('adventure') ? 'adventure' : m.includes('relax') ? 'relaxing' : null;
+
+    // Merge into data
+    const dest  = rawDest  || data.dest;
+    const days  = rawDays  || data.days;
+    const tStyle = style   || data.style;
+    state.ptChatData = { dest, days, style: tStyle };
+
+    // If we have both dest + days → generate full plan
+    if (dest && days) {
+      state.ptChatPlan = { dest, days };
+      const known = DESTINATIONS.find(d => dest.toLowerCase().includes(d.city.toLowerCase()));
+      const statsLine = known
+        ? `\n\n📊 **${known.city} stats:** ⭐ ${known.rating}/5 · 💰 ~$${Math.round(known.monthlyCost / 30 * days).toLocaleString()} for ${days} days · 📶 ${known.speed} Mbps WiFi · 🛡️ ${known.safetyScore}/10 safety`
+        : '';
+      const styleNote = tStyle ? `\n\n*Tailored for a **${tStyle}** experience.*` : '';
+      return { response: AI_RESPONSES.plan(dest) + statsLine + styleNote, showCTA: true };
+    }
+
+    // Have dest but no days → ask duration
+    if (dest && !days) {
+      const known = DESTINATIONS.find(d => dest.toLowerCase().includes(d.city.toLowerCase()));
+      const statsLine = known
+        ? `\n\n📊 Quick stats: ⭐ ${known.rating}/5 · 💰 $${known.monthlyCost.toLocaleString()}/mo · 📶 ${known.speed} Mbps · 🛡️ ${known.safetyScore}/10 safety`
+        : '';
+      return {
+        response: `Great pick! ✈️ **${dest}** is a fantastic nomad destination.${statsLine}\n\nHow many days are you thinking? And any travel style preferences — budget, luxury, adventure, or relaxing?`,
+        showCTA: false,
+      };
+    }
+
+    // Have days but no dest → ask destination
+    if (days && !dest) {
+      return {
+        response: `${days} days — perfect! 🗓️ Where do you want to go? I can suggest top nomad cities or plan anywhere you have in mind.\n\n*Try: "Bali", "Tokyo", "Lisbon", or tell me a region like "Southeast Asia".*`,
+        showCTA: false,
+      };
+    }
+
+    // Unclear → guide user
+    return {
+      response: `I'd love to plan your perfect trip! 🌍\n\nJust tell me:\n• **Where** do you want to go?\n• **How many days?**\n\nOr say something like *"7 days in Bali"* and I'll build your full day-by-day itinerary instantly!`,
+      showCTA: false,
+    };
+  }
+
   function ptSendAiMsg(msg) {
     const container = document.getElementById('pt-chat-msgs');
     if (!container) return;
+    state.ptHistory = state.ptHistory || [];
+    state.ptHistory.push({ role: 'user', text: msg });
+
     container.insertAdjacentHTML('beforeend',
       `<div class="msg msg-usr"><div class="msg-bubble">${escHtml(msg)}</div></div>`);
     container.insertAdjacentHTML('beforeend', `
@@ -2376,23 +2646,17 @@ const App = (() => {
 
     setTimeout(() => {
       document.getElementById('pt-typing')?.remove();
-      const response = getAiResponse(msg);
-      container.insertAdjacentHTML('beforeend',
-        `<div class="msg msg-ai"><div class="msg-bubble">${markdownToHtml(response)}</div></div>`);
+      const { response, showCTA } = getPtResponse(msg);
+      state.ptHistory.push({ role: 'ai', text: response });
+
+      const bubble = document.createElement('div');
+      bubble.className = 'msg msg-ai msg-new';
+      bubble.innerHTML = `<div class="msg-bubble">${markdownToHtml(response)}</div>`;
+      container.appendChild(bubble);
       container.scrollTop = container.scrollHeight;
 
-      // Detect trip intent → show "Add to My Trips" CTA
-      const m = msg.toLowerCase();
-      if (m.match(/\b(go|trip|travel|visit|plan|days?|weeks?|itinerary|fly|explore)\b/)) {
-        const daysMatch = msg.match(/(\d+)\s*(?:days?|nights?)/i);
-        const days = daysMatch ? parseInt(daysMatch[1]) : 7;
-        const dest = msg
-          .replace(/plan|a|my|trip|to|travel|for|in|visit|itinerary|how|do|i|get|there|days?|weeks?|nights?|fly|explore|\d+|\?/gi, ' ')
-          .replace(/\s+/g, ' ').trim();
-        state.ptChatPlan = { dest: dest.replace(/\b\w/g, c => c.toUpperCase()) || 'New Destination', days };
-        document.getElementById('pt-trip-confirm')?.classList.remove('hidden');
-      }
-    }, 1000 + Math.random() * 700);
+      if (showCTA) document.getElementById('pt-trip-confirm')?.classList.remove('hidden');
+    }, 700 + Math.random() * 500);
   }
 
   function ptShowChat() {
@@ -2766,6 +3030,7 @@ const App = (() => {
     // Trips (auth-gated)
     openPlanTrip, openPackingList, togglePackItem,
     ptKeydown, ptSend, ptShowChat, ptShowForm, ptConfirmTrip,
+    _suggClick, clearAiChat,
     // Wallet
     openWalletTab,
     // Reviews
