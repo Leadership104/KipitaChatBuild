@@ -70,15 +70,82 @@ const App = (() => {
     { id: 'food',      label: 'Food',      emoji: () => { const h = getHour(); return h < 10 ? '🍳' : h < 15 ? '🍜' : h < 20 ? '🍽️' : '🌮' }, query: 'restaurants' },
     { id: 'cafe',      label: 'Cafes',     emoji: () => { const h = getHour(); return h < 11 ? '☕' : h < 16 ? '🧋' : '🍵' },                    query: 'cafes' },
     { id: 'hotel',     label: 'Hotels',    emoji: () => '🏨', query: 'hotels' },
-    { id: 'transport', label: 'Transit',   emoji: () => '🚇', query: 'public transit' },
-    { id: 'atm',       label: 'ATM / BTC', emoji: () => '₿',  query: 'bitcoin atm' },
     { id: 'shop',      label: 'Shopping',  emoji: () => '🛍️', query: 'shopping' },
+    { id: 'transport', label: 'Transit',   emoji: () => '🚇', query: 'public transit' },
     { id: 'gym',       label: 'Fitness',   emoji: () => '💪', query: 'gym' },
-    { id: 'hospital',  label: 'Medical',   emoji: () => '🏥', query: 'hospital' },
-    { id: 'pharmacy',  label: 'Pharmacy',  emoji: () => '💊', query: 'pharmacy' },
     { id: 'beach',     label: 'Beaches',   emoji: () => '🏖️', query: 'beach' },
     { id: 'nightlife', label: 'Nightlife', emoji: () => '🎵', query: 'nightlife bars' },
+    { id: 'atm',       label: 'ATM',       emoji: () => '🏧', query: 'atm cash machine' },
+    { id: 'btcatm',    label: 'BTC ATM',   emoji: () => '₿',  query: 'bitcoin atm cryptocurrency' },
+    { id: 'hospital',  label: 'Medical',   emoji: () => '🏥', query: 'hospital' },
+    { id: 'pharmacy',  label: 'Pharmacy',  emoji: () => '💊', query: 'pharmacy' },
   ];
+
+  /* ── CATEGORY SUBCATEGORIES ─────────────────────────────────── */
+  const CATEGORY_SUBS = {
+    food: [
+      { label: 'American',   query: 'american restaurant',  emoji: '🍔' },
+      { label: 'Bakery',     query: 'bakery bread',         emoji: '🥐' },
+      { label: 'Bar & Grill',query: 'bar grill',            emoji: '🍺' },
+      { label: 'Burger',     query: 'burger restaurant',    emoji: '🍔' },
+      { label: 'Chinese',    query: 'chinese restaurant',   emoji: '🥡' },
+      { label: 'Fast Food',  query: 'fast food',            emoji: '🍟' },
+      { label: 'Italian',    query: 'italian restaurant',   emoji: '🍝' },
+      { label: 'Japanese',   query: 'japanese restaurant',  emoji: '🍱' },
+      { label: 'Mexican',    query: 'mexican restaurant',   emoji: '🌮' },
+      { label: 'Pizza',      query: 'pizza restaurant',     emoji: '🍕' },
+      { label: 'Seafood',    query: 'seafood restaurant',   emoji: '🦞' },
+      { label: 'Thai',       query: 'thai restaurant',      emoji: '🍜' },
+      { label: 'Vietnamese', query: 'vietnamese restaurant',emoji: '🍲' },
+      { label: 'Steak',      query: 'steakhouse',           emoji: '🥩' },
+      { label: 'All Food',   query: 'restaurants',          emoji: '🍽️' },
+    ],
+    cafe: [
+      { label: 'Coffee',     query: 'coffee cafe',          emoji: '☕' },
+      { label: 'Boba / Tea', query: 'boba tea shop',        emoji: '🧋' },
+      { label: 'Coworking',  query: 'coworking cafe wifi',  emoji: '💻' },
+      { label: 'Bakery Café',query: 'bakery cafe',          emoji: '🥐' },
+      { label: 'Juice Bar',  query: 'juice bar smoothie',   emoji: '🧃' },
+      { label: 'All Cafes',  query: 'cafes',                emoji: '🍵' },
+    ],
+    shop: [
+      { label: 'Mall',       query: 'shopping mall',        emoji: '🏬' },
+      { label: 'Grocery',    query: 'supermarket grocery',  emoji: '🛒' },
+      { label: 'Electronics',query: 'electronics store',    emoji: '📱' },
+      { label: 'Clothing',   query: 'clothing store fashion',emoji: '👔' },
+      { label: 'Market',     query: 'local market bazaar',  emoji: '🏪' },
+      { label: 'All Shops',  query: 'shopping',             emoji: '🛍️' },
+    ],
+    nightlife: [
+      { label: 'Bar',        query: 'bar cocktail lounge',  emoji: '🍸' },
+      { label: 'Nightclub',  query: 'nightclub dance',      emoji: '🎉' },
+      { label: 'Live Music', query: 'live music venue',     emoji: '🎵' },
+      { label: 'Rooftop',    query: 'rooftop bar',          emoji: '🌃' },
+      { label: 'Pub',        query: 'pub sports bar',       emoji: '🍺' },
+    ],
+    hotel: [
+      { label: 'Hotel',      query: 'hotel',                emoji: '🏨' },
+      { label: 'Hostel',     query: 'hostel backpacker',    emoji: '🛏️' },
+      { label: 'Airbnb',     query: 'vacation rental',      emoji: '🏠' },
+      { label: 'Resort',     query: 'resort luxury',        emoji: '🏖️' },
+      { label: 'Boutique',   query: 'boutique hotel',       emoji: '🌟' },
+    ],
+    transport: [
+      { label: 'Bus',        query: 'bus station stop',     emoji: '🚌' },
+      { label: 'Train / MRT',query: 'train station metro',  emoji: '🚇' },
+      { label: 'Airport',    query: 'airport',              emoji: '✈️' },
+      { label: 'Taxi / Grab',query: 'taxi grab ride share', emoji: '🚕' },
+      { label: 'Ferry',      query: 'ferry boat terminal',  emoji: '⛴️' },
+      { label: 'Bike Share', query: 'bike rental bicycle',  emoji: '🚲' },
+    ],
+    gym: [
+      { label: 'Gym',        query: 'gym fitness center',   emoji: '💪' },
+      { label: 'Yoga',       query: 'yoga studio',          emoji: '🧘' },
+      { label: 'Swimming',   query: 'swimming pool',        emoji: '🏊' },
+      { label: 'Muay Thai',  query: 'muay thai boxing gym', emoji: '🥊' },
+      { label: 'Rock Climb', query: 'rock climbing gym',    emoji: '🧗' },
+    ],
+  };
 
   /* ── PHRASES DATA ──────────────────────────────────────────── */
   const PHRASES = {
@@ -264,6 +331,7 @@ const App = (() => {
   function onAppReady() {
     updateGreeting();
     updateUserUI();
+    renderHomeTools();
     renderHomeTrips();
     renderGroupsScreen();
     renderNearbyTeaser();
@@ -339,6 +407,9 @@ const App = (() => {
       img.classList.remove('hidden');
       icon.classList.add('hidden');
     }
+    // Wallet nav guard
+    const walletBtn = document.getElementById('nav-wallet-btn');
+    if (walletBtn) walletBtn.classList.toggle('locked', !state.user);
   }
 
   /* ── NAVIGATION ─────────────────────────────────────────────── */
@@ -1063,10 +1134,26 @@ const App = (() => {
 
   function openPlacesCat(id, label, query) {
     state.currentPcat = { id, label, query };
+    const subs = CATEGORY_SUBS[id];
     document.getElementById('pcat-title').textContent = label;
-    document.getElementById('pcat-body').innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Finding ${label.toLowerCase()} near you…</p></div>`;
     openModal('places-cat');
-    setTimeout(() => loadPlacesCat(label, query), 600);
+    if (subs) {
+      // Show subcategory picker first
+      const h = getHour();
+      document.getElementById('pcat-body').innerHTML = `
+        <div class="pcat-loc-bar"><span class="ms">location_on</span>${state.location.name || 'Current location'}</div>
+        <p class="pcat-sub-intro">Choose a type of ${label.toLowerCase()}:</p>
+        <div class="pcat-subcat-grid">
+          ${subs.map(s => `
+            <button class="pcat-subcat-chip" onclick="App.loadPlacesCat('${s.label}','${s.query}')">
+              <span class="pcat-sub-ico">${s.emoji}</span>
+              <span>${s.label}</span>
+            </button>`).join('')}
+        </div>`;
+    } else {
+      document.getElementById('pcat-body').innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Finding ${label.toLowerCase()} near you…</p></div>`;
+      setTimeout(() => loadPlacesCat(label, query), 600);
+    }
   }
 
   function loadPlacesCat(label, query) {
@@ -1871,6 +1958,15 @@ const App = (() => {
       </div>`).join('');
   }
 
+  function openWalletTab() {
+    if (!state.user) {
+      snack('Sign in to access your Wallet 💳');
+      openModal('profile');
+      return;
+    }
+    switchTab('wallet');
+  }
+
   function connectWallet() { snack('₿ Wallet connection coming soon!') }
   function walletCopy()    { navigator.clipboard.writeText('bc1qkipitaexamplewallet').then(() => snack('Address copied!')) }
   function walletSend()    { snack('Send feature coming soon!') }
@@ -2134,7 +2230,7 @@ const App = (() => {
            <span class="ms">lock</span>
            <strong>Sign in to chat</strong>
            <p>Create a profile to join groups, send messages, and connect with nomads.</p>
-           <button class="btn-primary-sm" onclick="App.openModal('auth')">Sign In / Sign Up</button>
+           <button class="btn-primary-sm" onclick="App.openModal('profile')">Sign In / Sign Up</button>
          </div>`
       : '';
     el.innerHTML = state.groups.map(g => {
@@ -2170,20 +2266,118 @@ const App = (() => {
       </div>`).join('');
   }
 
+  /* ── HOME TOOLS — context-aware ─────────────────────────────── */
+  function renderHomeTools() {
+    const grid = document.getElementById('home-tools-grid');
+    const title = document.getElementById('home-tools-title');
+    if (!grid) return;
+    const hasTrips = state.trips.filter(t => !t.isSample).length > 0;
+    const isUser   = !!state.user;
+
+    if (isUser) {
+      title.textContent = 'Quick Tools';
+      grid.innerHTML = `
+        <button class="tool-item" onclick="App.switchTab('trips')">
+          <div class="tool-ico">✈️</div><span>My Trips</span>
+        </button>
+        <button class="tool-item" onclick="App.openPackingList()">
+          <div class="tool-ico">🧳</div><span>Packing List</span>
+        </button>
+        <button class="tool-item" onclick="App.switchTab('wallet')">
+          <div class="tool-ico">💱</div><span>Wallet</span>
+        </button>
+        <button class="tool-item" onclick="App.switchTab('maps')">
+          <div class="tool-ico">🗺️</div><span>Maps</span>
+        </button>
+        <button class="tool-item" onclick="App.openModal('advisory')">
+          <div class="tool-ico">🛡️</div><span>Safety</span>
+        </button>
+        <button class="tool-item" onclick="App.openModal('translate')">
+          <div class="tool-ico">🌐</div><span>Translate</span>
+        </button>`;
+    } else {
+      title.textContent = 'Explore Kipita';
+      grid.innerHTML = `
+        <button class="tool-item" onclick="App.switchTab('maps')">
+          <div class="tool-ico">🗺️</div><span>Maps</span>
+        </button>
+        <button class="tool-item" onclick="App.switchTab('places')">
+          <div class="tool-ico">🌍</div><span>Explore</span>
+        </button>
+        <button class="tool-item" onclick="App.openModal('advisory')">
+          <div class="tool-ico">🛡️</div><span>Safety</span>
+        </button>
+        <button class="tool-item" onclick="App.openModal('translate')">
+          <div class="tool-ico">🌐</div><span>Translate</span>
+        </button>
+        <button class="tool-item" onclick="App.switchTab('wallet')">
+          <div class="tool-ico">💱</div><span>Currency</span>
+        </button>
+        <button class="tool-item" onclick="App.openModal('profile')">
+          <div class="tool-ico">👤</div><span>Sign Up</span>
+        </button>`;
+    }
+  }
+
+  const PACKING_LIST = [
+    { section: '📄 Documents', items: ['Passport / ID', 'Visa documents', 'Travel insurance card', 'Emergency contacts list', 'Flight / hotel confirmations'] },
+    { section: '💻 Electronics', items: ['Phone + charger', 'Laptop + charger', 'Universal power adapter', 'Power bank', 'Earphones / AirPods', 'Camera'] },
+    { section: '💳 Money & Crypto', items: ['Cash (local currency)', 'Credit cards', 'Bitcoin hardware wallet', 'ATM card', 'Emergency cash (USD / EUR)'] },
+    { section: '👕 Clothing', items: ['Underwear ×7', 'T-shirts ×5', 'Pants / shorts ×3', 'Light jacket', 'Swimwear', 'Sandals / flip-flops', 'Walking shoes', 'Formal outfit'] },
+    { section: '💊 Health', items: ['Prescription medications', 'Pain reliever / ibuprofen', 'Sunscreen SPF 50+', 'Insect repellent', 'Hand sanitizer', 'Basic first aid kit'] },
+    { section: '🪥 Toiletries', items: ['Toothbrush + toothpaste', 'Deodorant', 'Shampoo + conditioner', 'Razor', 'Moisturizer', 'Lip balm'] },
+    { section: '🎒 Extras', items: ['Reusable water bottle', 'Padlock (hostel)', 'Eye mask + earplugs', 'Small daypack', 'Notebook + pen', 'Snacks for travel day'] },
+  ];
+
+  function openPackingList() {
+    const trips = state.trips.filter(t => t.status === 'upcoming' || t.status === 'active');
+    if (!trips.length) {
+      snack('Plan a trip first to generate your packing list ✈️');
+      openPlanTrip();
+      return;
+    }
+    const trip = trips[0];
+    const label = document.getElementById('packing-trip-label');
+    if (label) label.textContent = `✈️ Packing for: ${trip.dest}`;
+    const body = document.getElementById('packing-list-body');
+    if (!body) { openModal('packing-list'); return; }
+    const saved = LS.get('packing_' + trip.id) || {};
+    body.innerHTML = PACKING_LIST.map(sec => `
+      <div class="pack-section">
+        <div class="pack-sec-title">${sec.section}</div>
+        ${sec.items.map(item => {
+          const key = sec.section + '|' + item;
+          const checked = saved[key] || false;
+          return `<label class="pack-item ${checked ? 'checked' : ''}">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="App.togglePackItem('${trip.id}','${key.replace(/'/g,"\\'")}',this)"/>
+            <span>${item}</span>
+          </label>`;
+        }).join('')}
+      </div>`).join('');
+    openModal('packing-list');
+  }
+
+  function togglePackItem(tripId, key, el) {
+    const saved = LS.get('packing_' + tripId) || {};
+    saved[key] = el.checked;
+    LS.set('packing_' + tripId, saved);
+    el.closest('.pack-item').classList.toggle('checked', el.checked);
+  }
+
   function sayHiToTraveler(name) {
-    if (!state.user) { snack('Sign in to connect with nearby nomads 👋'); openModal('auth'); return; }
+    if (!state.user) { snack('Sign in to connect with nearby nomads 👋'); openModal('profile'); return; }
     snack(`👋 Hi sent to ${name}!`);
   }
 
   function openPlanTrip() {
-    if (!state.user) { snack('Sign in to plan & save trips ✈️'); openModal('auth'); return; }
+    if (!state.user) { snack('Sign in to plan & save trips ✈️'); openModal('profile'); return; }
     openModal('plan-trip');
   }
 
   function openGroupChat(groupId) {
     if (!state.user) {
       snack('Sign in to join group chats 👥');
-      openModal('auth');
+      openModal('profile');
       return;
     }
     const group = state.groups.find(g => g.id === groupId); if (!group) return;
@@ -2285,7 +2479,7 @@ const App = (() => {
   }
 
   function promptCreateGroup() {
-    if (!state.user) { snack('Sign in to create groups 👥'); openModal('auth'); return; }
+    if (!state.user) { snack('Sign in to create groups 👥'); openModal('profile'); return; }
     const name = prompt('Enter group name:');
     if (!name?.trim()) return;
     const newGroup = { id: 'g-' + Date.now(), name: name.trim(), members: ['You'], createdAt: Date.now() };
@@ -2381,17 +2575,51 @@ const App = (() => {
     if (!name) { snack('Please enter your name'); return; }
     state.user = { ...state.user, name, email, bio, avatar: state._pendingAvatar || state.user?.avatar || '' };
     LS.set('user', state.user);
-    updateUserUI(); updateGreeting();
+    updateUserUI(); updateGreeting(); renderHomeTools();
     closeModal('profile');
     snack('✅ Profile saved!');
   }
 
-  function signInWithGoogle() { snack('🔐 Google Sign-In requires the mobile app') }
+  function signInWithGoogle() {
+    // Google Identity Services OAuth flow
+    // Requires: GOOGLE_CLIENT_ID set in gsiConfig (replace with your OAuth 2.0 Web Client ID)
+    const CLIENT_ID = window.KIPITA_GOOGLE_CLIENT_ID || '';
+    if (!CLIENT_ID) {
+      snack('Google Sign-In not configured — use email/name instead');
+      return;
+    }
+    if (typeof google === 'undefined' || !google.accounts) {
+      snack('Google Sign-In loading… try again');
+      return;
+    }
+    google.accounts.id.initialize({
+      client_id: CLIENT_ID,
+      callback: (response) => {
+        try {
+          // Decode JWT payload
+          const payload = JSON.parse(atob(response.credential.split('.')[1]));
+          const user = {
+            name: payload.name || 'Google User',
+            email: payload.email || '',
+            avatar: payload.picture || '',
+            joinedAt: Date.now(),
+          };
+          state.user = user;
+          LS.set('user', user);
+          updateUserUI();
+          renderHomeTools();
+          closeModal('profile');
+          snack(`✅ Signed in as ${user.name}`);
+        } catch { snack('Google Sign-In failed. Try again.'); }
+      },
+    });
+    google.accounts.id.prompt();
+  }
 
   function signOut() {
     if (!confirm('Sign out?')) return;
     state.user = null; LS.del('user');
-    updateUserUI(); closeProfileMenu(); closeModal('settings');
+    updateUserUI(); renderHomeTools(); closeProfileMenu(); closeModal('settings');
     snack('Signed out');
   }
 
@@ -2473,7 +2701,9 @@ const App = (() => {
     promptCreateGroup, openGroupChat, closeGroupChat,
     sendGroupMsg, groupChatKeydown, showGroupInfo, sayHiToTraveler,
     // Trips (auth-gated)
-    openPlanTrip,
+    openPlanTrip, openPackingList, togglePackItem,
+    // Wallet
+    openWalletTab,
     // Reviews
     switchSocialTab, filterReviews, sortReviews,
     openWriteReview, setReviewStar, setNomadScore, submitReview,
