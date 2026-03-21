@@ -1037,7 +1037,7 @@ ul      { list-style:none; padding:0 }
 #screen-groups.active { display:flex }
 
 .groups-list-view {
-  display:flex; flex-direction:column; height:100%; overflow:hidden;
+  display:flex; flex-direction:column; flex:1; overflow:hidden;
 }
 .groups-intro-text {
   font-size:13px; color:var(--text2); margin-bottom:16px; line-height:1.6;
@@ -1363,7 +1363,7 @@ ul      { list-style:none; padding:0 }
 .sst-btn.active { color:var(--red); border-bottom-color:var(--red) }
 
 /* ── Reviews layout ── */
-.reviews-view { display:flex; flex-direction:column; height:100%; overflow:hidden }
+.reviews-view { display:flex; flex-direction:column; flex:1; overflow:hidden }
 .rev-header-bar { display:flex; justify-content:space-between; align-items:center; padding:16px 16px 10px; flex-shrink:0 }
 .rev-filter-pills { display:flex; gap:8px; padding:0 16px 10px; overflow-x:auto; scrollbar-width:none; flex-shrink:0 }
 .rev-filter-pills::-webkit-scrollbar { display:none }
@@ -1612,6 +1612,12 @@ ul      { list-style:none; padding:0 }
   /* Desktop groups: side-by-side */
   #screen-groups.active {
     flex-direction: row;
+    padding-top: 47px; /* space for absolute subtab row */
+  }
+  #screen-groups .social-subtab-row {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 5;
   }
   .groups-list-view {
     width: 320px;
@@ -1621,6 +1627,9 @@ ul      { list-style:none; padding:0 }
   .groups-chat-view {
     position: relative;
     transform: none !important;
+    flex: 1;
+  }
+  .reviews-view {
     flex: 1;
   }
   .groups-chat-view.hidden {
