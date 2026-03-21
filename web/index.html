@@ -813,13 +813,25 @@
   <div class="modal-body" id="dest-detail-body"></div>
 </div>
 
-<!-- PLACES CATEGORY -->
-<div id="modal-places-cat" class="modal fullscreen hidden">
-  <div class="modal-hdr sticky">
-    <button class="modal-back" onclick="App.closeModal('places-cat')"><span class="ms">arrow_back</span></button>
-    <h3 id="pcat-title">Places</h3><div></div>
+<!-- PLACES CATEGORY — bottom sheet -->
+<div id="modal-places-cat" class="pcat-sheet hidden">
+  <div class="pcat-sheet-handle" onclick="App.closeModal('places-cat')"></div>
+  <div class="pcat-sheet-hdr">
+    <div class="pcat-sheet-hdr-inner">
+      <div id="pcat-hero-emoji" class="pcat-hero-emoji"></div>
+      <div>
+        <h2 id="pcat-title" class="pcat-sheet-title">Places</h2>
+        <div class="pcat-sheet-loc" id="pcat-sheet-loc">
+          <span class="ms" style="font-size:12px;color:var(--red)">location_on</span>
+          <span id="pcat-loc-text">Detecting…</span>
+        </div>
+      </div>
+    </div>
+    <button class="pcat-close-btn" onclick="App.closeModal('places-cat')">
+      <span class="ms">close</span>
+    </button>
   </div>
-  <div class="modal-body" id="pcat-body">
+  <div class="pcat-scroll" id="pcat-body">
     <div class="loading-state"><div class="spinner"></div><p>Finding places near you…</p></div>
   </div>
 </div>

@@ -456,10 +456,10 @@ const App = (() => {
   }
 
   function closeModal(name) {
-    const el = document.getElementById('modal-' + name);
+    const el = document.getElementById('modal-' + name) || document.getElementById(name);
     if (!el) return;
     el.classList.remove('open');
-    setTimeout(() => el.classList.add('hidden'), 300);
+    setTimeout(() => el.classList.add('hidden'), 340);
     const idx = state.modalStack.lastIndexOf(name);
     if (idx !== -1) state.modalStack.splice(idx, 1);
     if (state.modalStack.length === 0) {
@@ -1135,13 +1135,21 @@ const App = (() => {
   function openPlacesCat(id, label, query) {
     state.currentPcat = { id, label, query };
     const subs = CATEGORY_SUBS[id];
+    const cat  = CATEGORIES.find(c => c.id === id);
     document.getElementById('pcat-title').textContent = label;
-    openModal('places-cat');
+    const heroEl = document.getElementById('pcat-hero-emoji');
+    if (heroEl) heroEl.textContent = cat ? cat.emoji() : '📍';
+    const locEl = document.getElementById('pcat-loc-text');
+    if (locEl) locEl.textContent = state.location.name || 'Current location';
+    // Show the sheet
+    const sheet = document.getElementById('modal-places-cat');
+    if (sheet) { sheet.classList.remove('hidden'); requestAnimationFrame(() => sheet.classList.add('open')); }
+    document.getElementById('modal-backdrop')?.classList.remove('hidden');
+    state.modalStack.push('places-cat');
+
     if (subs) {
       // Show subcategory picker first
-      const h = getHour();
       document.getElementById('pcat-body').innerHTML = `
-        <div class="pcat-loc-bar"><span class="ms">location_on</span>${state.location.name || 'Current location'}</div>
         <p class="pcat-sub-intro">Choose a type of ${label.toLowerCase()}:</p>
         <div class="pcat-subcat-grid">
           ${subs.map(s => `

@@ -740,16 +740,20 @@ ul      { list-style:none; padding:0 }
 .edc-cost-amt { font-size:17px; font-weight:800; color:var(--text) }
 .edc-cost-label { font-size:11px; color:var(--text3); margin-top:1px }
 
-/* Place List Cards (for category listings) */
+/* Place List Cards — rounded card style */
 .place-list-card {
   display:flex; gap:0; background:var(--surface);
-  border-bottom:1px solid var(--border); padding:14px 16px;
+  border-radius:18px; border:1px solid var(--border);
+  padding:14px; margin-bottom:12px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+  transition:box-shadow .2s, transform .15s;
+  overflow:hidden;
 }
-.place-list-card:last-child { border-bottom:none }
+.place-list-card:hover { box-shadow:0 4px 22px rgba(0,0,0,.12); transform:translateY(-1px) }
+.place-list-card:active { transform:scale(.99) }
 .plc-photo {
-  width:70px; height:70px; border-radius:var(--radius-sm); flex-shrink:0;
-  display:flex; align-items:center; justify-content:center; overflow:hidden;
-  border:2px solid rgba(255,255,255,.2);
+  width:76px; height:76px; border-radius:12px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; overflow:hidden; border:none;
 }
 .plc-body { flex:1; min-width:0; margin-left:12px }
 .plc-top-row {
@@ -1943,4 +1947,85 @@ ul      { list-style:none; padding:0 }
   top: 4px; right: 4px;
   font-size: 10px;
   line-height: 1;
+}
+
+/* ═══════════════════════════ PLACES CAT BOTTOM SHEET ══════════ */
+.pcat-sheet {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 88vh;
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -6px 40px rgba(0,0,0,.18);
+  display: flex; flex-direction: column;
+  transform: translateY(100%);
+  transition: transform .38s cubic-bezier(.4,0,.2,1);
+  z-index: 500;
+  overflow: hidden;
+}
+.pcat-sheet.open { transform: translateY(0) }
+
+/* drag handle */
+.pcat-sheet-handle {
+  width: 44px; height: 5px; border-radius: 3px;
+  background: var(--border); margin: 10px auto 0; flex-shrink: 0;
+  cursor: pointer; transition: background .2s;
+}
+.pcat-sheet-handle:hover { background: var(--red) }
+
+/* header */
+.pcat-sheet-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.pcat-sheet-hdr-inner { display: flex; align-items: center; gap: 12px }
+.pcat-hero-emoji {
+  width: 46px; height: 46px; border-radius: 14px;
+  background: var(--red-lt); display: flex; align-items: center;
+  justify-content: center; font-size: 24px; flex-shrink: 0;
+}
+.pcat-sheet-title { font-size: 20px; font-weight: 800; margin: 0; line-height: 1.2 }
+.pcat-sheet-loc {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 12px; color: var(--text3); margin-top: 2px; font-weight: 500;
+}
+.pcat-close-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--card-bg); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.pcat-close-btn .ms { font-size: 18px; color: var(--text2) }
+
+/* scrollable body */
+.pcat-scroll {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+}
+.pcat-scroll::-webkit-scrollbar { width: 4px }
+.pcat-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px }
+
+/* desktop: centered card */
+@media (min-width: 768px) {
+  .pcat-sheet {
+    left: 50%; right: auto;
+    width: min(600px, 90vw);
+    transform: translateX(-50%) translateY(100%);
+    bottom: 0; height: 86vh;
+    border-radius: 24px 24px 0 0;
+  }
+  .pcat-sheet.open { transform: translateX(-50%) translateY(0) }
+}
+
+/* subcat grid tweaks inside the sheet */
+.pcat-sheet .pcat-subcat-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (min-width: 480px) {
+  .pcat-sheet .pcat-subcat-grid { grid-template-columns: repeat(4, 1fr) }
+}
+
+/* plc-action buttons tighter */
+.plc-action-btn {
+  padding: 9px 6px; border-radius: 10px; font-size: 11px;
 }
