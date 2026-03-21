@@ -1354,6 +1354,8 @@ ul      { list-style:none; padding:0 }
 .perk-desc  { font-size:13px; color:var(--text2); margin-top:4px; line-height:1.5 }
 .perk-code  { display:inline-flex; align-items:center; gap:6px; background:var(--red-lt); border:1px dashed var(--red); color:var(--red); padding:4px 10px; border-radius:6px; font-size:12px; font-weight:700; margin-top:8px; cursor:pointer }
 .perk-expiry { font-size:11px; color:var(--text3); margin-top:4px }
+.perk-claim-btn { display:inline-block; margin-top:10px; padding:7px 16px; background:var(--red); color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit }
+.perk-claim-btn:hover { opacity:.88 }
 
 /* Travelers */
 .travelers-intro { font-size:14px; color:var(--text2); margin-bottom:16px }
