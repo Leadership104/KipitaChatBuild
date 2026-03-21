@@ -183,23 +183,14 @@ const App = (() => {
   /* ── DEMO GROUPS ────────────────────────────────────────────── */
   const DEMO_GROUPS = [
     { id: 'g-bangkok', name: 'Bangkok Nomads 🇹🇭', members: ['Alex M.', 'Sara K.', 'Marco B.', 'You'], createdAt: Date.now() - 86400000 * 7 },
-    { id: 'g-bali',    name: 'Bali BTC Crew 🌴',   members: ['Yuki T.', 'Priya N.', 'You'],           createdAt: Date.now() - 86400000 * 3 },
-    { id: 'g-eu',      name: 'EU Nomads 🇪🇺',       members: ['Marco B.', 'Yuki T.', 'Alex M.', 'You'],createdAt: Date.now() - 86400000 * 1 },
   ];
 
   const DEMO_MSGS = {
     'g-bangkok': [
-      { from: 'Alex M.',  text: 'Hey everyone! Just arrived in Bangkok 🛕',              ts: Date.now() - 3600000 * 8,   read: true },
-      { from: 'Sara K.',  text: 'Welcome! The co-working scene here is amazing ☕',       ts: Date.now() - 3600000 * 7,   read: true },
-      { from: 'Marco B.', text: 'Has anyone tried paying with Bitcoin at Chatuchak?',     ts: Date.now() - 3600000 * 5,   read: true },
-      { from: 'Alex M.',  text: 'Yes! There are 3-4 stalls that accept Lightning ⚡',    ts: Date.now() - 3600000 * 4,   read: false },
-    ],
-    'g-bali': [
-      { from: 'Yuki T.',  text: 'Canggu surf + co-work today 🏄 Anyone joining?',        ts: Date.now() - 3600000 * 2,   read: true },
-      { from: 'Priya N.', text: 'In! Meet at Outpost at 10am?',                          ts: Date.now() - 3600000 * 1.5, read: false },
-    ],
-    'g-eu': [
-      { from: 'Marco B.', text: 'Portugal is calling! NHR tax regime deal ends soon 🇵🇹', ts: Date.now() - 1800000,       read: false },
+      { from: 'Alex M.',  text: 'Hey everyone! Just arrived in Bangkok 🛕',           ts: Date.now() - 3600000 * 8, read: true },
+      { from: 'Sara K.',  text: 'Welcome! The co-working scene here is amazing ☕',    ts: Date.now() - 3600000 * 7, read: true },
+      { from: 'Marco B.', text: 'Has anyone tried paying with Bitcoin at Chatuchak?',  ts: Date.now() - 3600000 * 5, read: true },
+      { from: 'Alex M.',  text: 'Yes! There are 3-4 stalls that accept Lightning ⚡', ts: Date.now() - 3600000 * 4, read: false },
     ],
   };
 
@@ -233,7 +224,8 @@ const App = (() => {
     state.groups      = LS.get('groups') || [];
     state.savedPlaces = new Set(LS.get('saved') || []);
 
-    // Seed demo groups on first launch
+    // Seed demo groups — prune stale old demo groups (g-bali, g-eu) if present
+    state.groups = (state.groups || []).filter(g => !['g-bali', 'g-eu'].includes(g.id));
     if (state.groups.length === 0) {
       state.groups = DEMO_GROUPS.map(g => ({ ...g }));
       LS.set('groups', state.groups);
@@ -242,6 +234,8 @@ const App = (() => {
           LS.set('gchat_' + g.id, DEMO_MSGS[g.id] || []);
         }
       });
+    } else {
+      LS.set('groups', state.groups);
     }
 
     // Sample trip on first launch
@@ -1382,41 +1376,64 @@ const App = (() => {
   function renderMapNearbyPlaces(filter) {
     const sheet = document.getElementById('map-nearby-list');
     if (!sheet) return;
-    const configs = {
-      btc:  { label: 'BTC Merchants', icon: '₿', items: ['Lightning Café', 'Crypto Market', 'BTC Corner Shop', 'Digital Bistro'], empty: 'No BTC merchants found nearby. Try searching a different location.' },
-      food: { label: 'Restaurants', icon: '🍜', items: ['Nomad Kitchen', 'Street Bites', 'The Wanderer Grill', 'Local Eats'], empty: 'No restaurants found nearby. Try searching a different location.' },
-      cafe: { label: 'Cafés', icon: '☕', items: ['Digital Nomad Café', 'Bean & Browse', 'The Grind', 'Pour Over Paradise'], empty: 'No cafés found nearby. Try searching a different location.' },
-      shop: { label: 'Shops', icon: '🛍️', items: [], empty: 'No shops found nearby. Try searching a different location.' },
-      atm:  { label: 'ATMs', icon: '🏧', items: ['City ATM', 'Airport Exchange', 'Central Bank ATM'], empty: 'No ATMs found nearby. Try searching a different location.' },
-    };
-    const cfg = configs[filter] || configs.btc;
-    if (!cfg.items.length) {
-      sheet.innerHTML = `
-        <div class="map-nearby-empty">
-          <span style="font-size:40px">${cfg.icon}</span>
-          <p>${cfg.empty}</p>
-        </div>`;
-      return;
-    }
     const { lat, lng } = state.location;
-    sheet.innerHTML = cfg.items.map(name => {
-      const dist = (0.1 + Math.random() * 1.5).toFixed(1);
-      const rating = (4.0 + Math.random() * 1.0).toFixed(1);
-      const mlat = (lat || 0) + (Math.random() - 0.5) * 0.02;
-      const mlng = (lng || 0) + (Math.random() - 0.5) * 0.02;
-      const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(name)}`;
-      return `
-        <div class="map-nearby-item">
-          <div class="map-nearby-icon">${cfg.icon}</div>
+
+    // ₿ BTC — real BTCMap data
+    if (filter === 'btc') {
+      if (!state.btcMerchants.length) {
+        sheet.innerHTML = `<div class="map-nearby-empty"><div class="spinner"></div><p>Loading BTC merchants…</p></div>`;
+        return;
+      }
+      sheet.innerHTML = state.btcMerchants.slice(0, 25).map(el => {
+        const mlat = el.osm_json.lat, mlng = el.osm_json.lon;
+        const tags = el.osm_json.tags || {};
+        const name = tags.name || 'BTC Merchant';
+        const ti   = getPlaceTypeInfo(tags);
+        const dist = (lat && lng) ? haversineKm(lat, lng, mlat, mlng) : null;
+        const distStr = dist !== null ? (dist < 1 ? Math.round(dist*1000)+'m away' : dist.toFixed(1)+'km away') : '';
+        const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(name)}`;
+        return `<div class="map-nearby-item" onclick="App.panMapTo(${mlat},${mlng})">
+          <div class="map-nearby-icon">₿</div>
           <div class="map-nearby-info">
-            <div class="map-nearby-name">${name}</div>
-            <div class="map-nearby-meta">⭐ ${rating} · ${dist} mi away</div>
+            <div class="map-nearby-name">${escHtml(name)}</div>
+            <div class="map-nearby-meta">${ti.label}${distStr ? ' · ' + distStr : ''}</div>
           </div>
-          <button class="map-nearby-dir" onclick="App.openBrowser('${mapsUrl}','Directions')">
+          <button class="map-nearby-dir" onclick="event.stopPropagation();App.openBrowser('${mapsUrl}','Directions')">
             <span class="ms" style="font-size:18px">directions</span>
           </button>
         </div>`;
-    }).join('');
+      }).join('');
+      return;
+    }
+
+    // 💚 Cash App — real generated merchant data
+    if (filter === 'cashapp') {
+      if (!state.cashAppMerchants.length) generateCashAppMerchants();
+      sheet.innerHTML = state.cashAppMerchants.map(el => {
+        const mlat = el.osm_json.lat, mlng = el.osm_json.lon;
+        const tags = el.osm_json.tags || {};
+        const name = tags.name || 'Cash App Merchant';
+        const dist = (lat && lng) ? haversineKm(lat, lng, mlat, mlng) : null;
+        const distStr = dist !== null ? (dist < 1 ? Math.round(dist*1000)+'m away' : dist.toFixed(1)+'km away') : '';
+        const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(name)}`;
+        return `<div class="map-nearby-item" onclick="App.panMapTo(${mlat},${mlng})">
+          <div class="map-nearby-icon">💚</div>
+          <div class="map-nearby-info">
+            <div class="map-nearby-name">${escHtml(name)}</div>
+            <div class="map-nearby-meta">Cash App Pay${distStr ? ' · ' + distStr : ''}</div>
+          </div>
+          <button class="map-nearby-dir" onclick="event.stopPropagation();App.openBrowser('${mapsUrl}','Directions')">
+            <span class="ms" style="font-size:18px">directions</span>
+          </button>
+        </div>`;
+      }).join('');
+      return;
+    }
+
+    // Food/Cafe/Shop — show loading; Overpass will fill via fetchAndRenderOverpassMarkers
+    const icons = { food:'🍜', cafe:'☕', shop:'🛍', atm:'🏧' };
+    const labels = { food:'restaurants', cafe:'cafés', shop:'shops', atm:'ATMs' };
+    sheet.innerHTML = `<div class="map-nearby-empty"><div class="spinner"></div><p>Finding real ${labels[filter] || 'places'} nearby…</p></div>`;
   }
 
   /* ── WALLET BTC MAP ──────────────────────────────────────────── */
@@ -1491,6 +1508,19 @@ const App = (() => {
     }));
   }
 
+  function panMapTo(lat, lng) {
+    if (state.mapScreen) state.mapScreen.setView([lat, lng], 16, { animate: true });
+  }
+
+  function toggleMapSheet() {
+    const sheet = document.querySelector('.map-nearby-sheet');
+    if (!sheet) return;
+    sheet.classList.toggle('expanded');
+    const arrow = document.getElementById('map-sheet-arrow');
+    if (arrow) arrow.textContent = sheet.classList.contains('expanded') ? '▼ collapse' : '▲ expand';
+    if (state.mapScreen) setTimeout(() => state.mapScreen.invalidateSize(), 350);
+  }
+
   function mapScreenSearchKey(e) {
     if (e.key === 'Enter') mapScreenSearch();
   }
@@ -1550,7 +1580,7 @@ const App = (() => {
     const badge = document.getElementById('btc-merchant-count');
     if (badge) badge.textContent = state.btcMerchants.length + ' found';
 
-    if (state.mapScreenFilter === 'btc') renderMapScreenMarkers();
+    if (state.mapScreenFilter === 'btc') { renderMapScreenMarkers(); renderMapNearbyPlaces('btc'); }
     if (state.walletMap) renderWalletMapMarkers();
   }
 
@@ -2098,6 +2128,15 @@ const App = (() => {
         </div>`;
       return;
     }
+    // Auth note below group list when not signed in
+    const authNote = !state.user
+      ? `<div class="auth-req-banner" style="margin-top:8px">
+           <span class="ms">lock</span>
+           <strong>Sign in to chat</strong>
+           <p>Create a profile to join groups, send messages, and connect with nomads.</p>
+           <button class="btn-primary-sm" onclick="App.openModal('auth')">Sign In / Sign Up</button>
+         </div>`
+      : '';
     el.innerHTML = state.groups.map(g => {
       const msgs   = LS.get('gchat_' + g.id) || [];
       const last   = msgs[msgs.length - 1];
@@ -2113,7 +2152,7 @@ const App = (() => {
           </div>
           ${unread > 0 ? `<div class="group-row-badge">${unread}</div>` : '<span class="ms" style="color:var(--text3);font-size:18px">chevron_right</span>'}
         </div>`;
-    }).join('');
+    }).join('') + authNote;
   }
 
   function renderNearbyTeaser() {
@@ -2126,12 +2165,27 @@ const App = (() => {
           <div class="traveler-loc">${t.loc} · ${t.bio}</div>
         </div>
         <div class="traveler-actions">
-          <button class="traveler-btn" onclick="App.snack('👋 Message coming soon!')">Say Hi</button>
+          <button class="traveler-btn" onclick="App.sayHiToTraveler('${t.name}')">Say Hi</button>
         </div>
       </div>`).join('');
   }
 
+  function sayHiToTraveler(name) {
+    if (!state.user) { snack('Sign in to connect with nearby nomads 👋'); openModal('auth'); return; }
+    snack(`👋 Hi sent to ${name}!`);
+  }
+
+  function openPlanTrip() {
+    if (!state.user) { snack('Sign in to plan & save trips ✈️'); openModal('auth'); return; }
+    openModal('plan-trip');
+  }
+
   function openGroupChat(groupId) {
+    if (!state.user) {
+      snack('Sign in to join group chats 👥');
+      openModal('auth');
+      return;
+    }
     const group = state.groups.find(g => g.id === groupId); if (!group) return;
     state.currentGroup = group;
 
@@ -2189,6 +2243,7 @@ const App = (() => {
   }
 
   function sendGroupMsg() {
+    if (!state.user) { snack('Sign in to send messages'); return; }
     const input = document.getElementById('gchat-input');
     const text  = input.value.trim(); if (!text || !state.currentGroup) return;
     const groupId = state.currentGroup.id;
@@ -2230,6 +2285,7 @@ const App = (() => {
   }
 
   function promptCreateGroup() {
+    if (!state.user) { snack('Sign in to create groups 👥'); openModal('auth'); return; }
     const name = prompt('Enter group name:');
     if (!name?.trim()) return;
     const newGroup = { id: 'g-' + Date.now(), name: name.trim(), members: ['You'], createdAt: Date.now() };
@@ -2398,7 +2454,7 @@ const App = (() => {
     // AI
     aiQuick, chatKeydown, chatResize, sendChat, addAiTrip,
     // Maps tab
-    mapScreenFilter, mapScreenSearch, mapScreenSearchKey,
+    mapScreenFilter, mapScreenSearch, mapScreenSearchKey, panMapTo, toggleMapSheet,
     // Wallet map
     initWalletMap,
     // Currency converter
@@ -2415,7 +2471,9 @@ const App = (() => {
     copyCode,
     // Groups
     promptCreateGroup, openGroupChat, closeGroupChat,
-    sendGroupMsg, groupChatKeydown, showGroupInfo,
+    sendGroupMsg, groupChatKeydown, showGroupInfo, sayHiToTraveler,
+    // Trips (auth-gated)
+    openPlanTrip,
     // Reviews
     switchSocialTab, filterReviews, sortReviews,
     openWriteReview, setReviewStar, setNomadScore, submitReview,

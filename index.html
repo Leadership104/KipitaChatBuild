@@ -134,7 +134,7 @@
           <button class="tool-item" onclick="App.openModal('perks')">
             <div class="tool-ico">🏷️</div><span>Deals</span>
           </button>
-          <button class="tool-item" onclick="App.openModal('plan-trip')">
+          <button class="tool-item" onclick="App.openPlanTrip()">
             <div class="tool-ico">🧳</div><span>Packing List</span>
           </button>
           <button class="tool-item" onclick="App.openModal('advisory')">
@@ -228,7 +228,7 @@
       <div class="scr-scroll">
         <div class="trips-header">
           <h2>My Trips</h2>
-          <button class="btn-primary-sm" onclick="App.openModal('plan-trip')">
+          <button class="btn-primary-sm" onclick="App.openPlanTrip()">
             <span class="ms">add</span> Plan Trip
           </button>
         </div>
@@ -335,10 +335,11 @@
 
         <!-- Nearby Places Bottom Sheet -->
         <div class="map-nearby-sheet">
-          <div class="map-nearby-handle"></div>
-          <div class="map-nearby-hdr">
+          <div class="map-nearby-handle" onclick="App.toggleMapSheet()" title="Expand/collapse"></div>
+          <div class="map-nearby-hdr" onclick="App.toggleMapSheet()" style="cursor:pointer">
             <span class="map-nearby-title">Nearby Places</span>
-            <div class="map-nearby-pills" id="map-nearby-pills">
+            <span class="map-nearby-hdr-expand" id="map-sheet-arrow">▲ expand</span>
+            <div class="map-nearby-pills" id="map-nearby-pills" onclick="event.stopPropagation()">
               <button class="mnpill active" data-f="btc"     onclick="App.mapScreenFilter('btc',this)">₿ BTC</button>
               <button class="mnpill"        data-f="cashapp" onclick="App.mapScreenFilter('cashapp',this)">💚 Cash App</button>
               <button class="mnpill"        data-f="food"    onclick="App.mapScreenFilter('food',this)">🍜 Food</button>
