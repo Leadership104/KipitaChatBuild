@@ -141,12 +141,12 @@ const App = (() => {
 
   /* ── PERKS DATA ────────────────────────────────────────────── */
   const PERKS = [
-    { icon: '✈️', title: 'Skyscanner',   desc: '10% off flights when booked through Kipita. Valid on all routes.',              code: 'KIPITA10',    expiry: 'Dec 2026' },
-    { icon: '🏨', title: 'Booking.com',  desc: 'Genius Level 2 instant unlock — up to 20% off thousands of properties.',        code: 'KIPITAGENI', expiry: 'Ongoing' },
-    { icon: '💻', title: 'NomadList Pro',desc: '3 months free NomadList Pro subscription for Kipita members.',                  code: 'KIPITANOMAD',expiry: 'Mar 2027' },
-    { icon: '📶', title: 'Airalo eSIM',  desc: '5% off any eSIM data plan worldwide. Stay connected anywhere.',                 code: 'KIPITA5',     expiry: 'Jun 2026' },
-    { icon: '🏋️', title: 'ClassPass',   desc: 'First month free — access gyms, yoga and fitness globally.',                    code: 'KIPITAFIT',  expiry: 'Ongoing' },
-    { icon: '🔐', title: 'NordVPN',      desc: '2-year plan at 70% off. Secure your connection on public WiFi.',                code: 'KIPITAVPN',  expiry: 'Dec 2026' },
+    { icon: '✈️', title: 'Skyscanner',   desc: '10% off flights when booked through Kipita. Valid on all routes.',              code: 'KIPITA10',    expiry: 'Dec 2026', url: 'https://www.skyscanner.com/?utm_source=kipita&utm_medium=app&utm_campaign=KIPITA10' },
+    { icon: '🏨', title: 'Booking.com',  desc: 'Genius Level 2 instant unlock — up to 20% off thousands of properties.',        code: 'KIPITAGENI', expiry: 'Ongoing',  url: 'https://www.booking.com/?utm_source=kipita&utm_medium=app&utm_campaign=KIPITAGENI' },
+    { icon: '💻', title: 'NomadList Pro',desc: '3 months free NomadList Pro subscription for Kipita members.',                  code: 'KIPITANOMAD',expiry: 'Mar 2027', url: 'https://nomadlist.com/?utm_source=kipita&utm_medium=app&utm_campaign=KIPITANOMAD' },
+    { icon: '📶', title: 'Airalo eSIM',  desc: '5% off any eSIM data plan worldwide. Stay connected anywhere.',                 code: 'KIPITA5',    expiry: 'Jun 2026', url: 'https://www.airalo.com/?utm_source=kipita&utm_medium=app&utm_campaign=KIPITA5' },
+    { icon: '🏋️', title: 'ClassPass',   desc: 'First month free — access gyms, yoga and fitness globally.',                    code: 'KIPITAFIT',  expiry: 'Ongoing',  url: 'https://classpass.com/?utm_source=kipita&utm_medium=app&utm_campaign=KIPITAFIT' },
+    { icon: '🔐', title: 'NordVPN',      desc: '2-year plan at 70% off. Secure your connection on public WiFi.',                code: 'KIPITAVPN',  expiry: 'Dec 2026', url: 'https://nordvpn.com/?utm_source=kipita&utm_medium=app&utm_campaign=KIPITAVPN' },
   ];
 
   /* ── AI RESPONSES ──────────────────────────────────────────── */
@@ -1856,13 +1856,14 @@ const App = (() => {
     el.innerHTML = PERKS.map(p => `
       <div class="perk-card">
         <div class="perk-icon">${p.icon}</div>
-        <div>
+        <div style="flex:1;min-width:0">
           <div class="perk-title">${p.title}</div>
           <div class="perk-desc">${p.desc}</div>
           <div class="perk-code" onclick="App.copyCode('${p.code}')">
             <span class="ms" style="font-size:16px">content_copy</span> ${p.code}
           </div>
           <div class="perk-expiry">Expires: ${p.expiry}</div>
+          <button class="perk-claim-btn" onclick="App.openBrowser('${p.url}','${p.title}')">Claim Deal →</button>
         </div>
       </div>`).join('');
   }
